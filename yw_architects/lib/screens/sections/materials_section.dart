@@ -9,7 +9,7 @@ class MaterialsSection extends StatelessWidget {
 
   const MaterialsSection({super.key, required this.user, required this.onToast});
 
-  bool get canEdit => [UserRole.interior, UserRole.admin].contains(user.role);
+  bool get canEdit => [UserRole.srArchitect, UserRole.jrArchitect, UserRole.draftsman, UserRole.admin, UserRole.coFounder].contains(user.role);
 
   @override
   Widget build(BuildContext context) {

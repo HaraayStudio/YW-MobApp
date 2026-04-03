@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YW Architects | Full 3D Construction</title>
+    <style>
+        :root {
+            --bg: #1A1A1A;
+            --yw-gold: #F4C430;
+            --concrete: #333333;
+            --glass: rgba(135, 206, 235, 0.15);
+            --glass-top: rgba(135, 206, 235, 0.25);
+            --wireframe: rgba(255, 255, 255, 0.03);
+        }
+
+        body, html {
+            margin: 0;
+            height: 100vh;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            perspective: 2000px;
+            background-image: 
+                linear-gradient(var(--wireframe) 1px, transparent 1px),
+                linear-gradient(90deg, var(--wireframe) 1px, transparent 1px);
+            background-size: 60px 60px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* --- STATIC BRANDING (FRONT FACING) --- */
+        /* Pulled out of the 3D site to remain flat to the monitor */
+        .branding {
+            position: absolute;
+            z-index: 100;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            /* Appears earlier than the building finish */
+            animation: revealFront 2s ease-out 1.5s forwards; 
+        }
+
+        .branding h1 {
+            color: white;
+            font-weight: 200;
+            letter-spacing: 20px;
+            font-size: 3rem;
+            margin: 0;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .branding p {
+            color: var(--yw-gold);
+            letter-spacing: 8px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        @keyframes revealFront {
+            to { opacity: 1; transform: translateY(-20px); }
+        }
+
+        /* --- THE 3D SCENE --- */
+        .building-site {
+            width: 300px;
+            height: 500px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(25deg) rotateY(-35deg);
+            animation: cinematicRotate 20s infinite alternate ease-in-out;
+        }
+
+        @keyframes cinematicRotate {
+            0% { transform: rotateX(20deg) rotateY(-45deg); }
+            100% { transform: rotateX(30deg) rotateY(-20deg); }
+        }
+
+        .core {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 40px;
+            height: 0;
+            background: #222;
+            transform: translateX(-50%) translateZ(-20px);
+            border-left: 2px solid var(--yw-gold);
+            animation: growCore 2s ease-out forwards;
+        }
+
+        @keyframes growCore {
+            to { height: 420px; }
+        }
+
+        .floor-group {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+        }
+
+        .slab {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            left: 50%;
+            margin-left: -90px;
+            background: var(--concrete);
+            border: 1px solid #444;
+            transform: rotateX(90deg);
+            opacity: 0;
+            animation: dropSlab 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .s1 { bottom: 0; animation-delay: 0.5s; }
+        .s2 { bottom: 80px; animation-delay: 1.0s; }
+        .s3 { bottom: 160px; animation-delay: 1.5s; }
+        .s4 { bottom: 240px; animation-delay: 2.0s; }
+        .s5 { bottom: 320px; animation-delay: 2.5s; background: var(--yw-gold); } 
+
+        @keyframes dropSlab {
+            0% { opacity: 0; transform: rotateX(90deg) translateZ(600px); }
+            100% { opacity: 1; transform: rotateX(90deg) translateZ(0); }
+        }
+
+        /* --- THE GLASS FACADES --- */
+        
+        /* Main Bottom Facade */
+        .facade {
+            position: absolute;
+            width: 182px;
+            height: 0;
+            left: 50%;
+            margin-left: -91px;
+            background: var(--glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            transform: translateZ(91px);
+            bottom: 0;
+            animation: installGlass 3s ease-in-out 3s forwards;
+            backdrop-filter: blur(2px);
+        }
+
+        /* Top side glass (below the yellow terrace) */
+        .facade-top {
+            position: absolute;
+            width: 182px;
+            height: 0;
+            left: 50%;
+            margin-left: -91px;
+            background: var(--glass-top);
+            border: 1px solid rgba(255,255,255,0.2);
+            transform: translateZ(91px);
+            bottom: 240px; /* Positions it between slab 4 and 5 */
+            animation: installGlassTop 2s ease-in-out 4.5s forwards;
+            backdrop-filter: blur(4px);
+        }
+
+        @keyframes installGlass {
+            to { height: 240px; }
+        }
+
+        @keyframes installGlassTop {
+            to { height: 80px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="branding">
+        <h1>YW</h1>
+        <p>Architects</p>
+    </div>
+
+    <div class="building-site">
+        <div class="core"></div>
+
+        <div class="floor-group">
+            <div class="slab s1"></div>
+            <div class="slab s2"></div>
+            <div class="slab s3"></div>
+            <div class="slab s4"></div>
+            <div class="slab s5"></div> 
+        </div>
+
+        <div class="facade"></div>
+        
+        <div class="facade-top"></div>
+    </div>
+
+</body>
+</html>

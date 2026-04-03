@@ -9,7 +9,7 @@ class LeavesSection extends StatelessWidget {
 
   const LeavesSection({super.key, required this.user, required this.onToast});
 
-  bool get isApprover => [UserRole.admin, UserRole.senior, UserRole.hr].contains(user.role);
+  bool get isApprover => [UserRole.admin, UserRole.coFounder, UserRole.hr, UserRole.srArchitect, UserRole.srEngineer, UserRole.liaisonManager].contains(user.role);
 
   @override
   Widget build(BuildContext context) {

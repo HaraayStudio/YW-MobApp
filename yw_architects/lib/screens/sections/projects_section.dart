@@ -82,8 +82,10 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
   bool get canCreate => [
     UserRole.admin,
-    UserRole.senior,
-    UserRole.admin,
+    UserRole.coFounder,
+    UserRole.srArchitect,
+    UserRole.srEngineer,
+    UserRole.liaisonManager,
   ].contains(widget.user.role);
 
   List<Map<String, dynamic>> get _filtered {

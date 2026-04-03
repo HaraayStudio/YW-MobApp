@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>YW Architects — Management System</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "on-tertiary-container": "#373123",
+        "secondary-fixed": "#ffe171",
+        "inverse-on-surface": "#f0f2e3",
+        "on-tertiary-fixed": "#201b0f",
+        "error-container": "#ffdad6",
+        "on-error": "#ffffff",
+        "surface-tint": "#755b00",
+        "surface-bright": "#f9fbec",
+        "on-error-container": "#93000a",
+        "inverse-primary": "#e9c254",
+        "surface-container-highest": "#e2e4d5",
+        "on-primary-fixed": "#241a00",
+        "inverse-surface": "#2e3228",
+        "surface-variant": "#e2e4d5",
+        "tertiary-container": "#a29887",
+        "secondary": "#705d00",
+        "tertiary-fixed": "#ede1cd",
+        "surface-container-lowest": "#ffffff",
+        "tertiary-fixed-dim": "#d0c5b2",
+        "surface": "#f9fbec",
+        "primary-fixed": "#ffe08f",
+        "surface-container": "#edefe0",
+        "on-surface": "#1a1d14",
+        "primary": "#755b00",
+        "surface-container-high": "#e7e9db",
+        "tertiary": "#655d4e",
+        "surface-dim": "#d9dbcd",
+        "on-tertiary": "#ffffff",
+        "on-primary": "#ffffff",
+        "primary-fixed-dim": "#e9c254",
+        "on-secondary-container": "#756100",
+        "secondary-container": "#fcde6c",
+        "background": "#f9fbec",
+        "primary-container": "#b8952a",
+        "surface-container-low": "#f3f5e6",
+        "on-secondary-fixed": "#221b00",
+        "on-tertiary-fixed-variant": "#4d4638",
+        "on-primary-fixed-variant": "#584400",
+        "secondary-fixed-dim": "#e2c555",
+        "outline-variant": "#d0c5b0",
+        "on-surface-variant": "#4d4636",
+        "on-primary-container": "#3e2f00",
+        "on-secondary-fixed-variant": "#554600",
+        "on-background": "#1a1d14",
+        "on-secondary": "#ffffff",
+        "outline": "#7f7664",
+        "error": "#ba1a1a"
+      },
+      fontFamily: {
+        "headline": ["Plus Jakarta Sans"],
+        "body": ["Plus Jakarta Sans"],
+        "label": ["Plus Jakarta Sans"]
+      },
+      borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1.5rem", "full": "9999px" },
+    },
+  },
+}
+</script>
+<style>
+  * { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .material-symbols-outlined.filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .gold-gradient { background: linear-gradient(135deg, #755B00 0%, #B8952A 100%); }
+  .arch-gradient { background: linear-gradient(135deg, #F9FBEC 0%, #EDEF60 50%, #f3f5e6 100%); }
+  .gold-text { background: linear-gradient(135deg, #755B00, #B8952A); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .screen-full { display: none; min-height: 100vh; }
+  .screen-full.active { display: flex; flex-direction: column; }
+  .nav-item { transition: all 0.2s ease; }
+  .nav-item.active .nav-icon { color: #755B00; }
+  .nav-item.active .nav-label { color: #755B00; font-weight: 700; }
+  .nav-item .nav-icon { color: #7f7664; }
+  .nav-item .nav-label { color: #7f7664; font-size: 10px; }
+  .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(26,29,20,0.08); }
+  .progress-track { background: #ffe08f; border-radius: 999px; overflow: hidden; }
+  .progress-fill { background: linear-gradient(90deg, #755B00, #B8952A); border-radius: 999px; transition: width 0.6s ease; }
+  .chip-planning { background: rgba(33,150,243,0.12); color: #1565c0; }
+  .chip-progress { background: rgba(255,152,0,0.12); color: #e65100; }
+  .chip-review { background: rgba(156,39,176,0.12); color: #6a1b9a; }
+  .chip-done { background: rgba(76,175,80,0.12); color: #2e7d32; }
+  .chip-hold { background: rgba(117,91,0,0.12); color: #755B00; }
+  .avatar { width: 40px; height: 40px; border-radius: 999px; background: linear-gradient(135deg, #755B00, #B8952A); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+  .avatar-sm { width: 32px; height: 32px; font-size: 11px; }
+  .avatar-lg { width: 56px; height: 56px; font-size: 18px; }
+  .input-field { background: #f3f5e6; border: none; border-bottom: 1px solid rgba(208,197,176,0.4); border-radius: 8px 8px 0 0; padding: 12px 16px; width: 100%; outline: none; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; color: #1a1d14; transition: border-color 0.2s; }
+  .input-field:focus { border-bottom: 2px solid #b8952a; }
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 40; }
+  .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; background: #f9fbec; z-index: 50; transition: left 0.3s ease; overflow-y: auto; box-shadow: 4px 0 20px rgba(26,29,20,0.1); }
+  .sidebar.open { left: 0; }
+  .sidebar-overlay.open { display: block; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 60; align-items: flex-end; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal-sheet { background: white; border-radius: 24px 24px 0 0; padding: 24px; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.3s ease forwards; }
+  .notification-dot { width: 8px; height: 8px; background: #ba1a1a; border-radius: 999px; position: absolute; top: 6px; right: 6px; }
+  .section-header { border-left: 4px solid #B8952A; padding-left: 16px; }
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(249,251,236,0.9); backdrop-filter: blur(20px); border-top: 1px solid rgba(208,197,176,0.2); z-index: 30; padding: 8px 0 12px; }
+  input[type="range"] { accent-color: #755B00; }
+  .task-item { border-left: 3px solid transparent; transition: all 0.2s; }
+  .task-item:hover { border-left-color: #B8952A; background: rgba(184,149,42,0.05); }
+  .task-high { border-left-color: #ba1a1a !important; }
+  .task-medium { border-left-color: #e65100 !important; }
+  .task-low { border-left-color: #2e7d32 !important; }
+  .splash-screen { background: linear-gradient(160deg, #1a1d14 0%, #2e3228 40%, #4d4636 100%); }
+  .tab-btn { padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; transition: all 0.2s; color: #7f7664; }
+  .tab-btn.active { background: #755B00; color: white; }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .pulse { animation: pulse 2s ease infinite; }
+  .gps-btn { background: linear-gradient(135deg, #755B00, #B8952A); border-radius: 999px; width: 80px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 32px rgba(117,91,0,0.4); }
+  .role-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgba(184,149,42,0.15); color: #755B00; text-transform: uppercase; letter-spacing: 0.05em; }
+</style>
+</head>
+<body class="bg-surface text-on-surface overflow-x-hidden">
+
+<!-- ===================== SPLASH SCREEN ===================== -->
+<div id="splash" class="screen-full active splash-screen min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+  <!-- Architectural grid pattern -->
+  <div class="absolute inset-0 opacity-10">
+    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#B8952A" stroke-width="0.5"/></pattern></defs>
+      <rect width="100%" height="100%" fill="url(#grid)"/>
+    </svg>
+  </div>
+  <!-- Golden accent lines -->
+  <div class="absolute top-0 left-0 w-1 h-full gold-gradient opacity-60"></div>
+  <div class="absolute bottom-0 left-0 right-0 h-1 gold-gradient opacity-40"></div>
+  <!-- Logo mark -->
+  <div class="relative z-10 flex flex-col items-center">
+    <div class="w-24 h-24 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-center justify-center mb-8 shadow-[0_24px_64px_rgba(184,149,42,0.3)] pulse">
+      <span class="text-3xl font-extrabold" style="color:#B8952A; letter-spacing:-2px;">YW</span>
+    </div>
+    <h1 class="text-white font-extrabold text-4xl tracking-tight mb-2">YW Architects</h1>
+    <p class="text-white/50 font-medium text-sm tracking-widest uppercase mb-12">Management System</p>
+    <!-- Loading bar -->
+    <div class="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+      <div id="splashBar" class="h-full gold-gradient rounded-full" style="width:0%;transition:width 2.5s ease;"></div>
+    </div>
+    <p class="text-white/30 text-xs mt-4 font-medium">Initializing workspace...</p>
+  </div>
+  <!-- Bottom tagline -->
+  <div class="absolute bottom-12 text-center z-10">
+    <p class="text-white/20 text-xs tracking-wider">DESIGN. BUILD. INSPIRE.</p>
+  </div>
+</div>
+
+<!-- ===================== LOGIN SCREEN ===================== -->
+<div id="login" class="screen-full arch-gradient min-h-screen flex flex-col">
+  <div class="flex-grow flex items-center justify-center px-6 py-12">
+    <div class="w-full max-w-sm fade-in">
+      <!-- Branding -->
+      <div class="mb-10 ml-2">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-surface-container-lowest rounded-2xl shadow-sm mb-6">
+          <span class="font-extrabold text-2xl tracking-tighter" style="color:#755B00;">YW</span>
+        </div>
+        <h1 class="text-on-surface font-bold text-3xl tracking-tight leading-tight">Architectural<br/>Mastery Begins Here.</h1>
+        <p class="text-on-surface-variant text-sm mt-2">Sign in to your workspace</p>
+      </div>
+      <!-- Card -->
+      <div class="bg-surface-container-lowest rounded-2xl p-8 shadow-[0_32px_64px_-12px_rgba(26,29,20,0.1)] border border-outline-variant/10">
+        <h2 class="text-on-surface font-bold text-xl mb-1">Welcome back</h2>
+        <p class="text-on-surface-variant text-sm mb-8">Select your role and sign in</p>
+        <!-- Role selector -->
+        <div class="mb-6">
+          <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Role</label>
+          <div class="relative">
+            <select id="roleSelect" class="input-field rounded-xl appearance-none pr-10 cursor-pointer" style="background:#f3f5e6;">
+              <option value="founder">🏛️ Founder / Principal Architect</option>
+              <option value="senior">🔷 Senior Architect</option>
+              <option value="junior">🔹 Junior Architect</option>
+              <option value="interior">🎨 Interior Designer</option>
+              <option value="site">🏗️ Site Engineer / Supervisor</option>
+              <option value="visualizer">🖼️ 3D Visualizer</option>
+              <option value="admin" selected>⚙️ Admin / HR</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-3 top-3 text-on-surface-variant pointer-events-none" style="font-size:18px;">expand_more</span>
+          </div>
+        </div>
+        <!-- Email -->
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Email</label>
+          <input id="emailInput" type="email" placeholder="admin@ywarchitects.com" value="admin@ywarchitects.com" class="input-field rounded-xl"/>
+        </div>
+        <!-- Password -->
+        <div class="mb-8 relative">
+          <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Password</label>
+          <input id="pwInput" type="password" placeholder="••••••••" value="admin123" class="input-field rounded-xl pr-12"/>
+          <button class="absolute right-3 top-9 text-on-surface-variant" onclick="togglePw()">
+            <span class="material-symbols-outlined" id="pwEye" style="font-size:20px;">visibility</span>
+          </button>
+        </div>
+        <!-- Temp credentials hint -->
+        <div class="bg-surface-container-low rounded-xl p-3 mb-6 border-l-2 border-primary-container">
+          <p class="text-xs text-on-surface-variant font-medium">
+            <span class="font-bold text-primary">Demo credentials —</span> Admin: admin@ywarchitects.com / admin123 | Founder: founder@ywarchitects.com / founder123 | Engineer: engineer@ywarchitects.com / eng123
+          </p>
+        </div>
+        <!-- Sign In Button -->
+        <button onclick="doLogin()" class="w-full gold-gradient text-white font-bold text-base py-4 rounded-2xl shadow-[0_8px_24px_rgba(117,91,0,0.3)] active:scale-95 transition-transform mb-4">
+          Sign In →
+        </button>
+        <button onclick="showScreen('forgotpw')" class="w-full text-primary text-sm font-semibold text-center py-2">Forgot Password?</button>
+      </div>
+      <!-- Footer -->
+      <p class="text-center text-on-surface-variant text-xs mt-8 opacity-60">© 2025 YW Architects. All rights reserved.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== FORGOT PASSWORD ===================== -->
+<div id="forgotpw" class="screen-full arch-gradient min-h-screen flex flex-col">
+  <div class="flex-grow flex items-center justify-center px-6">
+    <div class="w-full max-w-sm fade-in">
+      <button onclick="showScreen('login')" class="flex items-center gap-2 text-primary font-semibold mb-8">
+        <span class="material-symbols-outlined">arrow_back</span> Back to Login
+      </button>
+      <div class="bg-surface-container-lowest rounded-2xl p-8 shadow-[0_32px_64px_-12px_rgba(26,29,20,0.1)]">
+        <div class="w-14 h-14 rounded-2xl gold-gradient flex items-center justify-center mb-6">
+          <span class="material-symbols-outlined text-white" style="font-size:28px;">lock_reset</span>
+        </div>
+        <h2 class="text-on-surface font-bold text-2xl mb-2">Reset Password</h2>
+        <p class="text-on-surface-variant text-sm mb-8">Enter your email to receive a reset link.</p>
+        <div class="mb-6">
+          <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Work Email</label>
+          <input type="email" placeholder="you@ywarchitects.com" class="input-field rounded-xl"/>
+        </div>
+        <button class="w-full gold-gradient text-white font-bold py-4 rounded-2xl shadow-[0_8px_24px_rgba(117,91,0,0.3)]" onclick="alert('Reset link sent! Check your email.')">
+          Send Reset Link
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MAIN APP WRAPPER ===================== -->
+<div id="app" class="screen" style="min-height:100vh;">
+  <!-- Sidebar -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="p-6 gold-gradient">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+          <span class="font-extrabold text-xl text-white">YW</span>
+        </div>
+        <div>
+          <h2 class="text-white font-bold text-lg">YW Architects</h2>
+          <p class="text-white/70 text-xs">Management System</p>
+        </div>
+      </div>
+      <!-- Current user -->
+      <div class="bg-white/10 rounded-xl p-3 flex items-center gap-3">
+        <div class="avatar" id="sidebarAvatar">AD</div>
+        <div>
+          <p class="text-white font-semibold text-sm" id="sidebarName">YW Admin</p>
+          <p class="text-white/60 text-xs" id="sidebarRole">Admin / HR</p>
+        </div>
+      </div>
+    </div>
+    <div class="p-4">
+      <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider px-3 mb-3">Main Menu</p>
+      <nav id="sidebarNav" class="space-y-1"></nav>
+      <div class="mt-8 pt-4 border-t border-outline-variant/20">
+        <button onclick="logout()" class="flex items-center gap-3 px-3 py-3 rounded-xl text-error hover:bg-error/5 w-full transition-colors">
+          <span class="material-symbols-outlined" style="font-size:20px;">logout</span>
+          <span class="text-sm font-semibold">Sign Out</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Bar -->
+  <header class="fixed top-0 w-full z-20 flex justify-between items-center px-5 h-16" style="background:rgba(249,251,236,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(208,197,176,0.15);">
+    <div class="flex items-center gap-3">
+      <button onclick="openSidebar()" class="text-primary p-2 hover:bg-primary/10 rounded-full transition-all active:scale-95">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+      <div>
+        <h1 class="text-base font-bold text-primary" id="topbarTitle">Dashboard</h1>
+        <p class="text-xs text-on-surface-variant" id="topbarSub">YW Architects</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="showSection('notifications')" class="relative p-2 hover:bg-primary/10 rounded-full">
+        <span class="material-symbols-outlined text-primary">notifications</span>
+        <span class="notification-dot"></span>
+      </button>
+      <div class="avatar avatar-sm cursor-pointer" id="topbarAvatar" onclick="showSection('profile')">AD</div>
+    </div>
+  </header>
+
+  <!-- Content Area -->
+  <main class="pt-16 pb-24" id="mainContent">
+    <!-- DASHBOARD SECTION -->
+    <section id="sec-dashboard" class="section fade-in"></section>
+    <!-- PROJECTS SECTION -->
+    <section id="sec-projects" class="section hidden"></section>
+    <!-- TASKS SECTION -->
+    <section id="sec-tasks" class="section hidden"></section>
+    <!-- ATTENDANCE SECTION -->
+    <section id="sec-attendance" class="section hidden"></section>
+    <!-- LEAVES SECTION -->
+    <section id="sec-leaves" class="section hidden"></section>
+    <!-- SITE UPDATES SECTION -->
+    <section id="sec-site" class="section hidden"></section>
+    <!-- MATERIALS SECTION -->
+    <section id="sec-materials" class="section hidden"></section>
+    <!-- 3D VISUALIZER SECTION -->
+    <section id="sec-renders" class="section hidden"></section>
+    <!-- EMPLOYEES SECTION -->
+    <section id="sec-employees" class="section hidden"></section>
+    <!-- REPORTS SECTION -->
+    <section id="sec-reports" class="section hidden"></section>
+    <!-- NOTIFICATIONS -->
+    <section id="sec-notifications" class="section hidden"></section>
+    <!-- PROFILE -->
+    <section id="sec-profile" class="section hidden"></section>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <div class="flex justify-around" id="bottomNav"></div>
+  </nav>
+</div>
+
+<!-- ===================== MODALS ===================== -->
+<!-- Create Task Modal -->
+<div class="modal-overlay" id="modalTask">
+  <div class="modal-sheet">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="font-bold text-xl text-on-surface">New Task</h3>
+      <button onclick="closeModal('modalTask')" class="text-on-surface-variant"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="space-y-4">
+      <div><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Task Title</label><input type="text" class="input-field rounded-xl" placeholder="e.g. Prepare floor plan drawings"/></div>
+      <div><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Assign To</label>
+        <select class="input-field rounded-xl"><option>Rahul Sharma (Senior Architect)</option><option>Priya Singh (Interior Designer)</option><option>Amit Joshi (Site Engineer)</option><option>Kavya Rao (Junior Architect)</option></select>
+      </div>
+      <div><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Project</label>
+        <select class="input-field rounded-xl"><option>Sunrise Villa — Baner</option><option>Metro Office Complex</option><option>Green Residency</option></select>
+      </div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Due Date</label><input type="date" class="input-field rounded-xl"/></div>
+        <div class="flex-1"><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Priority</label>
+          <select class="input-field rounded-xl"><option>High</option><option>Medium</option><option>Low</option></select>
+        </div>
+      </div>
+      <div><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Description</label><textarea class="input-field rounded-xl h-20 resize-none" placeholder="Task details..."></textarea></div>
+      <button onclick="closeModal('modalTask');showToast('Task created successfully!')" class="w-full gold-gradient text-white font-bold py-4 rounded-2xl mt-2">Create Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Apply Leave Modal -->
+<div class="modal-overlay" id="modalLeave">
+  <div class="modal-sheet">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="font-bold text-xl text-on-surface">Apply for Leave</h3>
+      <button onclick="closeModal('modalLeave')" class="text-on-surface-variant"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="space-y-4">
+      <div><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Leave Type</label>
+        <select class="input-field rounded-xl"><option>Casual Leave</option><option>Sick Leave</option><option>Annual Leave</option><option>Emergency Leave</option><option>Compensatory Off</option></select>
+      </div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">From</label><input type="date" class="input-field rounded-xl"/></div>
+        <div class="flex-1"><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">To</label><input type="date" class="input-field rounded-xl"/></div>
+      </div>
+      <div><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Reason</label><textarea class="input-field rounded-xl h-20 resize-none" placeholder="Brief reason for leave..."></textarea></div>
+      <button onclick="closeModal('modalLeave');showToast('Leave application submitted!')" class="w-full gold-gradient text-white font-bold py-4 rounded-2xl mt-2">Submit Application</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Employee Modal -->
+<div class="modal-overlay" id="modalEmployee">
+  <div class="modal-sheet">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="font-bold text-xl text-on-surface">Add Employee</h3>
+      <button onclick="closeModal('modalEmployee')" class="text-on-surface-variant"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="space-y-4">
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">First Name</label><input type="text" class="input-field rounded-xl" placeholder="Rahul"/></div>
+        <div class="flex-1"><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Last Name</label><input type="text" class="input-field rounded-xl" placeholder="Sharma"/></div>
+      </div>
+      <div><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Work Email</label><input type="email" class="input-field rounded-xl" placeholder="rahul@ywarchitects.com"/></div>
+      <div><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Role</label>
+        <select class="input-field rounded-xl"><option>Junior Architect</option><option>Senior Architect</option><option>Interior Designer</option><option>Site Engineer</option><option>3D Visualizer</option><option>Admin / HR</option></select>
+      </div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Department</label><input type="text" class="input-field rounded-xl" placeholder="Architecture"/></div>
+        <div class="flex-1"><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Join Date</label><input type="date" class="input-field rounded-xl"/></div>
+      </div>
+      <div><label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Phone</label><input type="tel" class="input-field rounded-xl" placeholder="+91 98765 43210"/></div>
+      <button onclick="closeModal('modalEmployee');showToast('Employee added successfully!')" class="w-full gold-gradient text-white font-bold py-4 rounded-2xl mt-2">Add Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-28 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface px-5 py-3 rounded-2xl text-sm font-semibold z-50 opacity-0 transition-opacity pointer-events-none shadow-lg" style="white-space:nowrap;min-width:200px;text-align:center;"></div>
+
+<script>
+// ===================== STATE =====================
+let currentUser = null;
+let currentSection = 'dashboard';
+
+const ROLES = {
+  founder: { name: 'Founder / Principal', initials: 'FP', email: 'founder@ywarchitects.com', nav: ['dashboard','projects','tasks','employees','reports','attendance','leaves','notifications','profile'], label: 'Founder / Principal Architect' },
+  senior:  { name: 'Senior Architect', initials: 'SA', email: 'senior@ywarchitects.com', nav: ['dashboard','projects','tasks','attendance','leaves','notifications','profile'], label: 'Senior Architect' },
+  junior:  { name: 'Junior Architect', initials: 'JA', email: 'junior@ywarchitects.com', nav: ['dashboard','tasks','attendance','leaves','notifications','profile'], label: 'Junior Architect' },
+  interior:{ name: 'Interior Designer', initials: 'ID', email: 'interior@ywarchitects.com', nav: ['dashboard','tasks','materials','attendance','leaves','notifications','profile'], label: 'Interior Designer' },
+  site:    { name: 'Site Engineer', initials: 'SE', email: 'engineer@ywarchitects.com', nav: ['dashboard','tasks','site','attendance','leaves','notifications','profile'], label: 'Site Engineer / Supervisor' },
+  visualizer:{ name: '3D Visualizer', initials: '3V', email: 'viz@ywarchitects.com', nav: ['dashboard','tasks','renders','attendance','leaves','notifications','profile'], label: '3D Visualizer' },
+  admin:   { name: 'YW Admin', initials: 'AD', email: 'admin@ywarchitects.com', nav: ['dashboard','projects','tasks','employees','attendance','leaves','reports','notifications','profile'], label: 'Admin / HR' }
+};
+
+const NAV_CONFIG = {
+  dashboard:   { icon: 'space_dashboard', label: 'Dashboard' },
+  projects:    { icon: 'folder_special', label: 'Projects' },
+  tasks:       { icon: 'task_alt', label: 'Tasks' },
+  employees:   { icon: 'group', label: 'Employees' },
+  attendance:  { icon: 'fingerprint', label: 'Attendance' },
+  leaves:      { icon: 'event_available', label: 'Leaves' },
+  site:        { icon: 'construction', label: 'Site' },
+  materials:   { icon: 'inventory_2', label: 'Materials' },
+  renders:     { icon: 'view_in_ar', label: 'Renders' },
+  reports:     { icon: 'analytics', label: 'Reports' },
+  notifications:{ icon: 'notifications', label: 'Alerts' },
+  profile:     { icon: 'manage_accounts', label: 'Profile' }
+};
+
+const BOTTOM_NAV_LIMIT = 4; // icons in bottom nav (rest go to sidebar)
+
+// ===================== SPLASH =====================
+window.onload = () => {
+  const bar = document.getElementById('splashBar');
+  setTimeout(() => { bar.style.width = '100%'; }, 100);
+  setTimeout(() => {
+    hideAll();
+    showScreen('login');
+  }, 3000);
+};
+
+function hideAll() {
+  document.querySelectorAll('.screen-full, .screen').forEach(el => {
+    el.classList.remove('active');
+    if (el.classList.contains('screen-full')) el.style.display = 'none';
+  });
+}
+
+function showScreen(id) {
+  hideAll();
+  const el = document.getElementById(id);
+  if (el) {
+    if (el.classList.contains('screen-full')) { el.style.display = 'flex'; el.classList.add('active'); }
+    else { el.style.display = 'block'; el.classList.add('active'); }
+  }
+}
+
+// ===================== AUTH =====================
+function togglePw() {
+  const i = document.getElementById('pwInput');
+  const e = document.getElementById('pwEye');
+  if (i.type === 'password') { i.type = 'text'; e.textContent = 'visibility_off'; }
+  else { i.type = 'password'; e.textContent = 'visibility'; }
+}
+
+function doLogin() {
+  const role = document.getElementById('roleSelect').value;
+  currentUser = ROLES[role];
+  currentUser.role = role;
+  initApp();
+}
+
+function logout() {
+  currentUser = null;
+  currentSection = 'dashboard';
+  closeSidebar();
+  hideAll();
+  showScreen('login');
+}
+
+// ===================== APP INIT =====================
+function initApp() {
+  showScreen('app');
+  // Update header avatars
+  document.getElementById('topbarAvatar').textContent = currentUser.initials;
+  document.getElementById('sidebarAvatar').textContent = currentUser.initials;
+  document.getElementById('sidebarName').textContent = currentUser.name;
+  document.getElementById('sidebarRole').textContent = currentUser.label;
+
+  buildNav();
+  renderAllSections();
+  showSection('dashboard');
+}
+
+function buildNav() {
+  const navItems = currentUser.nav;
+  // Bottom nav: first 4 most important
+  const bottomItems = ['dashboard', ...navItems.filter(n => n !== 'dashboard' && n !== 'notifications' && n !== 'profile')].slice(0, 4);
+  const sideItems = navItems;
+
+  // Bottom nav
+  const bnEl = document.getElementById('bottomNav');
+  bnEl.innerHTML = '';
+  bottomItems.forEach(key => {
+    const cfg = NAV_CONFIG[key];
+    bnEl.innerHTML += `
+      <button class="nav-item flex flex-col items-center gap-1 px-3 py-1" onclick="showSection('${key}')" id="bn-${key}">
+        <span class="material-symbols-outlined nav-icon" style="font-size:22px;">${cfg.icon}</span>
+        <span class="nav-label">${cfg.label}</span>
+      </button>`;
+  });
+
+  // Sidebar nav
+  const snEl = document.getElementById('sidebarNav');
+  snEl.innerHTML = '';
+  sideItems.forEach(key => {
+    const cfg = NAV_CONFIG[key];
+    snEl.innerHTML += `
+      <button class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/5 w-full transition-colors text-on-surface-variant hover:text-primary" onclick="showSection('${key}');closeSidebar()">
+        <span class="material-symbols-outlined" style="font-size:20px;">${cfg.icon}</span>
+        <span class="text-sm font-semibold">${cfg.label}</span>
+      </button>`;
+  });
+}
+
+function showSection(key) {
+  currentSection = key;
+  document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+  const sec = document.getElementById('sec-' + key);
+  if (sec) { sec.classList.remove('hidden'); sec.classList.add('fade-in'); }
+  
+  // Update bottom nav active state
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const bnItem = document.getElementById('bn-' + key);
+  if (bnItem) bnItem.classList.add('active');
+
+  // Update top bar
+  const cfg = NAV_CONFIG[key];
+  if (cfg) {
+    document.getElementById('topbarTitle').textContent = cfg.label;
+    document.getElementById('topbarSub').textContent = currentUser.label;
+  }
+}
+
+// ===================== SIDEBAR =====================
+function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('open'); }
+
+// ===================== MODALS =====================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ===================== TOAST =====================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = '1';
+  setTimeout(() => { t.style.opacity = '0'; }, 3000);
+}
+
+// ===================== RENDER ALL SECTIONS =====================
+function renderAllSections() {
+  renderDashboard();
+  renderProjects();
+  renderTasks();
+  renderAttendance();
+  renderLeaves();
+  renderSiteUpdates();
+  renderMaterials();
+  renderRenders();
+  renderEmployees();
+  renderReports();
+  renderNotifications();
+  renderProfile();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const role = currentUser.role;
+  const el = document.getElementById('sec-dashboard');
+
+  // Role-specific stats
+  const statsMap = {
+    founder: [
+      { icon: 'architecture', label: 'Active Projects', val: '8', color: 'text-primary' },
+      { icon: 'groups', label: 'Total Employees', val: '24', color: 'text-primary' },
+      { icon: 'payments', label: 'Revenue (Cr)', val: '₹4.2', color: 'text-primary' },
+      { icon: 'pending_actions', label: 'Pending Approvals', val: '6', color: 'text-error' }
+    ],
+    admin: [
+      { icon: 'architecture', label: 'Active Projects', val: '8', color: 'text-primary' },
+      { icon: 'groups', label: 'Total Staff', val: '24', color: 'text-primary' },
+      { icon: 'event_available', label: 'Leave Requests', val: '4', color: 'text-error' },
+      { icon: 'person_add', label: 'New Joiners', val: '2', color: 'text-primary' }
+    ],
+    senior: [
+      { icon: 'folder_open', label: 'My Projects', val: '3', color: 'text-primary' },
+      { icon: 'task_alt', label: 'Pending Tasks', val: '7', color: 'text-error' },
+      { icon: 'group', label: 'My Team', val: '5', color: 'text-primary' },
+      { icon: 'schedule', label: 'Due This Week', val: '3', color: 'text-primary' }
+    ],
+    junior: [
+      { icon: 'task_alt', label: 'My Tasks', val: '5', color: 'text-primary' },
+      { icon: 'done_all', label: 'Completed', val: '12', color: 'text-primary' },
+      { icon: 'schedule', label: 'Due Today', val: '2', color: 'text-error' },
+      { icon: 'folder_open', label: 'Assigned Projects', val: '2', color: 'text-primary' }
+    ],
+    interior: [
+      { icon: 'palette', label: 'Active Designs', val: '4', color: 'text-primary' },
+      { icon: 'inventory_2', label: 'Materials', val: '38', color: 'text-primary' },
+      { icon: 'task_alt', label: 'My Tasks', val: '6', color: 'text-primary' },
+      { icon: 'schedule', label: 'Due Today', val: '1', color: 'text-error' }
+    ],
+    site: [
+      { icon: 'construction', label: 'Active Sites', val: '3', color: 'text-primary' },
+      { icon: 'photo_camera', label: 'Today\'s Updates', val: '8', color: 'text-primary' },
+      { icon: 'task_alt', label: 'Open Snags', val: '5', color: 'text-error' },
+      { icon: 'schedule', label: 'Site Visits', val: '2', color: 'text-primary' }
+    ],
+    visualizer: [
+      { icon: 'view_in_ar', label: 'Render Jobs', val: '6', color: 'text-primary' },
+      { icon: 'done_all', label: 'Delivered', val: '18', color: 'text-primary' },
+      { icon: 'feedback', label: 'Revisions Due', val: '3', color: 'text-error' },
+      { icon: 'schedule', label: 'Deadlines Today', val: '1', color: 'text-error' }
+    ]
+  };
+  
+  const stats = statsMap[role] || statsMap.admin;
+  
+  const greetings = {
+    founder: 'Principal', senior: 'Architect', junior: 'Architect',
+    interior: 'Designer', site: 'Engineer', visualizer: 'Visualizer', admin: 'Admin'
+  };
+
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-8">
+      <!-- Greeting -->
+      <div class="section-header">
+        <h2 class="text-2xl font-extrabold text-on-surface">Good Morning, ${greetings[role] || 'User'} 👋</h2>
+        <p class="text-on-surface-variant text-sm font-medium mt-1">${new Date().toLocaleDateString('en-IN', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}</p>
+      </div>
+
+      <!-- Stats Cards (horizontal scroll) -->
+      <div class="-mx-5 overflow-x-auto hide-scrollbar flex gap-4 px-5">
+        ${stats.map(s => `
+        <div class="stat-card min-w-[160px] bg-surface-container-lowest p-5 rounded-2xl shadow-[0_8px_32px_rgba(26,29,20,0.04)] border border-outline-variant/10">
+          <span class="material-symbols-outlined ${s.color} mb-3" style="font-size:24px;">${s.icon}</span>
+          <p class="text-on-surface-variant text-xs font-bold uppercase tracking-wider">${s.label}</p>
+          <h3 class="text-3xl font-extrabold ${s.color} mt-1">${s.val}</h3>
+        </div>`).join('')}
+      </div>
+
+      <!-- Active Projects -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-on-surface text-lg">Active Projects</h3>
+          <button onclick="showSection('projects')" class="text-primary text-sm font-semibold flex items-center gap-1">View all <span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span></button>
+        </div>
+        <div class="space-y-3">
+          ${[
+            { name: 'Sunrise Villa', client: 'Mr. Kapoor', pct: 68, status: 'In Progress', members: ['RK','PS','AJ'] },
+            { name: 'Metro Office Complex', client: 'City Corp Ltd', pct: 35, status: 'Planning', members: ['SA','VR'] },
+            { name: 'Green Residency', client: 'Patel Family', pct: 90, status: 'Review', members: ['MK','RD','SP'] },
+          ].map(p => `
+          <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10 active:scale-95 transition-transform cursor-pointer" onclick="showSection('projects')">
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <h4 class="font-bold text-on-surface">${p.name}</h4>
+                <p class="text-xs text-on-surface-variant font-medium mt-0.5">${p.client}</p>
+              </div>
+              <span class="chip-${p.status==='In Progress'?'progress':p.status==='Planning'?'planning':'review'} text-xs font-bold px-3 py-1 rounded-full">${p.status}</span>
+            </div>
+            <div class="progress-track h-1.5 mb-3">
+              <div class="progress-fill h-full" style="width:${p.pct}%"></div>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex -space-x-2">
+                ${p.members.map(m => `<div class="avatar avatar-sm border-2 border-white" style="font-size:9px;">${m}</div>`).join('')}
+              </div>
+              <span class="text-xs font-bold text-primary">${p.pct}% done</span>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- My Tasks Today -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-on-surface text-lg">Today's Tasks</h3>
+          <button onclick="showSection('tasks')" class="text-primary text-sm font-semibold flex items-center gap-1">View all <span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span></button>
+        </div>
+        <div class="space-y-2">
+          ${[
+            { title: 'Review ground floor plan for Sunrise Villa', priority: 'high', done: false, time: '10:00 AM' },
+            { title: 'Site visit documentation — Green Residency', priority: 'medium', done: false, time: '2:00 PM' },
+            { title: 'Client call — Metro Office brief', priority: 'low', done: true, time: '9:00 AM' },
+          ].map(t => `
+          <div class="task-item task-${t.priority} bg-surface-container-lowest rounded-xl p-4 flex items-center gap-3 border border-outline-variant/5">
+            <div class="w-5 h-5 rounded-full border-2 ${t.done ? 'border-primary bg-primary' : 'border-outline-variant'} flex items-center justify-center flex-shrink-0" onclick="this.classList.toggle('bg-primary');this.classList.toggle('border-primary')">
+              ${t.done ? '<span class="material-symbols-outlined filled text-white" style="font-size:12px;">check</span>' : ''}
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-on-surface ${t.done ? 'line-through opacity-50' : ''}">${t.title}</p>
+              <p class="text-xs text-on-surface-variant mt-0.5">${t.time}</p>
+            </div>
+            <span class="chip-${t.priority==='high'?'progress':t.priority==='medium'?'planning':'done'} text-xs font-bold px-2 py-0.5 rounded-full capitalize">${t.priority}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div>
+        <h3 class="font-bold text-on-surface text-lg mb-4">Quick Actions</h3>
+        <div class="grid grid-cols-3 gap-3">
+          ${getQuickActions(role).map(a => `
+          <button onclick="${a.action}" class="bg-surface-container-low rounded-2xl p-4 flex flex-col items-center gap-2 active:scale-95 transition-transform border border-outline-variant/10">
+            <span class="material-symbols-outlined text-primary" style="font-size:24px;">${a.icon}</span>
+            <span class="text-xs font-bold text-on-surface text-center leading-tight">${a.label}</span>
+          </button>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function getQuickActions(role) {
+  const all = {
+    founder: [
+      { icon: 'add_circle', label: 'New Project', action: "showSection('projects')" },
+      { icon: 'analytics', label: 'View Reports', action: "showSection('reports')" },
+      { icon: 'person_add', label: 'Add Employee', action: "openModal('modalEmployee')" },
+    ],
+    admin: [
+      { icon: 'person_add', label: 'Add Employee', action: "openModal('modalEmployee')" },
+      { icon: 'event_available', label: 'Leave Requests', action: "showSection('leaves')" },
+      { icon: 'task_alt', label: 'New Task', action: "openModal('modalTask')" },
+    ],
+    senior: [
+      { icon: 'add_task', label: 'Create Task', action: "openModal('modalTask')" },
+      { icon: 'construction', label: 'Site Update', action: "showSection('site')" },
+      { icon: 'event_available', label: 'Apply Leave', action: "openModal('modalLeave')" },
+    ],
+    default: [
+      { icon: 'fingerprint', label: 'Mark Attendance', action: "showSection('attendance')" },
+      { icon: 'event_available', label: 'Apply Leave', action: "openModal('modalLeave')" },
+      { icon: 'task_alt', label: 'My Tasks', action: "showSection('tasks')" },
+    ]
+  };
+  return all[role] || all.default;
+}
+
+// ============================================================
+// PROJECTS
+// ============================================================
+function renderProjects() {
+  const el = document.getElementById('sec-projects');
+  const canCreate = ['founder','senior','admin'].includes(currentUser.role);
+  
+  const projects = [
+    { id:1, name:'Sunrise Villa', client:'Mr. Anand Kapoor', location:'Baner, Pune', area:'4200 sq.ft', type:'Residential', pct:68, status:'In Progress', budget:'₹82L', team:['RK','PS','AJ','VR'], startDate:'Jan 2024', deadline:'Dec 2024', updates:12 },
+    { id:2, name:'Metro Office Complex', client:'City Corp Ltd.', location:'Shivajinagar, Pune', area:'18,500 sq.ft', type:'Commercial', pct:35, status:'Planning', budget:'₹3.2Cr', team:['SA','MK'], startDate:'Mar 2024', deadline:'Mar 2025', updates:4 },
+    { id:3, name:'Green Residency', client:'Patel Family Trust', location:'Wakad, Pune', area:'6800 sq.ft', type:'Residential', pct:90, status:'Review', budget:'₹1.1Cr', team:['RP','NJ','SK'], startDate:'Oct 2023', deadline:'Jun 2024', updates:28 },
+    { id:4, name:'Harmony Heights', client:'Raje Builders', location:'Kothrud, Pune', area:'32,000 sq.ft', type:'Commercial', pct:15, status:'Planning', budget:'₹7.5Cr', team:['SA'], startDate:'Apr 2024', deadline:'Jun 2026', updates:2 },
+  ];
+
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-6">
+      <div class="section-header">
+        <h2 class="text-2xl font-extrabold text-on-surface">Projects</h2>
+        <p class="text-on-surface-variant text-sm mt-1">${projects.length} active engagements</p>
+      </div>
+      <!-- Filter tabs -->
+      <div class="-mx-5 overflow-x-auto hide-scrollbar flex gap-2 px-5">
+        <button class="tab-btn active" onclick="filterTabs(this)">All</button>
+        <button class="tab-btn" onclick="filterTabs(this)">In Progress</button>
+        <button class="tab-btn" onclick="filterTabs(this)">Planning</button>
+        <button class="tab-btn" onclick="filterTabs(this)">Review</button>
+        <button class="tab-btn" onclick="filterTabs(this)">Completed</button>
+      </div>
+      <!-- Project cards -->
+      <div class="space-y-4">
+        ${projects.map(p => `
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 overflow-hidden shadow-[0_4px_16px_rgba(26,29,20,0.04)]" onclick="showProjectDetail(${p.id})">
+          <!-- Status bar -->
+          <div class="progress-track h-1.5 rounded-none">
+            <div class="progress-fill h-full" style="width:${p.pct}%"></div>
+          </div>
+          <div class="p-5">
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <h4 class="font-bold text-on-surface text-lg">${p.name}</h4>
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-primary-container/15 text-primary font-bold">${p.type}</span>
+                </div>
+                <p class="text-sm text-on-surface-variant">${p.client}</p>
+                <p class="text-xs text-on-surface-variant mt-1 flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:12px;">location_on</span> ${p.location}</p>
+              </div>
+              <span class="chip-${p.status==='In Progress'?'progress':p.status==='Planning'?'planning':'review'} text-xs font-bold px-3 py-1 rounded-full">${p.status}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mb-4">
+              <div class="bg-surface-container-low rounded-xl p-3 text-center">
+                <p class="text-xs text-on-surface-variant font-medium">Budget</p>
+                <p class="text-sm font-bold text-on-surface">${p.budget}</p>
+              </div>
+              <div class="bg-surface-container-low rounded-xl p-3 text-center">
+                <p class="text-xs text-on-surface-variant font-medium">Area</p>
+                <p class="text-sm font-bold text-on-surface">${p.area}</p>
+              </div>
+              <div class="bg-surface-container-low rounded-xl p-3 text-center">
+                <p class="text-xs text-on-surface-variant font-medium">Updates</p>
+                <p class="text-sm font-bold text-on-surface">${p.updates}</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex -space-x-2">
+                ${p.team.map(m => `<div class="avatar avatar-sm border-2 border-white" style="font-size:9px;">${m}</div>`).join('')}
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-primary-container" style="font-size:14px;">schedule</span>
+                <span class="text-xs font-semibold text-on-surface-variant">Due: ${p.deadline}</span>
+              </div>
+            </div>
+          </div>
+        </div>`).join('')}
+      </div>
+      ${canCreate ? `
+      <button onclick="showToast('Project creation form opened!')" class="w-full gold-gradient text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(117,91,0,0.3)]">
+        <span class="material-symbols-outlined">add</span> Create New Project
+      </button>` : ''}
+    </div>`;
+}
+
+function showProjectDetail(id) {
+  const el = document.getElementById('sec-projects');
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-6">
+      <button onclick="renderProjects();document.querySelector('#sec-projects').classList.remove('hidden')" class="flex items-center gap-2 text-primary font-semibold">
+        <span class="material-symbols-outlined">arrow_back</span> Back to Projects
+      </button>
+      <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <h2 class="text-2xl font-extrabold text-on-surface">Sunrise Villa</h2>
+            <p class="text-on-surface-variant mt-1">Mr. Anand Kapoor · Residential</p>
+            <p class="text-xs text-on-surface-variant mt-1 flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:12px;">location_on</span> Baner, Pune</p>
+          </div>
+          <span class="chip-progress text-sm font-bold px-3 py-1 rounded-full">In Progress</span>
+        </div>
+        <div class="progress-track h-2 mb-2"><div class="progress-fill h-full" style="width:68%"></div></div>
+        <p class="text-xs text-primary font-bold text-right">68% Complete</p>
+      </div>
+      <!-- Details grid -->
+      <div class="grid grid-cols-2 gap-3">
+        ${[['Budget','₹82 Lakh'],['Area','4,200 sq.ft'],['Start','Jan 2024'],['Deadline','Dec 2024'],['Phase','Construction'],['Contractor','Mehta Infra']].map(([k,v]) => `
+        <div class="bg-surface-container-low rounded-xl p-4">
+          <p class="text-xs text-on-surface-variant font-medium">${k}</p>
+          <p class="font-bold text-on-surface mt-1">${v}</p>
+        </div>`).join('')}
+      </div>
+      <!-- Team -->
+      <div>
+        <h3 class="font-bold text-on-surface text-lg mb-3">Project Team</h3>
+        <div class="space-y-3">
+          ${[
+            { name:'Rahul Kapoor', role:'Senior Architect', init:'RK' },
+            { name:'Priya Singh', role:'Interior Designer', init:'PS' },
+            { name:'Amit Joshi', role:'Site Engineer', init:'AJ' },
+            { name:'Varun Rao', role:'3D Visualizer', init:'VR' },
+          ].map(m => `
+          <div class="bg-surface-container-lowest rounded-xl p-4 flex items-center gap-3 border border-outline-variant/5">
+            <div class="avatar">${m.init}</div>
+            <div>
+              <p class="font-semibold text-on-surface text-sm">${m.name}</p>
+              <p class="text-xs text-on-surface-variant">${m.role}</p>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>
+      <!-- Recent Activity -->
+      <div>
+        <h3 class="font-bold text-on-surface text-lg mb-3">Recent Activity</h3>
+        <div class="space-y-3">
+          ${[
+            { icon:'photo_camera', text:'Amit uploaded 8 site progress photos', time:'2 hrs ago', color:'text-primary' },
+            { icon:'task_alt', text:'Floor plan drawings marked complete', time:'Yesterday', color:'text-primary' },
+            { icon:'comment', text:'Client approved plumbing layout', time:'3 days ago', color:'text-primary' },
+          ].map(a => `
+          <div class="flex items-start gap-3 p-3 rounded-xl bg-surface-container-low">
+            <span class="material-symbols-outlined ${a.color} mt-0.5" style="font-size:18px;">${a.icon}</span>
+            <div>
+              <p class="text-sm text-on-surface font-medium">${a.text}</p>
+              <p class="text-xs text-on-surface-variant">${a.time}</p>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// TASKS
+// ============================================================
+function renderTasks() {
+  const el = document.getElementById('sec-tasks');
+  const canCreate = ['founder','senior','admin'].includes(currentUser.role);
+  
+  const tasks = [
+    { id:1, title:'Ground floor structural drawings — Sunrise Villa', project:'Sunrise Villa', assignee:'Rahul K.', priority:'high', status:'In Progress', due:'Today', overdue:false },
+    { id:2, title:'Prepare 3D model for Metro Complex — Lobby', project:'Metro Office', assignee:'Varun R.', priority:'medium', status:'In Progress', due:'Tomorrow', overdue:false },
+    { id:3, title:'Material schedule update — Green Residency bathrooms', project:'Green Residency', assignee:'Priya S.', priority:'low', status:'Pending', due:'28 Mar', overdue:false },
+    { id:4, title:'Site inspection checklist — Level 3 slab pour', project:'Sunrise Villa', assignee:'Amit J.', priority:'high', status:'Pending', due:'26 Mar', overdue:true },
+    { id:5, title:'Client presentation deck preparation', project:'Harmony Heights', assignee:'Kavya R.', priority:'medium', status:'Done', due:'20 Mar', overdue:false },
+    { id:6, title:'Electrical layout review — Metro basement', project:'Metro Office', assignee:'Rahul K.', priority:'medium', status:'Review', due:'30 Mar', overdue:false },
+  ];
+
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-6">
+      <div class="flex items-center justify-between">
+        <div class="section-header">
+          <h2 class="text-2xl font-extrabold text-on-surface">Tasks</h2>
+          <p class="text-on-surface-variant text-sm mt-1">${tasks.length} tasks assigned</p>
+        </div>
+        ${canCreate ? `<button onclick="openModal('modalTask')" class="gold-gradient text-white font-bold text-sm px-4 py-2.5 rounded-xl flex items-center gap-1 shadow-[0_4px_12px_rgba(117,91,0,0.3)]"><span class="material-symbols-outlined" style="font-size:16px;">add</span> New</button>` : ''}
+      </div>
+      <!-- Search -->
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant" style="font-size:18px;">search</span>
+        <input type="text" placeholder="Search tasks..." class="input-field rounded-xl pl-10"/>
+      </div>
+      <!-- Filter -->
+      <div class="-mx-5 overflow-x-auto hide-scrollbar flex gap-2 px-5">
+        <button class="tab-btn active" onclick="filterTabs(this)">All</button>
+        <button class="tab-btn" onclick="filterTabs(this)">In Progress</button>
+        <button class="tab-btn" onclick="filterTabs(this)">Pending</button>
+        <button class="tab-btn" onclick="filterTabs(this)">Review</button>
+        <button class="tab-btn" onclick="filterTabs(this)">Done</button>
+      </div>
+      <!-- Tasks list -->
+      <div class="space-y-3">
+        ${tasks.map(t => `
+        <div class="task-item task-${t.priority} bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/5 shadow-[0_2px_8px_rgba(26,29,20,0.03)]">
+          <div class="flex items-start gap-3">
+            <div class="mt-0.5 w-5 h-5 rounded-full border-2 ${t.status==='Done'?'border-primary bg-primary':'border-outline-variant'} flex items-center justify-center flex-shrink-0 cursor-pointer" onclick="showToast('Task status updated!')">
+              ${t.status==='Done' ? '<span class="material-symbols-outlined filled text-white" style="font-size:12px;">check</span>' : ''}
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-on-surface text-sm ${t.status==='Done'?'line-through opacity-50':''}">${t.title}</p>
+              <div class="flex items-center gap-2 mt-2 flex-wrap">
+                <span class="text-xs text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded-lg font-medium">${t.project}</span>
+                <span class="text-xs text-on-surface-variant">→ ${t.assignee}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-outline-variant/10">
+            <div class="flex items-center gap-2">
+              <span class="chip-${t.priority==='high'?'progress':t.priority==='medium'?'planning':'done'} text-xs font-bold px-2 py-0.5 rounded-full capitalize">${t.priority}</span>
+              <span class="chip-${t.status==='Done'?'done':t.status==='In Progress'?'progress':t.status==='Review'?'review':'hold'} text-xs font-bold px-2 py-0.5 rounded-full">${t.status}</span>
+            </div>
+            <div class="flex items-center gap-1 ${t.overdue?'text-error':'text-on-surface-variant'}">
+              <span class="material-symbols-outlined" style="font-size:14px;">${t.overdue?'warning':'schedule'}</span>
+              <span class="text-xs font-semibold">${t.overdue?'OVERDUE · ':''} Due ${t.due}</span>
+            </div>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// ATTENDANCE
+// ============================================================
+function renderAttendance() {
+  const el = document.getElementById('sec-attendance');
+  const isAdmin = ['admin','founder'].includes(currentUser.role);
+  
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-6">
+      <div class="section-header">
+        <h2 class="text-2xl font-extrabold text-on-surface">Attendance</h2>
+        <p class="text-on-surface-variant text-sm mt-1">March 2025</p>
+      </div>
+
+      <!-- Check In/Out Card -->
+      <div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/10 shadow-[0_8px_32px_rgba(26,29,20,0.06)]">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Today</p>
+            <h3 class="text-xl font-bold text-on-surface">${new Date().toLocaleDateString('en-IN', {weekday:'long', day:'numeric', month:'short'})}</h3>
+          </div>
+          <div class="chip-done text-xs font-bold px-3 py-1 rounded-full">Office Day</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-5">
+          <div class="bg-surface-container-low rounded-xl p-4 text-center">
+            <p class="text-xs text-on-surface-variant font-medium">Check In</p>
+            <p class="text-xl font-extrabold text-primary mt-1">09:12 AM</p>
+            <p class="text-xs text-on-surface-variant">On time ✓</p>
+          </div>
+          <div class="bg-surface-container-low rounded-xl p-4 text-center">
+            <p class="text-xs text-on-surface-variant font-medium">Check Out</p>
+            <p class="text-xl font-extrabold text-on-surface-variant mt-1">—:— —</p>
+            <p class="text-xs text-on-surface-variant">Still in office</p>
+          </div>
+        </div>
+        <button onclick="showToast('Check-out recorded: 6:31 PM')" class="w-full gold-gradient text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(117,91,0,0.3)]">
+          <span class="material-symbols-outlined">logout</span> Check Out Now
+        </button>
+      </div>
+
+      <!-- Monthly Summary -->
+      <div class="bg-surface-container-low rounded-2xl p-5">
+        <h3 class="font-bold text-on-surface mb-4">March Summary</h3>
+        <div class="grid grid-cols-4 gap-2">
+          ${[
+            { label:'Present', val:18, color:'text-primary' },
+            { label:'Absent', val:2, color:'text-error' },
+            { label:'Late', val:3, color:'text-on-surface-variant' },
+            { label:'Leave', val:2, color:'text-secondary' },
+          ].map(s => `
+          <div class="text-center">
+            <p class="text-2xl font-extrabold ${s.color}">${s.val}</p>
+            <p class="text-xs text-on-surface-variant font-medium">${s.label}</p>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      ${isAdmin ? `
+      <!-- All employees attendance (Admin view) -->
+      <div>
+        <h3 class="font-bold text-on-surface text-lg mb-3">Today's Team Status</h3>
+        <div class="space-y-2">
+          ${[
+            { name:'Rahul Kapoor', role:'Senior Architect', status:'Present', time:'9:05 AM', init:'RK' },
+            { name:'Priya Singh', role:'Interior Designer', status:'Present', time:'9:22 AM', init:'PS' },
+            { name:'Amit Joshi', role:'Site Engineer', status:'On Site', time:'8:45 AM', init:'AJ' },
+            { name:'Varun Rao', role:'3D Visualizer', status:'WFH', time:'9:30 AM', init:'VR' },
+            { name:'Kavya Rao', role:'Junior Architect', status:'Absent', time:'—', init:'KR' },
+          ].map(e => `
+          <div class="bg-surface-container-lowest rounded-xl p-4 flex items-center gap-3 border border-outline-variant/5">
+            <div class="avatar">${e.init}</div>
+            <div class="flex-1">
+              <p class="font-semibold text-on-surface text-sm">${e.name}</p>
+              <p class="text-xs text-on-surface-variant">${e.role} · ${e.time}</p>
+            </div>
+            <span class="chip-${e.status==='Present'||e.status==='On Site'||e.status==='WFH'?'done':'progress'} text-xs font-bold px-3 py-1 rounded-full">${e.status}</span>
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <!-- Attendance Log -->
+      <div>
+        <h3 class="font-bold text-on-surface text-lg mb-3">Recent Log</h3>
+        <div class="space-y-2">
+          ${[
+            { date:'25 Mar', day:'Tue', in:'9:15', out:'6:32', hrs:'9h 17m', status:'Present' },
+            { date:'24 Mar', day:'Mon', in:'9:05', out:'6:48', hrs:'9h 43m', status:'Present' },
+            { date:'23 Mar', day:'Sun', in:'—', out:'—', hrs:'—', status:'Off' },
+            { date:'22 Mar', day:'Sat', in:'—', out:'—', hrs:'—', status:'Off' },
+            { date:'21 Mar', day:'Fri', in:'9:40', out:'6:30', hrs:'8h 50m', status:'Late' },
+            { date:'20 Mar', day:'Thu', in:'—', out:'—', hrs:'—', status:'Leave' },
+          ].map(l => `
+          <div class="bg-surface-container-lowest rounded-xl p-4 flex items-center justify-between border border-outline-variant/5">
+            <div class="flex items-center gap-3">
+              <div class="text-center w-12">
+                <p class="text-sm font-extrabold text-on-surface">${l.date.split(' ')[0]}</p>
+                <p class="text-xs text-on-surface-variant font-medium">${l.day}</p>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-on-surface">${l.in} → ${l.out}</p>
+                <p class="text-xs text-on-surface-variant">${l.hrs}</p>
+              </div>
+            </div>
+            <span class="chip-${l.status==='Present'?'done':l.status==='Late'?'progress':l.status==='Off'?'hold':'planning'} text-xs font-bold px-3 py-1 rounded-full">${l.status}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// LEAVES
+// ============================================================
+function renderLeaves() {
+  const el = document.getElementById('sec-leaves');
+  const isApprover = ['founder','senior','admin'].includes(currentUser.role);
+  
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-6">
+      <div class="flex items-center justify-between">
+        <div class="section-header">
+          <h2 class="text-2xl font-extrabold text-on-surface">Leaves</h2>
+          <p class="text-on-surface-variant text-sm mt-1">Manage leave requests</p>
+        </div>
+        <button onclick="openModal('modalLeave')" class="gold-gradient text-white font-bold text-sm px-4 py-2.5 rounded-xl flex items-center gap-1 shadow-[0_4px_12px_rgba(117,91,0,0.3)]">
+          <span class="material-symbols-outlined" style="font-size:16px;">add</span> Apply
+        </button>
+      </div>
+      <!-- Leave Balance -->
+      <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10">
+        <h3 class="font-bold text-on-surface mb-4">Your Leave Balance — FY 2024-25</h3>
+        <div class="space-y-3">
+          ${[
+            { type:'Casual Leave', used:4, total:12 },
+            { type:'Sick Leave', used:2, total:12 },
+            { type:'Annual Leave', used:8, total:21 },
+            { type:'Compensatory Off', used:0, total:4 },
+          ].map(l => `
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="text-sm font-semibold text-on-surface">${l.type}</span>
+              <span class="text-xs font-bold text-primary">${l.total - l.used} remaining</span>
+            </div>
+            <div class="progress-track h-2">
+              <div class="progress-fill h-full" style="width:${(l.used/l.total)*100}%"></div>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-1">${l.used} used of ${l.total} days</p>
+          </div>`).join('')}
+        </div>
+      </div>
+      
+      ${isApprover ? `
+      <!-- Pending approvals (for Admins/Senior/Founder) -->
+      <div>
+        <h3 class="font-bold text-on-surface text-lg mb-3">Pending Approvals</h3>
+        <div class="space-y-3">
+          ${[
+            { name:'Kavya Rao', role:'Junior Architect', type:'Casual Leave', dates:'28-30 Mar', days:3, reason:'Personal work', init:'KR' },
+            { name:'Varun Rao', role:'3D Visualizer', type:'Sick Leave', dates:'27 Mar', days:1, reason:'Medical appointment', init:'VR' },
+          ].map(l => `
+          <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10">
+            <div class="flex items-start gap-3 mb-4">
+              <div class="avatar">${l.init}</div>
+              <div class="flex-1">
+                <p class="font-bold text-on-surface">${l.name}</p>
+                <p class="text-xs text-on-surface-variant">${l.role}</p>
+              </div>
+              <span class="chip-planning text-xs font-bold px-2 py-0.5 rounded-full">Pending</span>
+            </div>
+            <div class="bg-surface-container-low rounded-xl p-3 mb-4">
+              <div class="flex justify-between mb-1">
+                <span class="text-sm font-semibold text-on-surface">${l.type}</span>
+                <span class="text-sm font-bold text-primary">${l.days} day${l.days>1?'s':''}</span>
+              </div>
+              <p class="text-xs text-on-surface-variant">${l.dates} · ${l.reason}</p>
+            </div>
+            <div class="flex gap-3">
+              <button onclick="showToast('Leave approved!')" class="flex-1 gold-gradient text-white font-bold py-3 rounded-xl flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined" style="font-size:16px;">check</span> Approve
+              </button>
+              <button onclick="showToast('Leave rejected.')" class="flex-1 bg-error-container text-error font-bold py-3 rounded-xl flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined" style="font-size:16px;">close</span> Reject
+              </button>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+      
+      <!-- My Leave History -->
+      <div>
+        <h3 class="font-bold text-on-surface text-lg mb-3">My History</h3>
+        <div class="space-y-2">
+          ${[
+            { type:'Annual Leave', dates:'10-14 Mar 2025', days:5, status:'Approved' },
+            { type:'Casual Leave', dates:'24 Feb 2025', days:1, status:'Approved' },
+            { type:'Sick Leave', dates:'18 Jan 2025', days:2, status:'Approved' },
+            { type:'Casual Leave', dates:'5 Jan 2025', days:1, status:'Rejected' },
+          ].map(l => `
+          <div class="bg-surface-container-lowest rounded-xl p-4 flex items-center justify-between border border-outline-variant/5">
+            <div>
+              <p class="font-semibold text-on-surface text-sm">${l.type}</p>
+              <p class="text-xs text-on-surface-variant">${l.dates} · ${l.days} day${l.days>1?'s':''}</p>
+            </div>
+            <span class="chip-${l.status==='Approved'?'done':'progress'} text-xs font-bold px-3 py-1 rounded-full">${l.status}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// SITE UPDATES (Site Engineer)
+// ============================================================
+function renderSiteUpdates() {
+  const el = document.getElementById('sec-site');
+  
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-6">
+      <div class="section-header">
+        <h2 class="text-2xl font-extrabold text-on-surface">Site Updates</h2>
+        <p class="text-on-surface-variant text-sm mt-1">GPS tracking & daily logs</p>
+      </div>
+      
+      <!-- GPS Check-in Card -->
+      <div class="bg-surface-container-lowest rounded-2xl overflow-hidden border border-outline-variant/10 shadow-[0_8px_32px_rgba(26,29,20,0.06)]">
+        <div class="bg-surface-container h-32 flex items-center justify-center relative">
+          <!-- Map placeholder -->
+          <div class="absolute inset-0 opacity-30">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+              <defs><pattern id="mapgrid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="#755B00" stroke-width="0.5"/></pattern></defs>
+              <rect width="100%" height="100%" fill="url(#mapgrid)"/>
+            </svg>
+          </div>
+          <div class="relative z-10 text-center">
+            <span class="material-symbols-outlined text-primary" style="font-size:36px;">location_on</span>
+            <p class="text-xs font-bold text-primary mt-1">Sunrise Villa Site</p>
+            <p class="text-xs text-on-surface-variant">Baner, Pune — 18.560° N, 73.776° E</p>
+          </div>
+        </div>
+        <div class="p-5">
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-surface-container-low rounded-xl p-3 text-center">
+              <p class="text-xs text-on-surface-variant">Checked In</p>
+              <p class="font-extrabold text-primary">08:45 AM</p>
+            </div>
+            <div class="bg-surface-container-low rounded-xl p-3 text-center">
+              <p class="text-xs text-on-surface-variant">Check Out</p>
+              <p class="font-extrabold text-on-surface-variant">Active</p>
+            </div>
+          </div>
+          <button onclick="showToast('GPS check-out recorded!')" class="w-full gold-gradient text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined">gps_fixed</span> GPS Check Out
+          </button>
+        </div>
+      </div>
+
+      <!-- Upload Progress Photos -->
+      <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10">
+        <h3 class="font-bold text-on-surface mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary" style="font-size:20px;">photo_camera</span>
+          Upload Progress Photos
+        </h3>
+        <div class="grid grid-cols-3 gap-2 mb-4">
+          ${[1,2,3,4,5].map(i => `
+          <div class="aspect-square rounded-xl bg-surface-container flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-surface-variant" style="font-size:24px;">image</span>
+          </div>`).join('')}
+          <button onclick="showToast('Gallery opened!')" class="aspect-square rounded-xl bg-surface-container-low border-2 border-dashed border-outline-variant/40 flex flex-col items-center justify-center gap-1">
+            <span class="material-symbols-outlined text-primary" style="font-size:22px;">add_photo_alternate</span>
+            <span class="text-xs font-bold text-primary">Add</span>
+          </button>
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Daily Log Note</label>
+          <textarea class="input-field rounded-xl h-20 resize-none" placeholder="Describe today's site progress, observations, issues..."></textarea>
+        </div>
+        <div class="flex gap-2 mb-4">
+          <div class="flex-1">
+            <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Site Area</label>
+            <select class="input-field rounded-xl"><option>Ground Floor</option><option>First Floor</option><option>Basement</option><option>Rooftop</option></select>
+          </div>
+          <div class="flex-1">
+            <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Activity Type</label>
+            <select class="input-field rounded-xl"><option>Concrete Work</option><option>Masonry</option><option>Electrical</option><option>Plumbing</option><option>Finishing</option></select>
+          </div>
+        </div>
+        <button onclick="showToast('Daily log submitted!')" class="w-full gold-gradient text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined">upload</span> Submit Daily Log
+        </button>
+      </div>
+
+      <!-- Snag List -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-on-surface text-lg">Open Snags</h3>
+          <button onclick="showToast('Snag created!')" class="text-primary text-sm font-semibold flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:16px;">add</span> Report</button>
+        </div>
+        <div class="space-y-3">
+          ${[
+            { title:'Crack in south wall column — G/F', area:'Ground Floor', severity:'High', status:'Open' },
+            { title:'Drainage slope incorrect — Toilet 2', area:'First Floor', severity:'Medium', status:'In Review' },
+            { title:'Door frame misalignment — Room 4', area:'First Floor', severity:'Low', status:'Fixed' },
+          ].map(s => `
+          <div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/5">
+            <div class="flex items-start justify-between mb-2">
+              <p class="font-semibold text-on-surface text-sm flex-1 mr-2">${s.title}</p>
+              <span class="chip-${s.severity==='High'?'progress':s.severity==='Medium'?'planning':'done'} text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">${s.severity}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-on-surface-variant">${s.area}</span>
+              <span class="chip-${s.status==='Fixed'?'done':s.status==='In Review'?'review':'progress'} text-xs font-bold px-2 py-0.5 rounded-full">${s.status}</span>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// MATERIALS (Interior Designer)
+// ============================================================
+function renderMaterials() {
+  const el = document.getElementById('sec-materials');
+  const canEdit = ['interior','founder','admin'].includes(currentUser.role);
+  
+  const materials = [
+    { name:'Italian Marble — Carrara White', vendor:'Marble Palace', qty:'320 sq.ft', rate:'₹285/sqft', total:'₹91,200', project:'Sunrise Villa', status:'Ordered' },
+    { name:'Teak Wood Flooring — 18mm', vendor:'WoodCraft India', qty:'180 sq.ft', rate:'₹420/sqft', total:'₹75,600', project:'Green Residency', status:'Delivered' },
+    { name:'Aluminium Window Frames', vendor:'AlluMate', qty:'24 units', rate:'₹3,400/unit', total:'₹81,600', project:'Metro Office', status:'Pending' },
+    { name:'Gypsum False Ceiling — 2"', vendor:'CeilCraft', qty:'450 sq.ft', rate:'₹95/sqft', total:'₹42,750', project:'Sunrise Villa', status:'Delivered' },
+    { name:'Anti-Skid Tiles — Bathroom', vendor:'Kajaria Ceramics', qty:'240 sq.ft', rate:'₹68/sqft', total:'₹16,320', project:'Green Residency', status:'Ordered' },
+  ];
+
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-6">
+      <div class="flex items-center justify-between">
+        <div class="section-header">
+          <h2 class="text-2xl font-extrabold text-on-surface">Materials</h2>
+          <p class="text-on-surface-variant text-sm mt-1">₹3,07,470 tracked</p>
+        </div>
+        ${canEdit ? `<button onclick="showToast('Add material form opened!')" class="gold-gradient text-white font-bold text-sm px-4 py-2.5 rounded-xl flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:16px;">add</span> Add</button>` : ''}
+      </div>
+      <!-- Summary -->
+      <div class="grid grid-cols-3 gap-3">
+        ${[
+          { label:'Total Value', val:'₹3.07L', icon:'payments', color:'text-primary' },
+          { label:'Ordered', val:'8', icon:'local_shipping', color:'text-primary' },
+          { label:'Pending', val:'4', icon:'pending', color:'text-error' },
+        ].map(s => `
+        <div class="bg-surface-container-lowest rounded-2xl p-4 text-center border border-outline-variant/10">
+          <span class="material-symbols-outlined ${s.color}" style="font-size:20px;">${s.icon}</span>
+          <p class="text-lg font-extrabold text-on-surface mt-1">${s.val}</p>
+          <p class="text-xs text-on-surface-variant">${s.label}</p>
+        </div>`).join('')}
+      </div>
+      <!-- Search -->
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant" style="font-size:18px;">search</span>
+        <input type="text" placeholder="Search materials..." class="input-field rounded-xl pl-10"/>
+      </div>
+      <!-- Materials list -->
+      <div class="space-y-3">
+        ${materials.map(m => `
+        <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10 shadow-[0_2px_8px_rgba(26,29,20,0.03)]">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex-1 mr-3">
+              <p class="font-bold text-on-surface text-sm">${m.name}</p>
+              <p class="text-xs text-on-surface-variant mt-1">${m.vendor}</p>
+            </div>
+            <span class="chip-${m.status==='Delivered'?'done':m.status==='Ordered'?'planning':'progress'} text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">${m.status}</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 mb-3">
+            <div class="bg-surface-container-low rounded-lg p-2.5 text-center">
+              <p class="text-xs text-on-surface-variant">Qty</p>
+              <p class="text-xs font-bold text-on-surface">${m.qty}</p>
+            </div>
+            <div class="bg-surface-container-low rounded-lg p-2.5 text-center">
+              <p class="text-xs text-on-surface-variant">Rate</p>
+              <p class="text-xs font-bold text-on-surface">${m.rate}</p>
+            </div>
+            <div class="bg-surface-container-low rounded-lg p-2.5 text-center">
+              <p class="text-xs text-on-surface-variant">Total</p>
+              <p class="text-xs font-bold text-primary">${m.total}</p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-on-surface-variant bg-surface-container-low px-2 py-1 rounded-lg">${m.project}</span>
+            ${canEdit ? `<button onclick="showToast('Material updated!')" class="text-primary text-xs font-semibold flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:14px;">edit</span> Edit</button>` : ''}
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// 3D RENDERS (Visualizer)
+// ============================================================
+function renderRenders() {
+  const el = document.getElementById('sec-renders');
+  const canUpload = ['visualizer','founder','admin'].includes(currentUser.role);
+  
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-6">
+      <div class="flex items-center justify-between">
+        <div class="section-header">
+          <h2 class="text-2xl font-extrabold text-on-surface">3D Renders</h2>
+          <p class="text-on-surface-variant text-sm mt-1">Visualization workspace</p>
+        </div>
+        ${canUpload ? `<button onclick="showToast('Upload dialog opened!')" class="gold-gradient text-white font-bold text-sm px-4 py-2.5 rounded-xl flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:16px;">upload</span> Upload</button>` : ''}
+      </div>
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-3">
+        ${[
+          { label:'Total Renders', val:'42', icon:'view_in_ar' },
+          { label:'In Progress', val:'6', icon:'pending' },
+          { label:'Revisions', val:'3', icon:'feedback' },
+        ].map(s => `
+        <div class="bg-surface-container-lowest rounded-2xl p-4 text-center border border-outline-variant/10">
+          <span class="material-symbols-outlined text-primary" style="font-size:20px;">${s.icon}</span>
+          <p class="text-2xl font-extrabold text-on-surface mt-1">${s.val}</p>
+          <p class="text-xs text-on-surface-variant">${s.label}</p>
+        </div>`).join('')}
+      </div>
+      <!-- Render Jobs -->
+      <div>
+        <h3 class="font-bold text-on-surface text-lg mb-3">Active Render Jobs</h3>
+        <div class="space-y-4">
+          ${[
+            { title:'Sunrise Villa — Living Room Exterior', project:'Sunrise Villa', task:'Exterior Perspective Render', views:3, feedback:2, status:'In Progress', due:'Tomorrow', progress:60 },
+            { title:'Metro Office — Reception Lobby', project:'Metro Office', task:'Interior Walk-through', views:1, feedback:0, status:'Pending', due:'30 Mar', progress:20 },
+            { title:'Green Residency — Master Bedroom', project:'Green Residency', task:'Interior Render Set', views:5, feedback:1, status:'Review', due:'27 Mar', progress:90 },
+          ].map(r => `
+          <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 overflow-hidden shadow-[0_2px_8px_rgba(26,29,20,0.04)]">
+            <!-- Render preview placeholder -->
+            <div class="h-36 bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center relative">
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="w-16 h-16 rounded-2xl bg-white/50 backdrop-blur-sm flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary" style="font-size:32px;">view_in_ar</span>
+                </div>
+              </div>
+              <div class="absolute top-3 right-3">
+                <span class="chip-${r.status==='In Progress'?'progress':r.status==='Pending'?'planning':'review'} text-xs font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">${r.status}</span>
+              </div>
+            </div>
+            <div class="p-5">
+              <h4 class="font-bold text-on-surface mb-1">${r.title}</h4>
+              <p class="text-xs text-on-surface-variant mb-3">${r.task} · ${r.project}</p>
+              <div class="progress-track h-1.5 mb-2"><div class="progress-fill h-full" style="width:${r.progress}%"></div></div>
+              <div class="flex items-center justify-between mt-3">
+                <div class="flex items-center gap-3">
+                  <span class="flex items-center gap-1 text-xs text-on-surface-variant"><span class="material-symbols-outlined" style="font-size:14px;">image</span> ${r.views} renders</span>
+                  <span class="flex items-center gap-1 text-xs ${r.feedback>0?'text-error':'text-on-surface-variant'}"><span class="material-symbols-outlined" style="font-size:14px;">feedback</span> ${r.feedback} feedback</span>
+                </div>
+                <span class="text-xs font-semibold text-on-surface-variant">Due ${r.due}</span>
+              </div>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>
+      <!-- Upload section -->
+      ${canUpload ? `
+      <div class="bg-surface-container-low rounded-2xl p-5 border-2 border-dashed border-outline-variant/30">
+        <div class="flex flex-col items-center text-center py-4">
+          <span class="material-symbols-outlined text-primary mb-3" style="font-size:40px;">cloud_upload</span>
+          <p class="font-bold text-on-surface mb-1">Upload New Renders</p>
+          <p class="text-sm text-on-surface-variant mb-4">Drag & drop or tap to select files</p>
+          <button onclick="showToast('File picker opened!')" class="gold-gradient text-white font-bold px-6 py-3 rounded-xl">Select Files</button>
+        </div>
+      </div>` : ''}
+    </div>`;
+}
+
+// ============================================================
+// EMPLOYEES
+// ============================================================
+function renderEmployees() {
+  const el = document.getElementById('sec-employees');
+  
+  const employees = [
+    { name:'Rahul Kapoor', role:'Senior Architect', dept:'Architecture', status:'Active', since:'Jan 2021', email:'rahul@ywarchitects.com', init:'RK', projects:3 },
+    { name:'Priya Singh', role:'Interior Designer', dept:'Interior', status:'Active', since:'Mar 2022', email:'priya@ywarchitects.com', init:'PS', projects:2 },
+    { name:'Amit Joshi', role:'Site Engineer', dept:'Construction', status:'Active', since:'Jul 2020', email:'amit@ywarchitects.com', init:'AJ', projects:4 },
+    { name:'Varun Rao', role:'3D Visualizer', dept:'Design', status:'Active', since:'Sep 2022', email:'varun@ywarchitects.com', init:'VR', projects:3 },
+    { name:'Kavya Rao', role:'Junior Architect', dept:'Architecture', status:'Active', since:'Jun 2023', email:'kavya@ywarchitects.com', init:'KR', projects:2 },
+    { name:'Meera Nair', role:'Junior Architect', dept:'Architecture', status:'On Leave', since:'Dec 2023', email:'meera@ywarchitects.com', init:'MN', projects:1 },
+    { name:'Dev Patel', role:'Site Engineer', dept:'Construction', status:'Active', since:'Feb 2024', email:'dev@ywarchitects.com', init:'DP', projects:1 },
+  ];
+
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-6">
+      <div class="flex items-center justify-between">
+        <div class="section-header">
+          <h2 class="text-2xl font-extrabold text-on-surface">Employees</h2>
+          <p class="text-on-surface-variant text-sm mt-1">${employees.length} team members</p>
+        </div>
+        <button onclick="openModal('modalEmployee')" class="gold-gradient text-white font-bold text-sm px-4 py-2.5 rounded-xl flex items-center gap-1 shadow-[0_4px_12px_rgba(117,91,0,0.3)]">
+          <span class="material-symbols-outlined" style="font-size:16px;">person_add</span> Add
+        </button>
+      </div>
+      <!-- Search -->
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant" style="font-size:18px;">search</span>
+        <input type="text" placeholder="Search employees..." class="input-field rounded-xl pl-10"/>
+      </div>
+      <!-- Filter by dept -->
+      <div class="-mx-5 overflow-x-auto hide-scrollbar flex gap-2 px-5">
+        <button class="tab-btn active" onclick="filterTabs(this)">All</button>
+        <button class="tab-btn" onclick="filterTabs(this)">Architecture</button>
+        <button class="tab-btn" onclick="filterTabs(this)">Interior</button>
+        <button class="tab-btn" onclick="filterTabs(this)">Construction</button>
+        <button class="tab-btn" onclick="filterTabs(this)">Design</button>
+      </div>
+      <!-- Employee Cards -->
+      <div class="space-y-3">
+        ${employees.map(e => `
+        <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10 shadow-[0_2px_8px_rgba(26,29,20,0.03)] cursor-pointer active:scale-95 transition-transform" onclick="showEmployeeProfile('${e.name}')">
+          <div class="flex items-center gap-4">
+            <div class="avatar avatar-lg">${e.init}</div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-0.5">
+                <h4 class="font-bold text-on-surface">${e.name}</h4>
+                <span class="chip-${e.status==='Active'?'done':'planning'} text-xs font-bold px-2 py-0.5 rounded-full">${e.status}</span>
+              </div>
+              <p class="text-sm text-on-surface-variant">${e.role}</p>
+              <div class="flex items-center gap-3 mt-2">
+                <span class="text-xs text-on-surface-variant flex items-center gap-0.5"><span class="material-symbols-outlined" style="font-size:12px;">folder_open</span> ${e.projects} projects</span>
+                <span class="text-xs text-on-surface-variant flex items-center gap-0.5"><span class="material-symbols-outlined" style="font-size:12px;">calendar_today</span> Since ${e.since}</span>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <button onclick="event.stopPropagation();showToast('Calling ${e.name}...')" class="p-2 rounded-full hover:bg-primary/10 text-primary">
+                <span class="material-symbols-outlined" style="font-size:18px;">call</span>
+              </button>
+              <button onclick="event.stopPropagation();showToast('Email opened!')" class="p-2 rounded-full hover:bg-primary/10 text-primary">
+                <span class="material-symbols-outlined" style="font-size:18px;">mail</span>
+              </button>
+            </div>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function showEmployeeProfile(name) {
+  const el = document.getElementById('sec-employees');
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-6">
+      <button onclick="renderEmployees()" class="flex items-center gap-2 text-primary font-semibold">
+        <span class="material-symbols-outlined">arrow_back</span> Back
+      </button>
+      <!-- Profile Hero -->
+      <div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/10 text-center">
+        <div class="avatar avatar-lg mx-auto mb-4" style="width:72px;height:72px;font-size:22px;">RK</div>
+        <h2 class="text-2xl font-extrabold text-on-surface">${name}</h2>
+        <p class="text-on-surface-variant mt-1">Senior Architect · Architecture Dept</p>
+        <div class="flex justify-center gap-2 mt-3">
+          <span class="chip-done text-xs font-bold px-3 py-1 rounded-full">Active</span>
+          <span class="role-badge">SINCE JAN 2021</span>
+        </div>
+        <div class="flex justify-center gap-3 mt-5">
+          <button onclick="showToast('Calling...')" class="gold-gradient text-white font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5">
+            <span class="material-symbols-outlined" style="font-size:16px;">call</span> Call
+          </button>
+          <button onclick="showToast('Email opened!')" class="bg-surface-container-high text-on-surface font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5">
+            <span class="material-symbols-outlined" style="font-size:16px;">mail</span> Email
+          </button>
+        </div>
+      </div>
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-3">
+        ${[['Projects','3'],['Tasks Done','28'],['Attend.','94%']].map(([k,v]) => `
+        <div class="bg-surface-container-low rounded-2xl p-4 text-center">
+          <p class="text-2xl font-extrabold text-primary">${v}</p>
+          <p class="text-xs text-on-surface-variant">${k}</p>
+        </div>`).join('')}
+      </div>
+      <!-- Info -->
+      <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10 space-y-4">
+        ${[
+          { icon:'mail', label:'Email', val:'rahul@ywarchitects.com' },
+          { icon:'phone', label:'Phone', val:'+91 98765 43210' },
+          { icon:'badge', label:'Employee ID', val:'YW-2021-001' },
+          { icon:'home_work', label:'Department', val:'Architecture' },
+          { icon:'school', label:'Qualification', val:'B.Arch, CEPT University' },
+        ].map(i => `
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-primary" style="font-size:18px;">${i.icon}</span>
+          </div>
+          <div>
+            <p class="text-xs text-on-surface-variant">${i.label}</p>
+            <p class="text-sm font-semibold text-on-surface">${i.val}</p>
+          </div>
+        </div>`).join('')}
+      </div>
+      <!-- Role management (Admin/Founder only) -->
+      <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10">
+        <h3 class="font-bold text-on-surface mb-4">Role & Permissions</h3>
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Assigned Role</label>
+          <select class="input-field rounded-xl"><option selected>Senior Architect</option><option>Junior Architect</option><option>Principal Architect</option><option>Admin / HR</option></select>
+        </div>
+        <button onclick="showToast('Role updated successfully!')" class="w-full gold-gradient text-white font-bold py-3.5 rounded-xl">Update Role</button>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// REPORTS
+// ============================================================
+function renderReports() {
+  const el = document.getElementById('sec-reports');
+  
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-6">
+      <div class="section-header">
+        <h2 class="text-2xl font-extrabold text-on-surface">Reports</h2>
+        <p class="text-on-surface-variant text-sm mt-1">Business Intelligence Overview</p>
+      </div>
+      <!-- Period selector -->
+      <div class="flex gap-2">
+        <button class="tab-btn active" onclick="filterTabs(this)">This Month</button>
+        <button class="tab-btn" onclick="filterTabs(this)">Q4 2025</button>
+        <button class="tab-btn" onclick="filterTabs(this)">FY 2025</button>
+      </div>
+      <!-- KPIs -->
+      <div class="grid grid-cols-2 gap-3">
+        ${[
+          { label:'Total Revenue', val:'₹4.2 Cr', change:'+12%', up:true, icon:'payments' },
+          { label:'Active Projects', val:'8', change:'+2', up:true, icon:'architecture' },
+          { label:'Avg Project Delay', val:'6.2 days', change:'-1.5d', up:false, icon:'schedule' },
+          { label:'Client Satisfaction', val:'4.7/5', change:'+0.3', up:true, icon:'star' },
+        ].map(k => `
+        <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10">
+          <span class="material-symbols-outlined text-primary mb-2" style="font-size:20px;">${k.icon}</span>
+          <p class="text-xs text-on-surface-variant font-medium">${k.label}</p>
+          <p class="text-xl font-extrabold text-on-surface mt-1">${k.val}</p>
+          <p class="text-xs font-bold mt-1 ${k.up?'text-primary':'text-error'}">${k.change} vs last period</p>
+        </div>`).join('')}
+      </div>
+      <!-- Project progress chart -->
+      <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h3 class="font-bold text-on-surface">Project Progress</h3>
+            <p class="text-xs text-on-surface-variant">Completion status across all active projects</p>
+          </div>
+        </div>
+        <div class="space-y-4">
+          ${[
+            { name:'Sunrise Villa', pct:68, budget:'₹82L', color:'bg-primary' },
+            { name:'Metro Office Complex', pct:35, budget:'₹3.2Cr', color:'bg-primary-container' },
+            { name:'Green Residency', pct:90, budget:'₹1.1Cr', color:'bg-primary' },
+            { name:'Harmony Heights', pct:15, budget:'₹7.5Cr', color:'bg-primary-container' },
+          ].map(p => `
+          <div>
+            <div class="flex justify-between mb-1.5">
+              <span class="text-sm font-semibold text-on-surface">${p.name}</span>
+              <span class="text-xs font-bold text-primary">${p.pct}%</span>
+            </div>
+            <div class="progress-track h-2.5">
+              <div class="progress-fill h-full" style="width:${p.pct}%"></div>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-1">${p.budget}</p>
+          </div>`).join('')}
+        </div>
+      </div>
+      <!-- Employee Performance -->
+      <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10">
+        <h3 class="font-bold text-on-surface mb-4">Team Performance</h3>
+        <div class="space-y-3">
+          ${[
+            { name:'Rahul Kapoor', role:'Senior Architect', tasks:28, attend:'96%', rating:'4.8', init:'RK' },
+            { name:'Priya Singh', role:'Interior Designer', tasks:22, attend:'98%', rating:'4.9', init:'PS' },
+            { name:'Amit Joshi', role:'Site Engineer', tasks:34, attend:'94%', rating:'4.7', init:'AJ' },
+            { name:'Varun Rao', role:'3D Visualizer', tasks:19, attend:'88%', rating:'4.5', init:'VR' },
+          ].map(e => `
+          <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl">
+            <div class="avatar">${e.init}</div>
+            <div class="flex-1">
+              <p class="font-semibold text-on-surface text-sm">${e.name}</p>
+              <div class="flex gap-3 mt-1">
+                <span class="text-xs text-on-surface-variant">${e.tasks} tasks</span>
+                <span class="text-xs text-on-surface-variant">${e.attend} attend.</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="font-extrabold text-primary">${e.rating}</p>
+              <p class="text-xs text-on-surface-variant">rating</p>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>
+      <!-- Export -->
+      <div class="flex gap-3">
+        <button onclick="showToast('PDF report generated!')" class="flex-1 gold-gradient text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined">picture_as_pdf</span> Export PDF
+        </button>
+        <button onclick="showToast('Excel report downloaded!')" class="flex-1 bg-surface-container-high text-on-surface font-bold py-4 rounded-2xl flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-primary">table_chart</span> Export Excel
+        </button>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+function renderNotifications() {
+  const el = document.getElementById('sec-notifications');
+  
+  const notifs = [
+    { icon:'task_alt', title:'Task Completed', body:'Rahul K. completed "Ground floor structural drawings"', time:'2 mins ago', type:'success', read:false },
+    { icon:'event_available', title:'Leave Request', body:'Kavya Rao applied for Casual Leave (28-30 Mar)', time:'1 hr ago', type:'info', read:false },
+    { icon:'warning', title:'Task Overdue', body:'"Site inspection checklist" is past due date', time:'3 hrs ago', type:'error', read:false },
+    { icon:'person_add', title:'New Employee', body:'Dev Patel joined as Site Engineer today', time:'Yesterday', type:'info', read:true },
+    { icon:'payments', title:'Invoice Approved', body:'Proforma invoice INV-2024-042 approved by client', time:'2 days ago', type:'success', read:true },
+    { icon:'construction', title:'Site Update', body:'Amit J. submitted daily log for Sunrise Villa', time:'2 days ago', type:'info', read:true },
+  ];
+
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="section-header">
+          <h2 class="text-2xl font-extrabold text-on-surface">Notifications</h2>
+          <p class="text-on-surface-variant text-sm mt-1">3 unread</p>
+        </div>
+        <button onclick="showToast('All notifications marked as read')" class="text-primary text-sm font-semibold">Mark all read</button>
+      </div>
+      <div class="space-y-2">
+        ${notifs.map(n => `
+        <div class="bg-surface-container-lowest rounded-2xl p-4 flex items-start gap-3 border border-outline-variant/5 ${!n.read ? 'border-l-2 border-l-primary' : ''}">
+          <div class="w-10 h-10 rounded-xl ${n.type==='success'?'bg-primary/10':n.type==='error'?'bg-error/10':'bg-surface-container'} flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined ${n.type==='success'?'text-primary':n.type==='error'?'text-error':'text-primary'}" style="font-size:18px;">${n.icon}</span>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between">
+              <p class="font-bold text-on-surface text-sm">${n.title}</p>
+              ${!n.read ? '<div class="w-2 h-2 rounded-full bg-primary flex-shrink-0"></div>' : ''}
+            </div>
+            <p class="text-xs text-on-surface-variant mt-0.5 leading-relaxed">${n.body}</p>
+            <p class="text-xs text-on-surface-variant opacity-60 mt-1">${n.time}</p>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// PROFILE
+// ============================================================
+function renderProfile() {
+  const el = document.getElementById('sec-profile');
+  
+  el.innerHTML = `
+    <div class="px-5 pt-6 space-y-6">
+      <!-- Profile hero -->
+      <div class="bg-surface-container-lowest rounded-2xl overflow-hidden border border-outline-variant/10">
+        <div class="h-24 gold-gradient"></div>
+        <div class="px-5 pb-5">
+          <div class="flex items-end justify-between -mt-8 mb-4">
+            <div class="w-16 h-16 rounded-2xl border-4 border-white gold-gradient flex items-center justify-center">
+              <span class="text-white font-extrabold text-xl" id="profileInitials">${currentUser ? currentUser.initials : 'AD'}</span>
+            </div>
+            <button onclick="showToast('Profile edit mode activated!')" class="mt-10 bg-surface-container-high text-on-surface font-bold text-sm px-4 py-2.5 rounded-xl flex items-center gap-1.5">
+              <span class="material-symbols-outlined" style="font-size:16px;">edit</span> Edit Profile
+            </button>
+          </div>
+          <h2 class="text-xl font-extrabold text-on-surface" id="profileName">${currentUser ? currentUser.name : 'YW Admin'}</h2>
+          <p class="text-on-surface-variant text-sm" id="profileRole">${currentUser ? currentUser.label : 'Admin / HR'}</p>
+          <div class="flex items-center gap-2 mt-3">
+            <span class="chip-done text-xs font-bold px-3 py-1 rounded-full">Active</span>
+            <span class="role-badge">YW-2024-007</span>
+          </div>
+        </div>
+      </div>
+      <!-- Quick stats -->
+      <div class="grid grid-cols-3 gap-3">
+        ${[['Projects','4'],['Tasks','38'],['Days Left','8']].map(([k,v]) => `
+        <div class="bg-surface-container-low rounded-2xl p-4 text-center">
+          <p class="text-2xl font-extrabold text-primary">${v}</p>
+          <p class="text-xs text-on-surface-variant">${k}</p>
+        </div>`).join('')}
+      </div>
+      <!-- Account info -->
+      <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10 space-y-4">
+        <h3 class="font-bold text-on-surface">Account Information</h3>
+        ${[
+          { icon:'mail', label:'Email', val: currentUser ? currentUser.email : 'admin@ywarchitects.com' },
+          { icon:'phone', label:'Phone', val:'+91 98765 43210' },
+          { icon:'home_work', label:'Office', val:'YW Architects HQ, Pune' },
+          { icon:'badge', label:'Employee ID', val:'YW-2024-007' },
+          { icon:'calendar_today', label:'Date of Joining', val:'15 March 2024' },
+        ].map(i => `
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-primary" style="font-size:18px;">${i.icon}</span>
+          </div>
+          <div>
+            <p class="text-xs text-on-surface-variant">${i.label}</p>
+            <p class="text-sm font-semibold text-on-surface">${i.val}</p>
+          </div>
+        </div>`).join('')}
+      </div>
+      <!-- Settings -->
+      <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 overflow-hidden">
+        <h3 class="font-bold text-on-surface p-5 pb-3">Settings</h3>
+        ${[
+          { icon:'notifications', label:'Notifications', sub:'Push & email alerts', toggle:true, val:true },
+          { icon:'dark_mode', label:'Dark Mode', sub:'Appearance', toggle:true, val:false },
+          { icon:'language', label:'Language', sub:'English (India)', toggle:false },
+          { icon:'security', label:'Change Password', sub:'Security settings', toggle:false },
+        ].map((s, i) => `
+        <div class="flex items-center gap-3 px-5 py-4 ${i<3?'border-b border-outline-variant/10':''}" onclick="${!s.toggle?'showToast(\'Settings opened!\')':''}">
+          <div class="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-primary" style="font-size:18px;">${s.icon}</span>
+          </div>
+          <div class="flex-1">
+            <p class="font-semibold text-on-surface text-sm">${s.label}</p>
+            <p class="text-xs text-on-surface-variant">${s.sub}</p>
+          </div>
+          ${s.toggle ? `
+          <div class="w-12 h-6 rounded-full ${s.val?'bg-primary':'bg-surface-container-high'} relative cursor-pointer flex items-center px-0.5 transition-colors" onclick="this.classList.toggle('bg-primary');this.classList.toggle('bg-surface-container-high');this.querySelector('.toggle-thumb').style.transform=this.classList.contains('bg-primary')?'translateX(24px)':'translateX(0)'">
+            <div class="toggle-thumb w-5 h-5 rounded-full bg-white shadow-sm transition-transform" style="transform:${s.val?'translateX(24px)':'translateX(0)'}"></div>
+          </div>` : `<span class="material-symbols-outlined text-on-surface-variant" style="font-size:18px;">chevron_right</span>`}
+        </div>`).join('')}
+      </div>
+      <!-- Sign Out -->
+      <button onclick="logout()" class="w-full bg-error-container text-error font-bold py-4 rounded-2xl flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined">logout</span> Sign Out
+      </button>
+    </div>`;
+}
+
+// ===================== HELPERS =====================
+function filterTabs(el) {
+  el.closest('.flex').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

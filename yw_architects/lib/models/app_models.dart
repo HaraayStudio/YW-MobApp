@@ -1,6 +1,17 @@
 import 'package:flutter/material.dart';
 
-enum UserRole { admin, senior, junior, interior, site, visualizer, hr }
+enum UserRole {
+  admin,
+  coFounder,
+  hr,
+  srArchitect,
+  jrArchitect,
+  srEngineer,
+  draftsman,
+  liaisonManager,
+  liaisonOfficer,
+  liaisonAssistant,
+}
 
 class UserRoleInfo {
   final String name;
@@ -16,64 +27,115 @@ class UserRoleInfo {
     required this.label,
     required this.nav,
   });
+
+  UserRoleInfo copyWith({
+    String? name,
+    String? initials,
+    String? email,
+    String? label,
+    List<String>? nav,
+  }) {
+    return UserRoleInfo(
+      name:     name     ?? this.name,
+      initials: initials ?? this.initials,
+      email:    email    ?? this.email,
+      label:    label    ?? this.label,
+      nav:      nav      ?? this.nav,
+    );
+  }
 }
+
 
 class AppUser {
   final UserRole role;
   final UserRoleInfo info;
+  final String? token;      // ← ADD THIS
 
-  const AppUser({required this.role, required this.info});
+  const AppUser({
+    required this.role,
+    required this.info,
+    this.token,             // ← nullable, so existing code doesn't break
+  });
 }
+
+// Full access: 'dashboard', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile'
+const List<String> fullNav = ['dashboard', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile'];
+const List<String> hrNav = ['dashboard', 'employees', 'attendance', 'leaves', 'notifications', 'profile'];
+const List<String> srNav = ['dashboard', 'projects', 'tasks', 'leaves', 'notifications', 'profile'];
+const List<String> jrNav = ['dashboard', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
+const List<String> liaisonManagerNav = ['dashboard', 'projects', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
+const List<String> liaisonFieldNav = ['dashboard', 'site', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
 
 const Map<UserRole, UserRoleInfo> roleMap = {
   UserRole.admin: UserRoleInfo(
-    name: 'Founder / Admin',
+    name: 'Admin',
     initials: 'AD',
-    email: 'admin@gmail.com',
-    label: 'Founder / Admin',
-    nav: ['dashboard', 'projects', 'employees', 'reports', 'notifications', 'profile'],
+    email: 'admin@yw.com',
+    label: 'ADMIN',
+    nav: fullNav,
   ),
-  UserRole.senior: UserRoleInfo(
-    name: 'Senior Architect',
-    initials: 'SA',
-    email: 'srarchitect@gmail.com',
-    label: 'Senior Architect',
-    nav: ['dashboard', 'projects', 'tasks', 'leaves', 'notifications', 'profile'],
-  ),
-  UserRole.junior: UserRoleInfo(
-    name: 'Junior Architect',
-    initials: 'JA',
-    email: 'jrarchitect@gmail.com',
-    label: 'Junior Architect',
-    nav: ['dashboard', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'],
-  ),
-  UserRole.interior: UserRoleInfo(
-    name: 'Interior Designer',
-    initials: 'ID',
-    email: 'interior@gmail.com',
-    label: 'Interior Designer',
-    nav: ['dashboard', 'tasks', 'materials', 'attendance', 'leaves', 'notifications', 'profile'],
-  ),
-  UserRole.site: UserRoleInfo(
-    name: 'Site Engineer',
-    initials: 'SE',
-    email: 'site@gmail.com',
-    label: 'Site Engineer',
-    nav: ['dashboard', 'site', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'],
-  ),
-  UserRole.visualizer: UserRoleInfo(
-    name: '3D Visualizer',
-    initials: '3V',
-    email: 'visualizer@gmail.com',
-    label: '3D Visualizer',
-    nav: ['dashboard', 'tasks', 'renders', 'attendance', 'leaves', 'notifications', 'profile'],
+  UserRole.coFounder: UserRoleInfo(
+    name: 'Co-Founder',
+    initials: 'CF',
+    email: 'cofounder@yw.com',
+    label: 'CO_FOUNDER',
+    nav: fullNav,
   ),
   UserRole.hr: UserRoleInfo(
-    name: 'Admin / HR',
+    name: 'HR Manager',
     initials: 'HR',
-    email: 'hr@gmail.com',
-    label: 'Admin / HR',
-    nav: ['dashboard', 'employees', 'attendance', 'leaves', 'notifications', 'profile'],
+    email: 'hr@yw.com',
+    label: 'HR',
+    nav: hrNav,
+  ),
+  UserRole.srArchitect: UserRoleInfo(
+    name: 'Senior Architect',
+    initials: 'SA',
+    email: 'srarch@yw.com',
+    label: 'SR_ARCHITECT',
+    nav: srNav,
+  ),
+  UserRole.jrArchitect: UserRoleInfo(
+    name: 'Junior Architect',
+    initials: 'JA',
+    email: 'jrarch@yw.com',
+    label: 'JR_ARCHITECT',
+    nav: jrNav,
+  ),
+  UserRole.srEngineer: UserRoleInfo(
+    name: 'Senior Engineer',
+    initials: 'SE',
+    email: 'sreng@yw.com',
+    label: 'SR_ENGINEER',
+    nav: srNav,
+  ),
+  UserRole.draftsman: UserRoleInfo(
+    name: 'Draftsman',
+    initials: 'DM',
+    email: 'drafts@yw.com',
+    label: 'DRAFTSMAN',
+    nav: jrNav,
+  ),
+  UserRole.liaisonManager: UserRoleInfo(
+    name: 'Liaison Manager',
+    initials: 'LM',
+    email: 'liaisonmgr@yw.com',
+    label: 'LIAISON_MANAGER',
+    nav: liaisonManagerNav,
+  ),
+  UserRole.liaisonOfficer: UserRoleInfo(
+    name: 'Liaison Officer',
+    initials: 'LO',
+    email: 'liaisonoff@yw.com',
+    label: 'LIAISON_OFFICER',
+    nav: liaisonFieldNav,
+  ),
+  UserRole.liaisonAssistant: UserRoleInfo(
+    name: 'Liaison Assistant',
+    initials: 'LA',
+    email: 'liaisonasst@yw.com',
+    label: 'LIAISON_ASSISTANT',
+    nav: liaisonFieldNav,
   ),
 };
 

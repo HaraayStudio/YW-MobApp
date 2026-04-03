@@ -25,7 +25,7 @@ class _TasksSectionState extends State<TasksSection> {
     {'id': 6, 'title': 'Electrical layout review — Metro basement', 'project': 'Metro Office', 'assignee': 'Rahul K.', 'priority': 'medium', 'status': 'Review', 'due': '30 Mar', 'overdue': false},
   ];
 
-  bool get canCreate => [UserRole.admin, UserRole.senior, UserRole.hr].contains(widget.user.role);
+  bool get canCreate => [UserRole.admin, UserRole.coFounder, UserRole.hr, UserRole.srArchitect, UserRole.srEngineer, UserRole.liaisonManager].contains(widget.user.role);
 
   List<Map<String, dynamic>> get _filtered {
     if (_filter == 'All') return _tasks;

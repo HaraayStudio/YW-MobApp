@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-container": "#373123",
+              "secondary-fixed": "#ffe171",
+              "inverse-on-surface": "#f0f2e3",
+              "on-tertiary-fixed": "#201b0f",
+              "error-container": "#ffdad6",
+              "on-error": "#ffffff",
+              "surface-tint": "#755b00",
+              "surface-bright": "#f9fbec",
+              "on-error-container": "#93000a",
+              "inverse-primary": "#e9c254",
+              "surface-container-highest": "#e2e4d5",
+              "on-primary-fixed": "#241a00",
+              "inverse-surface": "#2e3228",
+              "surface-variant": "#e2e4d5",
+              "tertiary-container": "#a29887",
+              "secondary": "#705d00",
+              "tertiary-fixed": "#ede1cd",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-fixed-dim": "#d0c5b2",
+              "surface": "#f9fbec",
+              "primary-fixed": "#ffe08f",
+              "surface-container": "#edefe0",
+              "on-surface": "#1a1d14",
+              "primary": "#755b00",
+              "surface-container-high": "#e7e9db",
+              "tertiary": "#655d4e",
+              "surface-dim": "#d9dbcd",
+              "on-tertiary": "#ffffff",
+              "on-primary": "#ffffff",
+              "primary-fixed-dim": "#e9c254",
+              "on-secondary-container": "#756100",
+              "secondary-container": "#fcde6c",
+              "background": "#f9fbec",
+              "primary-container": "#b8952a",
+              "surface-container-low": "#f3f5e6",
+              "on-secondary-fixed": "#221b00",
+              "on-tertiary-fixed-variant": "#4d4638",
+              "on-primary-fixed-variant": "#584400",
+              "secondary-fixed-dim": "#e2c555",
+              "outline-variant": "#d0c5b0",
+              "on-surface-variant": "#4d4636",
+              "on-primary-container": "#3e2f00",
+              "on-secondary-fixed-variant": "#554600",
+              "on-background": "#1a1d14",
+              "on-secondary": "#ffffff",
+              "outline": "#7f7664",
+              "error": "#ba1a1a"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        @keyframes subtle-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(0.98); }
+        }
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-subtle { animation: subtle-pulse 3s ease-in-out infinite; }
+        .animate-spin-custom { animation: spin-slow 1.5s linear infinite; }
+        
+        body {
+            background-color: #f9fbec; /* Matches surface/background */
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body text-on-surface antialiased">
+<!-- Splash Screen Container -->
+<main class="relative h-screen w-full flex flex-col items-center justify-center bg-surface overflow-hidden">
+<!-- Background Architectural Elements (Subtle Textures) -->
+<div class="absolute inset-0 pointer-events-none opacity-20">
+<div class="absolute top-0 left-0 w-full h-full" style="background-image: radial-gradient(#d0c5b0 0.5px, transparent 0.5px); background-size: 32px 32px;"></div>
+</div>
+<!-- Central Branding Cluster -->
+<div class="relative z-10 flex flex-col items-center justify-center animate-subtle">
+<!-- Logo Mark -->
+<div class="flex items-baseline justify-center mb-6">
+<!-- Initials Container -->
+<div class="relative flex items-center">
+<!-- Letter Y (Gray/Stone) -->
+<span class="text-[120px] md:text-[160px] font-extrabold leading-none tracking-tighter text-outline" style="font-family: 'Plus Jakarta Sans';">Y</span>
+<!-- Letter W (Gold/Yellow) -->
+<span class="text-[120px] md:text-[160px] font-extrabold leading-none tracking-tighter -ml-6 md:-ml-8 text-primary-container" style="font-family: 'Plus Jakarta Sans';">W</span>
+</div>
+</div>
+<!-- Brand Name & Description -->
+<div class="text-center space-y-2">
+<h1 class="text-2xl md:text-3xl font-bold tracking-[0.2em] text-on-surface uppercase">
+                    YW Architects
+                </h1>
+<div class="flex items-center justify-center gap-4">
+<div class="h-[1px] w-8 bg-outline-variant/30"></div>
+<p class="text-[10px] md:text-xs font-medium tracking-[0.4em] text-outline uppercase">
+                        Mastery in Structure
+                    </p>
+<div class="h-[1px] w-8 bg-outline-variant/30"></div>
+</div>
+</div>
+</div>
+<!-- Footer / Loading Area -->
+<div class="absolute bottom-16 md:bottom-24 flex flex-col items-center gap-6">
+<!-- Circular Progress Indicator (ywGold / Primary-Container) -->
+<div class="relative w-10 h-10">
+<!-- Track -->
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container-high" cx="20" cy="20" fill="transparent" r="18" stroke="currentColor" stroke-width="3"></circle>
+<!-- Progress (Spinning) -->
+<circle class="text-primary-container animate-spin-custom" cx="20" cy="20" fill="transparent" r="18" stroke="currentColor" stroke-dasharray="100" stroke-dashoffset="70" stroke-linecap="round" stroke-width="3" style="transform-origin: center;"></circle>
+</svg>
+</div>
+<!-- Versioning / Meta -->
+<span class="text-[10px] font-semibold tracking-widest text-outline/50 uppercase">
+                System Initializing
+            </span>
+</div>
+<!-- Architectural Blueprint Lines (Decorative Corner) -->
+<div class="absolute bottom-0 right-0 p-8 opacity-10 hidden md:block">
+<svg fill="none" height="200" viewbox="0 0 200 200" width="200" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 199H200V0" stroke="#755B00" stroke-width="1"></path>
+<path d="M20 199V179H0" stroke="#755B00" stroke-width="1"></path>
+<circle cx="200" cy="0" fill="#755B00" r="4"></circle>
+</svg>
+</div>
+</main>
+</body></html>

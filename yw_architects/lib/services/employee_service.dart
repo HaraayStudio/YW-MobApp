@@ -1,0 +1,125 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'token_service.dart';
+
+class EmployeeService {
+  //static const String baseUrl = "http://localhost:8080/api/employees";
+  static const String baseUrl = "http://10.0.2.2:8080/api/employees";
+  // ── POST /api/employees/createemployee ────────────────────────────────────
+  // Spring: @PostMapping("/createemployee") @RequestBody User user
+  // Pass _buildPayload() directly from the Add Employee modal
+  static Future<bool> createEmployee(Map<String, dynamic> payload) async {
+    final token = TokenService.accessToken;
+
+    final response = await http.post(
+      Uri.parse("$baseUrl/createemployee"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(payload),
+    );
+
+    print("CREATE EMPLOYEE STATUS: ${response.statusCode}");
+    print("CREATE EMPLOYEE BODY:   ${response.body}");
+
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  // ── GET /api/employees/getallemployees ────────────────────────────────────
+  // Spring: @GetMapping("/getallemployees")
+  // Returns list from ResponseStructure.data
+  static Future<List<dynamic>> getAllEmployees() async {
+    final token = TokenService.accessToken;
+
+    final response = await http.get(
+      Uri.parse("$baseUrl/getallemployees"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    print("GET ALL EMPLOYEES STATUS: ${response.statusCode}");
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      return decoded['data'] ?? [];
+    }
+    return [];
+  }
+
+  // ── PUT /api/employees/updateemployee?id= ─────────────────────────────────
+  // Spring: @PutMapping("/updateemployee") @RequestParam Long id @RequestBody User
+  static Future<bool> updateEmployee(
+    int id,
+    Map<String, dynamic> payload,
+  ) async {
+    final token = TokenService.accessToken;
+
+    final response = await http.put(
+      Uri.parse("$baseUrl/updateemployee?id=$id"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(payload),
+    );
+
+    print("UPDATE EMPLOYEE STATUS: ${response.statusCode}");
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  // ── DELETE /api/employees/deleteemployee?id= ──────────────────────────────
+  // Spring: @DeleteMapping("/deleteemployee") @RequestParam Long id
+  // Soft delete — marks employee inactive, does not remove from DB
+  static Future<bool> deleteEmployee(int id) async {
+    final token = TokenService.accessToken;
+
+    final response = await http.delete(
+      Uri.parse("$baseUrl/deleteemployee?id=$id"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    print("DELETE EMPLOYEE STATUS: ${response.statusCode}");
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  // ── GET /api/employees/getmyprojects ──────────────────────────────────────
+  // Spring: @GetMapping("/getmyprojects") with pagination
+  static Future<List<dynamic>> getMyProjects({
+    int page = 0,
+    int size = 10,
+  }) async {
+    final token = TokenService.accessToken;
+
+    final response = await http.get(
+      Uri.parse("$baseUrl/getmyprojects?page=$page&size=$size"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    print("GET MY PROJECTS STATUS: ${response.statusCode}");
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      return decoded['data'] ?? [];
+    }
+    return [];
+  }
+
+  // ── PUT /api/employees/updatemypassword ───────────────────────────────────
+  // Spring: @PutMapping("/updatemypassword") @RequestParam oldPassword, newPassword
+  static Future<bool> updateMyPassword(
+    String oldPassword,
+    String newPassword,
+  ) async {
+    final token = TokenService.accessToken;
+
+    final response = await http.put(
+      Uri.parse(
+        "$baseUrl/updatemypassword?oldPassword=$oldPassword&newPassword=$newPassword",
+      ),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    print("UPDATE PASSWORD STATUS: ${response.statusCode}");
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+}

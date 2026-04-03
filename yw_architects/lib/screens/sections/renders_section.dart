@@ -9,7 +9,7 @@ class RendersSection extends StatelessWidget {
 
   const RendersSection({super.key, required this.user, required this.onToast});
 
-  bool get canUpload => [UserRole.visualizer, UserRole.admin].contains(user.role);
+  bool get canUpload => [UserRole.draftsman, UserRole.jrArchitect, UserRole.srArchitect, UserRole.admin, UserRole.coFounder].contains(user.role);
 
   @override
   Widget build(BuildContext context) {

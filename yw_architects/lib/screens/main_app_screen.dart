@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../models/app_models.dart';
 import '../widgets/common_widgets.dart';
 
-// Import New Separate Dashboards
+// Role-specific dashboard sections
 import 'sections/admin_dashboard_section.dart';
-import 'sections/senior_dashboard_section.dart';
-import 'sections/junior_dashboard_section.dart';
-import 'sections/interior_dashboard_section.dart';
-import 'sections/site_dashboard_section.dart';
-import 'sections/visualizer_dashboard_section.dart';
+import 'sections/co_founder_dashboard_section.dart';
 import 'sections/hr_dashboard_section.dart';
+import 'sections/sr_architect_dashboard_section.dart';
+import 'sections/jr_architect_dashboard_section.dart';
+import 'sections/sr_engineer_dashboard_section.dart';
+import 'sections/draftsman_dashboard_section.dart';
+import 'sections/liaison_manager_dashboard_section.dart';
+import 'sections/liaison_officer_dashboard_section.dart';
+import 'sections/liaison_assistant_dashboard_section.dart';
 
+// Feature sections
 import 'sections/projects_section.dart';
 import 'sections/tasks_section.dart';
 import 'sections/attendance_section.dart';
@@ -38,68 +44,72 @@ class _MainAppScreenState extends State<MainAppScreen> {
   String _currentSection = 'dashboard';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  List<String> get bottomNavItems {
+  // Bottom nav shows max 4 items (dashboard + 3 most relevant)
+  List<String> get _bottomNavItems {
     final nav = widget.user.info.nav;
-    final items = ['dashboard', ...nav.where((n) => n != 'dashboard' && n != 'notifications' && n != 'profile')];
-    return items.take(4).toList();
-  }
-
-  Widget _buildDashboard() {
-    switch (widget.user.role) {
-      case UserRole.admin: return AdminDashboardSection(user: widget.user, onNavigate: _navigate);
-      case UserRole.senior: return SeniorDashboardSection(user: widget.user, onNavigate: _navigate);
-      case UserRole.junior: return JuniorDashboardSection(user: widget.user, onNavigate: _navigate);
-      case UserRole.interior: return InteriorDashboardSection(user: widget.user, onNavigate: _navigate);
-      case UserRole.site: return SiteDashboardSection(user: widget.user, onNavigate: _navigate);
-      case UserRole.visualizer: return VisualizerDashboardSection(user: widget.user, onNavigate: _navigate);
-      case UserRole.hr: return HrDashboardSection(user: widget.user, onNavigate: _navigate);
-    }
-  }
-
-  Widget _buildSection() {
-    switch (_currentSection) {
-      case 'dashboard': return _buildDashboard();
-      case 'projects': return ProjectsSection(user: widget.user, onToast: _toast);
-      case 'tasks': return TasksSection(user: widget.user, onToast: _toast);
-      case 'attendance': return AttendanceSection(user: widget.user, onToast: _toast);
-      case 'leaves': return LeavesSection(user: widget.user, onToast: _toast);
-      case 'site': return SiteSection(onToast: _toast);
-      case 'materials': return MaterialsSection(user: widget.user, onToast: _toast);
-      case 'renders': return RendersSection(user: widget.user, onToast: _toast);
-      case 'employees': return EmployeesSection(onToast: _toast);
-      case 'reports': return ReportsSection(onToast: _toast);
-      case 'notifications': return NotificationsSection(onToast: _toast);
-      case 'profile': return ProfileSection(user: widget.user, onLogout: widget.onLogout, onToast: _toast);
-      default: return _buildDashboard();
-    }
+    final core = ['dashboard', ...nav.where((n) => n != 'dashboard' && n != 'notifications' && n != 'profile')];
+    return core.take(4).toList();
   }
 
   void _navigate(String section) => setState(() => _currentSection = section);
-
   void _toast(String msg) => showAppToast(context, msg);
+
+  // ── Role-specific dashboard ─────────────────────────────────────────────
+  Widget _buildDashboard() {
+    switch (widget.user.role) {
+      case UserRole.admin:
+        return AdminDashboardSection(user: widget.user, onNavigate: _navigate);
+      case UserRole.coFounder:
+        return CoFounderDashboardSection(user: widget.user, onNavigate: _navigate);
+      case UserRole.hr:
+        return HrDashboardSection(user: widget.user, onNavigate: _navigate);
+      case UserRole.srArchitect:
+        return SrArchitectDashboardSection(user: widget.user, onNavigate: _navigate);
+      case UserRole.jrArchitect:
+        return JrArchitectDashboardSection(user: widget.user, onNavigate: _navigate);
+      case UserRole.srEngineer:
+        return SrEngineerDashboardSection(user: widget.user, onNavigate: _navigate);
+      case UserRole.draftsman:
+        return DraftsmanDashboardSection(user: widget.user, onNavigate: _navigate);
+      case UserRole.liaisonManager:
+        return LiaisonManagerDashboardSection(user: widget.user, onNavigate: _navigate);
+      case UserRole.liaisonOfficer:
+        return LiaisonOfficerDashboardSection(user: widget.user, onNavigate: _navigate);
+      case UserRole.liaisonAssistant:
+        return LiaisonAssistantDashboardSection(user: widget.user, onNavigate: _navigate);
+    }
+  }
+
+  // ── Section switcher ────────────────────────────────────────────────────
+  Widget _buildSection() {
+    switch (_currentSection) {
+      case 'dashboard':     return _buildDashboard();
+      case 'projects':      return ProjectsSection(user: widget.user, onToast: _toast);
+      case 'tasks':         return TasksSection(user: widget.user, onToast: _toast);
+      case 'attendance':    return AttendanceSection(user: widget.user, onToast: _toast);
+      case 'leaves':        return LeavesSection(user: widget.user, onToast: _toast);
+      case 'site':          return SiteSection(onToast: _toast);
+      case 'materials':     return MaterialsSection(user: widget.user, onToast: _toast);
+      case 'renders':       return RendersSection(user: widget.user, onToast: _toast);
+      case 'employees':     return EmployeesSection(onToast: _toast);
+      case 'reports':       return ReportsSection(onToast: _toast);
+      case 'notifications': return NotificationsSection(onToast: _toast);
+      case 'profile':       return ProfileSection(user: widget.user, onLogout: widget.onLogout, onToast: _toast);
+      default:              return _buildDashboard();
+    }
+  }
 
   String get _topbarTitle => navConfig[_currentSection]?.label ?? 'Dashboard';
 
-  IconData _navIcon(String key) {
-    final icons = {
-      'dashboard': Icons.dashboard_rounded,
-      'projects': Icons.folder_special_rounded,
-      'tasks': Icons.task_alt_rounded,
-      'employees': Icons.group_rounded,
-      'attendance': Icons.fingerprint_rounded,
-      'leaves': Icons.event_available_rounded,
-      'site': Icons.construction_rounded,
-      'materials': Icons.inventory_2_rounded,
-      'renders': Icons.view_in_ar_rounded,
-      'reports': Icons.analytics_rounded,
-      'notifications': Icons.notifications_rounded,
-      'profile': Icons.manage_accounts_rounded,
-    };
-    return icons[key] ?? Icons.circle;
-  }
-
+  // ── Build ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    // Keep status bar icons dark
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ));
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: AppColors.surface,
@@ -109,7 +119,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
           _buildTopBar(),
           Expanded(
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
               child: KeyedSubtree(
                 key: ValueKey(_currentSection),
                 child: SingleChildScrollView(
@@ -118,123 +130,180 @@ class _MainAppScreenState extends State<MainAppScreen> {
               ),
             ),
           ),
+          _buildBottomNav(),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
+  // ── Top bar ──────────────────────────────────────────────────────────────
   Widget _buildTopBar() {
     return Container(
-      height: kToolbarHeight + MediaQuery.of(context).padding.top,
+      // Use SafeArea padding + explicit height so nothing clips on any device
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top,
-        left: 8, right: 8,
+        left: 16,
+        right: 16,
       ),
+      height: MediaQuery.of(context).padding.top + 56,
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.95),
-        border: Border(
-          bottom: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.15)),
-        ),
+        color: AppColors.surface.withOpacity(0.96),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-            icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
+          // Hamburger
+          InkWell(
+            onTap: () => _scaffoldKey.currentState?.openDrawer(),
+            borderRadius: BorderRadius.circular(999),
+            child: const Padding(
+              padding: EdgeInsets.all(8),
+              child: Icon(Icons.menu_rounded, color: AppColors.primary, size: 24),
+            ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 10),
+          // Title + subtitle
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   _topbarTitle,
-                  style: const TextStyle(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primary,
+                    height: 1.2,
                   ),
                 ),
                 Text(
                   widget.user.info.label,
-                  style: const TextStyle(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     color: AppColors.onSurfaceVariant,
+                    height: 1.1,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-          IconButton(
-            onPressed: () => _navigate('notifications'),
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_outlined, color: AppColors.primary),
-                Positioned(
-                  right: 0, top: 0,
-                  child: Container(
-                    width: 8, height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
-                    ),
+          // Notification bell
+          Stack(
+            children: [
+              InkWell(
+                onTap: () => _navigate('notifications'),
+                borderRadius: BorderRadius.circular(999),
+                child: const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Icon(Icons.notifications_rounded,
+                      color: AppColors.primary, size: 22),
+                ),
+              ),
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: AppColors.surface, width: 1.5),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          const SizedBox(width: 4),
+          // Avatar
           GestureDetector(
             onTap: () => _navigate('profile'),
             child: AvatarWidget(
               initials: widget.user.info.initials,
-              size: 34,
-              fontSize: 12,
+              size: 36,
+              fontSize: 13,
             ),
           ),
-          const SizedBox(width: 8),
         ],
       ),
     );
   }
 
+  // ── Bottom nav ───────────────────────────────────────────────────────────
   Widget _buildBottomNav() {
-    final items = bottomNavItems;
+    final items = _bottomNavItems;
     return Container(
-      height: 72,
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.92),
-        border: Border(
-          top: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
-        ),
+        color: AppColors.surface.withOpacity(0.97),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      // SafeArea bottom padding
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).padding.bottom + 4,
+        top: 4,
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: items.map((key) {
-          final isActive = _currentSection == key;
-          final label = navConfig[key]?.label ?? key;
+          final cfg = navConfig[key]!;
+          final active = _currentSection == key;
           return Expanded(
-            child: GestureDetector(
+            child: InkWell(
               onTap: () => _navigate(key),
-              behavior: HitTestBehavior.opaque,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    _navIcon(key),
-                    color: isActive ? AppColors.primary : AppColors.outline,
-                    size: 22,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isActive ? AppColors.primary : AppColors.outline,
-                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Active: filled background pill
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: active
+                            ? AppColors.primary.withOpacity(0.12)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Icon(
+                        cfg.iconData,
+                        color: active
+                            ? AppColors.primary
+                            : AppColors.onSurfaceVariant,
+                        size: 22,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      cfg.label,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        fontWeight:
+                            active ? FontWeight.w700 : FontWeight.w500,
+                        color: active
+                            ? AppColors.primary
+                            : AppColors.outline,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -243,14 +312,21 @@ class _MainAppScreenState extends State<MainAppScreen> {
     );
   }
 
+  // ── Drawer ───────────────────────────────────────────────────────────────
   Widget _buildDrawer() {
-    final navItems = widget.user.info.nav;
+    final allItems = widget.user.info.nav;
     return Drawer(
-      backgroundColor: AppColors.surfaceContainerLowest,
+      backgroundColor: AppColors.surface,
       child: Column(
         children: [
+          // Header
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 52, 20, 20),
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 16,
+              bottom: 20,
+              left: 20,
+              right: 20,
+            ),
             decoration: BoxDecoration(gradient: goldGradient),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,48 +334,87 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 Row(
                   children: [
                     Container(
-                      width: 48, height: 48,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(14),
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Center(
-                        child: Text('YW', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+                      child: Center(
+                        child: Text(
+                          'YW',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('YW Architects', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
-                        Text('Management System', style: TextStyle(color: Color(0xB3FFFFFF), fontSize: 11)),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'YW Architects',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            'Management System',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              color: Colors.white.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
+                // User chip
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: Colors.white.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      AvatarWidget(initials: widget.user.info.initials, size: 40, fontSize: 14),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.user.info.name,
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
-                          ),
-                          Text(
-                            widget.user.info.label,
-                            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
-                          ),
-                        ],
+                      AvatarWidget(
+                        initials: widget.user.info.initials,
+                        size: 36,
+                        fontSize: 13,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.user.info.name,
+                              style: GoogleFonts.plusJakartaSans(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              widget.user.info.label,
+                              style: GoogleFonts.plusJakartaSans(
+                                color: Colors.white.withOpacity(0.65),
+                                fontSize: 11,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -307,15 +422,17 @@ class _MainAppScreenState extends State<MainAppScreen> {
               ],
             ),
           ),
+
+          // Nav items
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(left: 12, bottom: 8),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
                   child: Text(
                     'MAIN MENU',
-                    style: TextStyle(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: AppColors.onSurfaceVariant,
@@ -323,43 +440,67 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     ),
                   ),
                 ),
-                ...navItems.map((key) {
-                  final item = navConfig[key];
-                  if (item == null) return const SizedBox.shrink();
-                  final isActive = _currentSection == key;
+                ...allItems.map((key) {
+                  final cfg = navConfig[key]!;
+                  final active = _currentSection == key;
                   return ListTile(
-                    leading: Icon(_navIcon(key), color: isActive ? AppColors.primary : AppColors.onSurfaceVariant, size: 20),
+                    dense: true,
+                    selected: active,
+                    selectedTileColor: AppColors.primary.withOpacity(0.08),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    leading: Icon(cfg.iconData,
+                        size: 20,
+                        color: active
+                            ? AppColors.primary
+                            : AppColors.onSurfaceVariant),
                     title: Text(
-                      item.label,
-                      style: TextStyle(
+                      cfg.label,
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isActive ? AppColors.primary : AppColors.onSurfaceVariant,
+                        fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                        color: active
+                            ? AppColors.primary
+                            : AppColors.onSurface,
                       ),
                     ),
-                    selected: isActive,
-                    selectedTileColor: AppColors.primary.withValues(alpha: 0.06),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     onTap: () {
                       Navigator.pop(context);
                       _navigate(key);
                     },
                   );
                 }),
-                const Divider(height: 32, color: AppColors.outlineVariant),
-                ListTile(
-                  leading: const Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
-                  title: const Text(
-                    'Sign Out',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.error),
-                  ),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    widget.onLogout();
-                  },
-                ),
               ],
+            ),
+          ),
+
+          // Sign out
+          const Divider(height: 1),
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom + 8,
+              top: 8,
+              left: 12,
+              right: 12,
+            ),
+            child: ListTile(
+              dense: true,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              leading: const Icon(Icons.logout_rounded,
+                  color: AppColors.error, size: 20),
+              title: Text(
+                'Sign Out',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.error,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                widget.onLogout();
+              },
             ),
           ),
         ],
