@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'token_service.dart';
+import '../api/constants.dart';
+
 
 class EmployeeService {
   //static const String baseUrl = "http://localhost:8080/api/employees";
-  static const String baseUrl = "http://10.0.2.2:8080/api/employees";
+  //static const String baseUrl = "http://10.0.2.2:8080/api/employees";
+  static const String baseUrl = "${ApiConstants.baseUrl}/employees";
   // ── POST /api/employees/createemployee ────────────────────────────────────
   // Spring: @PostMapping("/createemployee") @RequestBody User user
   // Pass _buildPayload() directly from the Add Employee modal
