@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/app_models.dart';
 import '../../widgets/common_widgets.dart';
+import '../../services/project_service.dart';
 
 class ProjectsSection extends StatefulWidget {
   final AppUser user;
@@ -17,68 +18,56 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   String _filter = 'All';
   int? _detailId;
 
-  final _projects = [
-    {
-      'id': 1,
-      'name': 'Sunrise Villa',
-      'client': 'Mr. Anand Kapoor',
-      'location': 'Baner, Pune',
-      'area': '4200 sq.ft',
-      'type': 'Residential',
-      'pct': 0.68,
-      'status': 'In Progress',
-      'budget': '₹82L',
-      'team': ['RK', 'PS', 'AJ', 'VR'],
-      'start': 'Jan 2024',
-      'deadline': 'Dec 2024',
-      'updates': 12,
-    },
-    {
-      'id': 2,
-      'name': 'Metro Office Complex',
-      'client': 'City Corp Ltd.',
-      'location': 'Shivajinagar, Pune',
-      'area': '18,500 sq.ft',
-      'type': 'Commercial',
-      'pct': 0.35,
-      'status': 'Planning',
-      'budget': '₹3.2Cr',
-      'team': ['SA', 'MK'],
-      'start': 'Mar 2024',
-      'deadline': 'Mar 2025',
-      'updates': 4,
-    },
-    {
-      'id': 3,
-      'name': 'Green Residency',
-      'client': 'Patel Family Trust',
-      'location': 'Wakad, Pune',
-      'area': '6800 sq.ft',
-      'type': 'Residential',
-      'pct': 0.90,
-      'status': 'Review',
-      'budget': '₹1.1Cr',
-      'team': ['RP', 'NJ', 'SK'],
-      'start': 'Oct 2023',
-      'deadline': 'Jun 2024',
-      'updates': 28,
-    },
-    {
-      'id': 4,
-      'name': 'Harmony Heights',
-      'client': 'Raje Builders',
-      'location': 'Kothrud, Pune',
-      'area': '32,000 sq.ft',
-      'type': 'Commercial',
-      'pct': 0.15,
-      'status': 'Planning',
-      'budget': '₹7.5Cr',
-      'team': ['SA'],
-      'start': 'Apr 2024',
-      'deadline': 'Jun 2026',
-      'updates': 2,
-    },
-  ];
+  List<Map<String, dynamic>> _projects = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProjects();
+  }
+
+  Future<void> _fetchProjects() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await ProjectService.getAllProjects();
+      setState(() {
+        _projects = data.map((d) {
+          return {
+            'id': d['projectId'] ?? 0,
+            'name': d['projectName'] ?? 'Unknown Project',
+            'client': d['projectCode'] ?? 'No Code', // using code as placeholder for list
+            'location': 'N/A', // Not in Lite DTO
+            'area': 'N/A', // Not in Lite DTO
+            'type': 'Architectural',
+            'pct': 0.0,
+            'status': d['projectStatus'] ?? 'Planning',
+            'budget': 'N/A',
+            'team': ['YW'],
+            'start': _formatDate(d['projectStartDateTime']),
+            'deadline': _formatDate(d['projectExpectedEndDate']),
+            'updates': 0,
+          };
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        widget.onToast("Failed to load projects");
+      }
+    }
+  }
+
+  String _formatDate(String? dt) {
+    if (dt == null || dt.isEmpty) return 'TBA';
+    try {
+      final date = DateTime.parse(dt);
+      return '${date.day}-${date.month}-${date.year}';
+    } catch (_) {
+      return 'TBA';
+    }
+  }
 
   bool get canCreate => [
     UserRole.admin,
@@ -145,7 +134,12 @@ class _ProjectsSectionState extends State<ProjectsSection> {
             ),
           ),
           const SizedBox(height: 16),
-          ..._filtered.map(
+          if (_isLoading)
+            const Center(child: Padding(padding: EdgeInsets.only(top: 40), child: CircularProgressIndicator(color: AppColors.primary)))
+          else if (_filtered.isEmpty)
+             const Center(child: Padding(padding: EdgeInsets.only(top: 40), child: Text("No projects found", style: TextStyle(color: AppColors.onSurfaceVariant))))
+          else
+            ..._filtered.map(
             (p) => Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: GestureDetector(
@@ -613,3 +607,4 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     );
   }
 }
+

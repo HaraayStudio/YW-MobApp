@@ -154,9 +154,26 @@ class AuthService {
         await TokenService.saveTokens(accessToken, refreshToken);
         return _buildEmployeeUser(accessToken, email);
       } else {
-        final msg = response.body.isNotEmpty
-            ? response.body
-            : 'Login failed (${response.statusCode})';
+        String msg = 'Login failed (${response.statusCode})';
+        try {
+          final errorData = json.decode(response.body);
+          final backendMsg = errorData['message']?.toString() ?? '';
+          if (backendMsg.toLowerCase().contains('bad credentials') || backendMsg.toLowerCase().contains('password')) {
+            msg = 'Wrong password';
+          } else if (backendMsg.toLowerCase().contains('null') || backendMsg.toLowerCase().contains('not found') || backendMsg.toLowerCase().contains('went wrong')) {
+            msg = 'Wrong username';
+          } else {
+            msg = backendMsg;
+          }
+        } catch (_) {
+          if (response.statusCode == 401) {
+            msg = 'Wrong password';
+          } else if (response.statusCode == 500 || response.statusCode == 404) {
+            msg = 'Wrong username';
+          }
+        }
+        // Remove the 'Exception: ' prefix when propagating by throwing a string or stripping it at the UI layer.
+        // But since we throw Exception, we'll keep the text clean so the UI can strip 'Exception: '
         throw Exception(msg);
       }
     } on SocketException {
@@ -222,9 +239,24 @@ class AuthService {
           ).copyWith(email: tokenEmail),
         );
       } else {
-        final msg = response.body.isNotEmpty
-            ? response.body
-            : 'Login failed (${response.statusCode})';
+        String msg = 'Login failed (${response.statusCode})';
+        try {
+          final errorData = json.decode(response.body);
+          final backendMsg = errorData['message']?.toString() ?? '';
+          if (backendMsg.toLowerCase().contains('bad credentials') || backendMsg.toLowerCase().contains('password')) {
+            msg = 'Wrong password';
+          } else if (backendMsg.toLowerCase().contains('null') || backendMsg.toLowerCase().contains('not found') || backendMsg.toLowerCase().contains('went wrong')) {
+            msg = 'Wrong username';
+          } else {
+            msg = backendMsg;
+          }
+        } catch (_) {
+          if (response.statusCode == 401) {
+            msg = 'Wrong password';
+          } else if (response.statusCode == 500 || response.statusCode == 404) {
+            msg = 'Wrong username';
+          }
+        }
         throw Exception(msg);
       }
     } on SocketException {

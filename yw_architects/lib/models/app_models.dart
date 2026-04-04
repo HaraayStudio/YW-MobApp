@@ -59,9 +59,9 @@ class AppUser {
 }
 
 // Full access: 'dashboard', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile'
-const List<String> fullNav = ['dashboard', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile'];
+const List<String> fullNav = ['dashboard', 'clients', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile'];
 const List<String> hrNav = ['dashboard', 'employees', 'attendance', 'leaves', 'notifications', 'profile'];
-const List<String> srNav = ['dashboard', 'projects', 'tasks', 'leaves', 'notifications', 'profile'];
+const List<String> srNav = ['dashboard', 'clients', 'projects', 'tasks', 'leaves', 'notifications', 'profile'];
 const List<String> jrNav = ['dashboard', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
 const List<String> liaisonManagerNav = ['dashboard', 'projects', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
 const List<String> liaisonFieldNav = ['dashboard', 'site', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
@@ -149,6 +149,7 @@ class NavItem {
 
 const Map<String, NavItem> navConfig = {
   'dashboard': NavItem(key: 'dashboard', iconData: Icons.dashboard_rounded, label: 'Dashboard'),
+  'clients': NavItem(key: 'clients', iconData: Icons.business_center_rounded, label: 'Clients'),
   'projects': NavItem(key: 'projects', iconData: Icons.folder_special_rounded, label: 'Projects'),
   'tasks': NavItem(key: 'tasks', iconData: Icons.task_alt_rounded, label: 'Tasks'),
   'employees': NavItem(key: 'employees', iconData: Icons.group_rounded, label: 'Employees'),

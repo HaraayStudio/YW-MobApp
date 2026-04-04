@@ -26,6 +26,7 @@ import 'sections/site_section.dart';
 import 'sections/materials_section.dart';
 import 'sections/renders_section.dart';
 import 'sections/employees_section.dart';
+import 'sections/clients_section.dart';
 import 'sections/reports_section.dart';
 import 'sections/notifications_section.dart';
 import 'sections/profile_section.dart';
@@ -92,6 +93,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
       case 'materials':     return MaterialsSection(user: widget.user, onToast: _toast);
       case 'renders':       return RendersSection(user: widget.user, onToast: _toast);
       case 'employees':     return EmployeesSection(onToast: _toast);
+      case 'clients':       return ClientsSection(onToast: _toast);
       case 'reports':       return ReportsSection(onToast: _toast);
       case 'notifications': return NotificationsSection(onToast: _toast);
       case 'profile':       return ProfileSection(user: widget.user, onLogout: widget.onLogout, onToast: _toast);

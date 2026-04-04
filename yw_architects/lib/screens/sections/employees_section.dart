@@ -17,6 +17,7 @@ import '../../services/employee_service.dart';
 
 // ── Employee data model ───────────────────────────────────────
 class _Employee {
+  final int id;
   final String name;
   final String roleLabel;
   final UserRole role;
@@ -32,6 +33,7 @@ class _Employee {
   final String attendance;
 
   const _Employee({
+    this.id = 0,
     required this.name,
     required this.roleLabel,
     required this.role,
@@ -46,23 +48,66 @@ class _Employee {
     required this.tasksDone,
     required this.attendance,
   });
+
+  factory _Employee.fromJson(Map<String, dynamic> json) {
+    final fName = json['firstName']?.toString() ?? 'Unknown';
+    final lName = json['lastName']?.toString() ?? '';
+    final roleStr = json['role']?.toString() ?? '';
+    
+    UserRole parsedRole = _backendToRole(roleStr);
+    final basicRoleInfo = roleMap[parsedRole] ?? roleMap[UserRole.admin]!;
+
+    return _Employee(
+      id: json['id'] as int? ?? 0,
+      name: '$fName $lName'.trim(),
+      roleLabel: basicRoleInfo.name, 
+      role: parsedRole,
+      dept: _roleToDept(parsedRole),
+      status: json['status']?.toString() ?? 'Active',
+      since: json['joinDate']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      empId: 'YW-${(json['id'] ?? '0').toString().padLeft(3, '0')}',
+      initials: (fName.isNotEmpty ? fName[0] : '') + (lName.isNotEmpty ? lName[0] : ''),
+      projects: 0,
+      tasksDone: 0,
+      attendance: '100%',
+    );
+  }
 }
 
-// ── Sample employees ──────────────────────────────────────────
-const _employees = [
-  _Employee(name: 'Yash Wadekar',   roleLabel: 'Co-Founder',       role: UserRole.coFounder,       dept: 'Management',     status: 'Active',   since: 'Jan 2018', email: 'yash@ywarchitects.com',        phone: '+91 98000 00001', empId: 'YW-2018-001', initials: 'YW', projects: 8, tasksDone: 120, attendance: '98%'),
-  _Employee(name: 'Supriya W.',     roleLabel: 'Admin',             role: UserRole.admin,           dept: 'Administration', status: 'Active',   since: 'Feb 2018', email: 'admin@ywarchitects.com',        phone: '+91 98000 00002', empId: 'YW-2018-002', initials: 'SW', projects: 8, tasksDone: 98,  attendance: '97%'),
-  _Employee(name: 'Anita Deshmukh', roleLabel: 'HR',                role: UserRole.hr,              dept: 'Human Resources',status: 'Active',   since: 'Mar 2019', email: 'hr@ywarchitects.com',           phone: '+91 98000 00003', empId: 'YW-2019-003', initials: 'AD', projects: 0, tasksDone: 45,  attendance: '96%'),
-  _Employee(name: 'Rahul Kapoor',   roleLabel: 'Senior Architect',  role: UserRole.srArchitect,     dept: 'Architecture',   status: 'Active',   since: 'Jan 2021', email: 'srarchitect@ywarchitects.com',  phone: '+91 98000 00004', empId: 'YW-2021-004', initials: 'RK', projects: 3, tasksDone: 88,  attendance: '94%'),
-  _Employee(name: 'Neha Joshi',     roleLabel: 'Senior Architect',  role: UserRole.srArchitect,     dept: 'Architecture',   status: 'Active',   since: 'Jun 2021', email: 'neha@ywarchitects.com',         phone: '+91 98000 00005', empId: 'YW-2021-005', initials: 'NJ', projects: 2, tasksDone: 74,  attendance: '95%'),
-  _Employee(name: 'Kavya Rao',      roleLabel: 'Junior Architect',  role: UserRole.jrArchitect,     dept: 'Architecture',   status: 'Active',   since: 'Jun 2023', email: 'jrarchitect@ywarchitects.com',  phone: '+91 98000 00006', empId: 'YW-2023-006', initials: 'KR', projects: 2, tasksDone: 34,  attendance: '92%'),
-  _Employee(name: 'Meera Nair',     roleLabel: 'Junior Architect',  role: UserRole.jrArchitect,     dept: 'Architecture',   status: 'On Leave', since: 'Dec 2023', email: 'meera@ywarchitects.com',         phone: '+91 98000 00007', empId: 'YW-2023-007', initials: 'MN', projects: 1, tasksDone: 18,  attendance: '89%'),
-  _Employee(name: 'Amit Joshi',     roleLabel: 'Senior Engineer',   role: UserRole.srEngineer,      dept: 'Construction',   status: 'Active',   since: 'Jul 2020', email: 'srengineer@ywarchitects.com',   phone: '+91 98000 00008', empId: 'YW-2020-008', initials: 'AJ', projects: 4, tasksDone: 102, attendance: '96%'),
-  _Employee(name: 'Rajan Shinde',   roleLabel: 'Draftsman',         role: UserRole.draftsman,       dept: 'Drafting',       status: 'Active',   since: 'Apr 2022', email: 'draftsman@ywarchitects.com',    phone: '+91 98000 00010', empId: 'YW-2022-010', initials: 'RS', projects: 5, tasksDone: 67,  attendance: '93%'),
-  _Employee(name: 'Suresh Kumar',   roleLabel: 'Liaison Manager',   role: UserRole.liaisonManager,  dept: 'Liaison',        status: 'Active',   since: 'May 2020', email: 'lmanager@ywarchitects.com',     phone: '+91 98000 00012', empId: 'YW-2020-012', initials: 'SK', projects: 5, tasksDone: 79,  attendance: '97%'),
-  _Employee(name: 'Pooja Sharma',   roleLabel: 'Liaison Officer',   role: UserRole.liaisonOfficer,  dept: 'Liaison',        status: 'Active',   since: 'Aug 2021', email: 'lofficer@ywarchitects.com',     phone: '+91 98000 00013', empId: 'YW-2021-013', initials: 'PS', projects: 3, tasksDone: 52,  attendance: '92%'),
-  _Employee(name: 'Tanvi Patil',    roleLabel: 'Liaison Assistant', role: UserRole.liaisonAssistant,dept: 'Liaison',        status: 'Active',   since: 'Mar 2023', email: 'lassistant@ywarchitects.com',   phone: '+91 98000 00015', empId: 'YW-2023-015', initials: 'TP', projects: 2, tasksDone: 22,  attendance: '88%'),
-];
+UserRole _backendToRole(String val) {
+  switch (val.trim().toUpperCase()) {
+    case 'ADMIN': return UserRole.admin;
+    case 'CO_FOUNDER': return UserRole.coFounder;
+    case 'HR': return UserRole.hr;
+    case 'SR_ARCHITECT': return UserRole.srArchitect;
+    case 'JR_ARCHITECT': return UserRole.jrArchitect;
+    case 'SR_ENGINEER': return UserRole.srEngineer;
+    case 'DRAFTSMAN': return UserRole.draftsman;
+    case 'LIAISON_MANAGER': return UserRole.liaisonManager;
+    case 'LIAISON_OFFICER': return UserRole.liaisonOfficer;
+    case 'LIAISON_ASSISTANT': return UserRole.liaisonAssistant;
+    default: return UserRole.jrArchitect;
+  }
+}
+
+String _roleToDept(UserRole role) {
+  switch (role) {
+    case UserRole.admin: return 'Administration';
+    case UserRole.coFounder: return 'Management';
+    case UserRole.hr: return 'Human Resources';
+    case UserRole.srArchitect:
+    case UserRole.jrArchitect: return 'Architecture';
+    case UserRole.srEngineer: return 'Construction';
+    case UserRole.draftsman: return 'Drafting';
+    case UserRole.liaisonManager:
+    case UserRole.liaisonOfficer:
+    case UserRole.liaisonAssistant: return 'Liaison';
+  }
+}
+
+// Data is now fetched dynamically instead of mocked.
 
 const _deptTabs = ['All', 'Management', 'Architecture', 'Construction', 'Drafting', 'Liaison', 'Human Resources'];
 
@@ -98,8 +143,34 @@ class _EmployeesSectionState extends State<EmployeesSection> {
   int _selectedTab = 0;
   final _searchCtrl = TextEditingController();
 
+  List<_Employee> _liveEmployees = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchEmployees();
+  }
+
+  Future<void> _fetchEmployees() async {
+    setState(() => _isLoading = true);
+    try {
+      final rawData = await EmployeeService.getAllEmployees();
+      final parsed = rawData.map((e) => _Employee.fromJson(e as Map<String, dynamic>)).toList();
+      setState(() {
+        _liveEmployees = parsed;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        widget.onToast('Failed to load employees: $e');
+      }
+    }
+  }
+
   List<_Employee> get _filtered {
-    var list = _employees.toList();
+    var list = _liveEmployees.toList();
     if (_selectedTab > 0) {
       final dept = _deptTabs[_selectedTab];
       list = list.where((e) => e.dept == dept).toList();
@@ -121,13 +192,16 @@ class _EmployeesSectionState extends State<EmployeesSection> {
     super.dispose();
   }
 
-  void _openAddModal() {
-    showModalBottomSheet(
+  void _openAddModal() async {
+    final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _AddEmployeeModal(onToast: widget.onToast),
     );
+    if (result == true) {
+      _fetchEmployees(); // Refresh list if employee added
+    }
   }
 
   @override
@@ -136,8 +210,13 @@ class _EmployeesSectionState extends State<EmployeesSection> {
     return _buildList();
   }
 
-  // ── LIST VIEW ─────────────────────────────────────────────────────────────
   Widget _buildList() {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 60),
+        child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      );
+    }
     final list = _filtered;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -151,7 +230,7 @@ class _EmployeesSectionState extends State<EmployeesSection> {
               Expanded(
                 child: SectionHeader(
                   title: 'Employees',
-                  subtitle: '${_employees.length} team members',
+                  subtitle: '${list.length} team members',
                 ),
               ),
               GestureDetector(
@@ -432,7 +511,7 @@ class _AddEmployeeModalState extends State<_AddEmployeeModal> {
     if (_lastNameCtrl.text.trim().isEmpty)  return 'Last name is required';
     if (_emailCtrl.text.trim().isEmpty)     return 'Email is required';
     if (!_emailCtrl.text.contains('@'))     return 'Enter a valid email';
-    if (_passwordCtrl.text.length < 6)      return 'Password must be at least 6 characters';
+    if (_passwordCtrl.text.length != 6)      return 'Password must be at least 6 characters';
     if (_phoneCtrl.text.trim().isEmpty)     return 'Phone number is required';
     if (_birthDate == null)                 return 'Date of birth is required';
     if (_joinDate == null)                  return 'Join date is required';
@@ -476,7 +555,7 @@ class _AddEmployeeModalState extends State<_AddEmployeeModal> {
       if (mounted) {
         setState(() => _isLoading = false);
         if (success) {
-          Navigator.pop(context);
+          Navigator.pop(context, true);
           widget.onToast('Employee added successfully!');
         } else {
           widget.onToast('Failed to add employee. Please try again.');
@@ -737,6 +816,7 @@ class _PasswordField extends StatelessWidget {
         TextField(
           controller: controller,
           obscureText: !visible,
+          maxLength: 6,
           style: const TextStyle(fontSize: 13, color: AppColors.onSurface, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             hintText: 'Min. 6 characters',
