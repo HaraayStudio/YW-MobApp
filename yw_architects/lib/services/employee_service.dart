@@ -85,6 +85,21 @@ class EmployeeService {
     return response.statusCode == 200 || response.statusCode == 201;
   }
 
+  // ── DELETE /api/employees/activeemployee?id= ──────────────────────────────
+  // Spring: @DeleteMapping("/activeemployee") @RequestParam Long id
+  // Marks employee as ACTIVE
+  static Future<bool> activateEmployee(int id) async {
+    final token = TokenService.accessToken;
+
+    final response = await http.delete(
+      Uri.parse("$baseUrl/activeemployee?id=$id"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    print("ACTIVATE EMPLOYEE STATUS: ${response.statusCode}");
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
   // ── GET /api/employees/getmyprojects ──────────────────────────────────────
   // Spring: @GetMapping("/getmyprojects") with pagination
   static Future<List<dynamic>> getMyProjects({
@@ -123,6 +138,46 @@ class EmployeeService {
     );
 
     print("UPDATE PASSWORD STATUS: ${response.statusCode}");
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  // ── PUT /api/employees/updatemyprofile ─────────────────────────────────────
+  // Spring: @PutMapping("/updatemyprofile") @RequestBody User employee
+  static Future<bool> updateMyProfile(Map<String, dynamic> payload) async {
+    final token = TokenService.accessToken;
+
+    final response = await http.put(
+      Uri.parse("$baseUrl/updatemyprofile"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(payload),
+    );
+
+    print("UPDATE MY PROFILE STATUS: ${response.statusCode}");
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  // ── PUT /api/employees/updatemyprofileimage ────────────────────────────────
+  // Spring: @PutMapping(consumes = MULTIPART_FORM_DATA_VALUE)
+  static Future<bool> updateMyProfileImage(String filePath) async {
+    final token = TokenService.accessToken;
+
+    final request = http.MultipartRequest(
+      'PUT',
+      Uri.parse("$baseUrl/updatemyprofileimage"),
+    );
+
+    request.headers['Authorization'] = "Bearer $token";
+    request.files.add(
+      await http.MultipartFile.fromPath('profileimage', filePath),
+    );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    print("UPDATE PROFILE IMAGE STATUS: ${response.statusCode}");
     return response.statusCode == 200 || response.statusCode == 201;
   }
 }

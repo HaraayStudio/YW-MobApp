@@ -60,7 +60,7 @@ class AppUser {
 
 // Full access: 'dashboard', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile'
 const List<String> fullNav = ['dashboard', 'clients', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile'];
-const List<String> hrNav = ['dashboard', 'employees', 'attendance', 'leaves', 'notifications', 'profile'];
+const List<String> hrNav = fullNav; // HR now has same access as Admin/Co-Founder
 const List<String> srNav = ['dashboard', 'clients', 'projects', 'tasks', 'leaves', 'notifications', 'profile'];
 const List<String> jrNav = ['dashboard', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
 const List<String> liaisonManagerNav = ['dashboard', 'projects', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];

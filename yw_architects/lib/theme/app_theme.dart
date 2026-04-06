@@ -64,6 +64,23 @@ class AppTheme {
       useMaterial3: true,
     );
   }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        brightness: Brightness.dark,
+      ).copyWith(
+        primary: AppColors.primaryFixed,
+        onPrimary: AppColors.primary,
+        surface: const Color(0xFF1A1D14),
+        onSurface: AppColors.inverseOnSurface,
+      ),
+      scaffoldBackgroundColor: const Color(0xFF1A1D14),
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(ThemeData.dark().textTheme),
+      useMaterial3: true,
+    );
+  }
 }
 
 LinearGradient get goldGradient => const LinearGradient(

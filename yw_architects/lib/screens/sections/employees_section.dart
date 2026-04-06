@@ -204,6 +204,51 @@ class _EmployeesSectionState extends State<EmployeesSection> {
     }
   }
 
+  Future<void> _toggleEmployeeStatus(_Employee employee) async {
+    final bool isActive = employee.status.toUpperCase() == 'ACTIVE';
+    final String actionText = isActive ? 'Deactivate' : 'Activate';
+    
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('$actionText Employee?'),
+        content: Text('Are you sure you want to $actionText ${employee.name}?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(actionText, style: TextStyle(color: isActive ? AppColors.error : Colors.green)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      setState(() => _isLoading = true);
+      final success = isActive 
+          ? await EmployeeService.deleteEmployee(employee.id)
+          : await EmployeeService.activateEmployee(employee.id);
+
+      if (success) {
+        widget.onToast("Employee ${isActive ? 'deactivated' : 'activated'} successfully.");
+        _selectedEmployee = null;
+        _fetchEmployees();
+      } else {
+        widget.onToast("Failed to update employee status.");
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      widget.onToast("Error updating status: $e");
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_selectedEmployee != null) return _buildProfile(_selectedEmployee!);
@@ -373,7 +418,11 @@ class _EmployeesSectionState extends State<EmployeesSection> {
                 Wrap(
                   spacing: 8,
                   children: [
-                    GoldChip(text: e.status, bg: e.status == 'Active' ? AppColors.chipDoneBg : AppColors.chipHoldBg, fg: e.status == 'Active' ? AppColors.chipDoneFg : AppColors.chipHoldFg),
+                    GoldChip(
+                      text: e.status, 
+                      bg: e.status.toUpperCase() == 'ACTIVE' ? AppColors.chipDoneBg : AppColors.chipHoldBg, 
+                      fg: e.status.toUpperCase() == 'ACTIVE' ? AppColors.chipDoneFg : AppColors.chipHoldFg
+                    ),
                     GoldChip(text: 'SINCE ${e.since.toUpperCase()}', bg: AppColors.primary.withOpacity(0.10), fg: AppColors.primary),
                   ],
                 ),
@@ -413,7 +462,32 @@ class _EmployeesSectionState extends State<EmployeesSection> {
           ),
           const SizedBox(height: 14),
 
-          CardContainer(child: _RoleManager(currentRole: e.role, onToast: widget.onToast)),
+          CardContainer(child: _RoleManager(employee: e, onToast: widget.onToast, onUpdate: _fetchEmployees)),
+          const SizedBox(height: 14),
+
+          CardContainer(
+            child: GestureDetector(
+               onTap: () => _toggleEmployeeStatus(e),
+               child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                     Icon(
+                       e.status.toUpperCase() == 'ACTIVE' ? Icons.no_accounts_rounded : Icons.person_add_alt_1_rounded,
+                       color: e.status.toUpperCase() == 'ACTIVE' ? AppColors.error : Colors.green,
+                       size: 20,
+                     ),
+                     const SizedBox(width: 8),
+                     Text(
+                       e.status.toUpperCase() == 'ACTIVE' ? 'Mark Inactive' : 'Activate Employee',
+                       style: TextStyle(
+                         color: e.status.toUpperCase() == 'ACTIVE' ? AppColors.error : Colors.green,
+                         fontWeight: FontWeight.w700,
+                       ),
+                     ),
+                  ]
+               )
+            )
+          )
         ],
       ),
     );
@@ -1048,9 +1122,10 @@ class _EmployeeCard extends StatelessWidget {
 }
 
 class _RoleManager extends StatefulWidget {
-  final UserRole currentRole;
+  final _Employee employee;
   final Function(String) onToast;
-  const _RoleManager({required this.currentRole, required this.onToast});
+  final VoidCallback onUpdate;
+  const _RoleManager({required this.employee, required this.onToast, required this.onUpdate});
 
   @override
   State<_RoleManager> createState() => _RoleManagerState();
@@ -1058,11 +1133,43 @@ class _RoleManager extends StatefulWidget {
 
 class _RoleManagerState extends State<_RoleManager> {
   late UserRole _selected;
+  bool _isUpdating = false;
 
   @override
   void initState() {
     super.initState();
-    _selected = widget.currentRole;
+    _selected = widget.employee.role;
+  }
+
+  Future<void> _updateRole() async {
+    if (_selected == widget.employee.role) return;
+
+    setState(() => _isUpdating = true);
+    try {
+      // The backend updateEmployee expects a full payload. 
+      // We'll update the role but keep other fields minimal or as they are.
+      final payload = {
+         "id": widget.employee.id,
+         "role": _roleToBackend(_selected),
+         "firstName": widget.employee.name.split(' ').first,
+         "lastName": widget.employee.name.split(' ').length > 1 ? widget.employee.name.split(' ').last : "",
+         "email": widget.employee.email,
+         "phone": widget.employee.phone,
+         "status": widget.employee.status.toUpperCase(),
+      };
+
+      final success = await EmployeeService.updateEmployee(widget.employee.id, payload);
+      if (success) {
+        widget.onToast('Role updated to ${roleMap[_selected]!.label}!');
+        widget.onUpdate();
+      } else {
+        widget.onToast('Failed to update role.');
+      }
+    } catch (e) {
+      widget.onToast('Error updating role: $e');
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
   }
 
   @override
@@ -1102,11 +1209,13 @@ class _RoleManagerState extends State<_RoleManager> {
           ),
         ),
         const SizedBox(height: 14),
-        GoldGradientButton(
-          text: 'Update Role',
-          verticalPadding: 14,
-          onTap: () => widget.onToast('Role updated to ${roleMap[_selected]!.label}!'),
-        ),
+        _isUpdating 
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : GoldGradientButton(
+              text: 'Update Role',
+              verticalPadding: 14,
+              onTap: _updateRole,
+            ),
       ],
     );
   }

@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/app_models.dart';
 import '../../widgets/common_widgets.dart';
+import '../../services/employee_service.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../main.dart'; // To access themeNotifier
 
 class ProfileSection extends StatefulWidget {
   final AppUser user;
@@ -21,7 +25,74 @@ class ProfileSection extends StatefulWidget {
 
 class _ProfileSectionState extends State<ProfileSection> {
   bool _notificationsOn = true;
-  bool _darkModeOn = false;
+
+  void _openEditProfile(BuildContext context) async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _EditProfileModal(user: widget.user),
+    );
+
+    if (result == true) {
+      widget.onToast("Profile updated!");
+    }
+  }
+
+  void _openLanguagePicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const _LanguageModal(),
+    );
+  }
+
+  void _openChangePassword() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _ChangePasswordModal(onToast: widget.onToast),
+    );
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      widget.onToast("Uploading profile picture...");
+      final success = await EmployeeService.updateMyProfileImage(image.path);
+      if (success) {
+        widget.onToast("Profile picture updated!");
+      } else {
+        widget.onToast("Failed to upload image.");
+      }
+    }
+  }
+
+  void _confirmLogout() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              widget.onLogout();
+            },
+            child: const Text('Sign Out', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,35 +160,56 @@ class _ProfileSectionState extends State<ProfileSection> {
                         children: [
                           Transform.translate(
                             offset: const Offset(0, -28),
-                            child: Container(
-                              width: 64,
-                              height: 64,
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 4,
-                                ),
-                                borderRadius: BorderRadius.circular(18),
-                                gradient: goldGradient,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  widget.user.info.initials,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 20,
+                            child: GestureDetector(
+                              onTap: _pickImage,
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    width: 64,
+                                    height: 64,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 4,
+                                      ),
+                                      borderRadius: BorderRadius.circular(18),
+                                      gradient: goldGradient,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        widget.user.info.initials,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.camera_alt_rounded,
+                                        size: 10,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                           Padding(
                             padding: const EdgeInsets.only(bottom: 4),
                             child: GestureDetector(
-                              onTap: () => widget.onToast(
-                                'Profile edit mode activated!',
-                              ),
+                              onTap: () => _openEditProfile(context),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -367,12 +459,13 @@ class _ProfileSectionState extends State<ProfileSection> {
                             ? Switch(
                                 value: s['key'] == 'notif'
                                     ? _notificationsOn
-                                    : _darkModeOn,
+                                    : (themeNotifier.value == ThemeMode.dark),
                                 onChanged: (v) => setState(() {
-                                  if (s['key'] == 'notif')
+                                  if (s['key'] == 'notif') {
                                     _notificationsOn = v;
-                                  else
-                                    _darkModeOn = v;
+                                  } else {
+                                    themeNotifier.value = v ? ThemeMode.dark : ThemeMode.light;
+                                  }
                                 }),
                                 activeThumbColor: AppColors.primary,
                               )
@@ -382,7 +475,10 @@ class _ProfileSectionState extends State<ProfileSection> {
                               ),
                         onTap: isToggle
                             ? null
-                            : () => widget.onToast('Settings opened!'),
+                            : () {
+                                if (s['label'] == 'Language') _openLanguagePicker();
+                                if (s['label'] == 'Change Password') _openChangePassword();
+                              },
                       ),
                       if (i < settings.length - 1)
                         const Divider(
@@ -401,7 +497,7 @@ class _ProfileSectionState extends State<ProfileSection> {
 
           // Sign Out
           GestureDetector(
-            onTap: widget.onLogout,
+            onTap: _confirmLogout,
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -459,6 +555,291 @@ class _ProfileSectionState extends State<ProfileSection> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EditProfileModal extends StatefulWidget {
+  final AppUser user;
+  const _EditProfileModal({required this.user});
+
+  @override
+  State<_EditProfileModal> createState() => _EditProfileModalState();
+}
+
+class _EditProfileModalState extends State<_EditProfileModal> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _firstNameController;
+  late TextEditingController _lastNameController;
+  late TextEditingController _phoneController;
+  late TextEditingController _birthDateController;
+  
+  String _selectedGender = "MALE";
+  String _selectedBlood = "B+";
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final names = widget.user.info.name.split(' ');
+    _firstNameController = TextEditingController(text: names.first);
+    _lastNameController = TextEditingController(text: names.length > 1 ? names.sublist(1).join(' ') : "");
+    _phoneController = TextEditingController(text: "9876543210"); 
+    _birthDateController = TextEditingController(text: "1995-01-01");
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(1995, 1, 1),
+      firstDate: DateTime(1960),
+      lastDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+    );
+    if (picked != null) {
+      setState(() {
+        _birthDateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    try {
+      final payload = {
+        "firstName": _firstNameController.text.trim(),
+        "lastName": _lastNameController.text.trim(),
+        "phone": _phoneController.text.trim(),
+        "email": widget.user.info.email,
+        "gender": _selectedGender,
+        "bloodGroup": _selectedBlood,
+        "birthDate": _birthDateController.text.trim(),
+      };
+
+      final success = await EmployeeService.updateMyProfile(payload);
+      if (success) {
+        if (mounted) Navigator.pop(context, true);
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Failed to update profile")));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              Text("Edit Profile", style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.onSurface)),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(child: _buildField("First Name", _firstNameController)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildField("Last Name", _lastNameController)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildField("Phone Number", _phoneController, keyboard: TextInputType.phone),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: _pickDate,
+                child: AbsorbPointer(child: _buildField("Birth Date", _birthDateController, icon: Icons.calendar_today_rounded)),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(child: _buildDropdown("Gender", _selectedGender, ["MALE", "FEMALE", "OTHER"], (v) => setState(() => _selectedGender = v!))),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildDropdown("Blood Group", _selectedBlood, ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], (v) => setState(() => _selectedBlood = v!))),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _isSaving 
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                : GoldGradientButton(text: "Save Changes", verticalPadding: 16, onTap: _save),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildField(String label, TextEditingController controller, {TextInputType? keyboard, IconData? icon}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant, letterSpacing: 0.5)),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboard,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onSurface),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: AppColors.surfaceContainerLow,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            suffixIcon: icon != null ? Icon(icon, size: 16, color: AppColors.onSurfaceVariant) : null,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          ),
+          validator: (v) => v == null || v.isEmpty ? "Required" : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdown(String label, String value, List<String> items, Function(String?) onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(12)),
+          child: DropdownButton<String>(
+            value: value,
+            isExpanded: true,
+            underline: const SizedBox(),
+            items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)))).toList(),
+            onChanged: onChanged,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LanguageModal extends StatelessWidget {
+  const _LanguageModal();
+
+  @override
+  Widget build(BuildContext context) {
+    final languages = [
+      {'name': 'English (India)', 'code': 'en_IN'},
+      {'name': 'Hindi', 'code': 'hi_IN'},
+      {'name': 'Marathi', 'code': 'mr_IN'},
+    ];
+    return Container(
+      decoration: const BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 20),
+          const Text("Select Language", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          ...languages.map((l) => ListTile(
+            title: Text(l['name']!),
+            trailing: l['code'] == 'en_IN' ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
+            onTap: () => Navigator.pop(context),
+          )),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChangePasswordModal extends StatefulWidget {
+  final Function(String) onToast;
+  const _ChangePasswordModal({required this.onToast});
+
+  @override
+  State<_ChangePasswordModal> createState() => _ChangePasswordModalState();
+}
+
+class _ChangePasswordModalState extends State<_ChangePasswordModal> {
+  final _oldController = TextEditingController();
+  final _newController = TextEditingController();
+  final _confirmController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _submit() async {
+    if (_newController.text != _confirmController.text) {
+      widget.onToast("Passwords don't match");
+      return;
+    }
+    if (_newController.text.length < 6) {
+      widget.onToast("Password must be at least 6 digits");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final success = await EmployeeService.updateMyPassword(_oldController.text, _newController.text);
+      if (success) {
+        widget.onToast("Password changed successfully!");
+        if (mounted) Navigator.pop(context);
+      } else {
+        widget.onToast("Failed to change password. Check old password.");
+      }
+    } catch (e) {
+      widget.onToast("Error: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 20),
+          const Text("Change Password", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 20),
+          _buildField("Current Password", _oldController, obscure: true),
+          const SizedBox(height: 16),
+          _buildField("New Password", _newController, obscure: true),
+          const SizedBox(height: 16),
+          _buildField("Confirm New Password", _confirmController, obscure: true),
+          const SizedBox(height: 24),
+          _isLoading 
+            ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+            : GoldGradientButton(text: "Update Password", onTap: _submit),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildField(String label, TextEditingController controller, {bool obscure = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          obscureText: obscure,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: AppColors.surfaceContainerLow,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          ),
+        ),
+      ],
     );
   }
 }

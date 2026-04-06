@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'theme/app_theme.dart';
 import 'models/app_models.dart';
 import 'screens/splash_screen.dart';   // ← fixed splash (no white flash)
@@ -8,6 +7,8 @@ import 'screens/auth_screens.dart';
 import 'screens/main_app_screen.dart';
 import 'services/token_service.dart';
 import 'services/auth_service.dart';
+
+final themeNotifier = ValueNotifier<ThemeMode>(ThemeMode.light);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,33 +36,19 @@ class YWArchitectsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'YW Architects',
-      debugShowCheckedModeBanner: false,
-      // Global scroll behaviour: no glow overscroll (cleaner on Android)
-      scrollBehavior: _NoGlowScrollBehavior(),
-      theme: ThemeData(
-        colorScheme: const ColorScheme(
-          brightness: Brightness.light,
-          primary: AppColors.primary,
-          onPrimary: Colors.white,
-          secondary: AppColors.secondary,
-          onSecondary: Colors.white,
-          error: AppColors.error,
-          onError: Colors.white,
-          surface: AppColors.surface,
-          onSurface: AppColors.onSurface,
-        ),
-        scaffoldBackgroundColor: AppColors.surface,
-        // Apply Plus Jakarta Sans globally — no layout shift
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(
-          ThemeData.light().textTheme,
-        ),
-        // Remove default splash/highlight on InkWell
-        splashFactory: InkRipple.splashFactory,
-        useMaterial3: true,
-      ),
-      home: const AppRoot(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (_, mode, __) {
+        return MaterialApp(
+          title: 'YW Architects',
+          debugShowCheckedModeBanner: false,
+          scrollBehavior: _NoGlowScrollBehavior(),
+          theme: AppTheme.theme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: mode,
+          home: const AppRoot(),
+        );
+      },
     );
   }
 }
