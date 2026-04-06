@@ -1,3 +1,5 @@
 yw_architects/ywarchitecture-main/ywarchitecture/src/main/resources/application-dev.properties
 *.properties
 *.properties
+*.properties
+/yw_architects/ywarchitecture-main/ywarchitecture/src/main/resources
