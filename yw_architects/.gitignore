@@ -48,3 +48,5 @@ app.*.map.json
 application-dev.properties
 application-prod.properties
 .env
+yw_architects\ywarchitecture-main\ywarchitecture\src\main\resources\application-dev.properties
+yw_architects\ywarchitecture-main\ywarchitecture\src\main\resources\application-prod.properties
