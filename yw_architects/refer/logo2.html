@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YW Architects | 3D Construction Splash</title>
+    <style>
+        :root {
+            --bg: #1A1A1A;
+            --yw-yellow: #F4C430;
+            /* Your logo yellow */
+            --concrete: #3D3D3D;
+            --glass-lower: rgba(135, 206, 235, 0.15);
+            --glass-upper: rgba(135, 206, 235, 0.25);
+            --wireframe: rgba(255, 255, 255, 0.03);
+        }
+
+        body,
+        html {
+            margin: 0;
+            height: 100vh;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            perspective: 2000px;
+            /* Essential for 3D depth */
+            background-image: linear-gradient(var(--wireframe) 1px, transparent 1px), linear-gradient(90deg, var(--wireframe) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* --- THE 3D SCENE --- */
+        .stage {
+            width: 300px;
+            height: 500px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(25deg) rotateY(-35deg);
+            /* Stable isometric angle */
+        }
+
+        /* --- THE LOGO (FRONT FACING) --- */
+        .branding {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            opacity: 0;
+            animation: revealBrand 2s ease-out 1.5s forwards;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .branding h1 {
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-weight: 200;
+            letter-spacing: 25px;
+            font-size: 3rem;
+            margin: 0;
+        }
+
+        .branding p {
+            color: var(--yw-yellow);
+            font-family: sans-serif;
+            letter-spacing: 10px;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            text-transform: uppercase;
+        }
+
+        @keyframes revealBrand {
+            to {
+                opacity: 1;
+                transform: translate(-50%, -60%);
+            }
+        }
+
+        /* --- TOWER COMPONENTS --- */
+
+        /* The Concrete Slabs (Flying in from Z-axis) */
+        .slab {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            left: 50%;
+            margin-left: -80px;
+            background: var(--concrete);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            opacity: 0;
+            animation: assembleSlab 1.2s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+        }
+
+        /* Staggered installation */
+        .s1 {
+            bottom: 0;
+            animation-delay: 0.5s;
+        }
+
+        .s2 {
+            bottom: 60px;
+            animation-delay: 1.2s;
+        }
+
+        .s3 {
+            bottom: 120px;
+            animation-delay: 1.9s;
+        }
+
+        .s4 {
+            bottom: 180px;
+            animation-delay: 2.6s;
+        }
+
+        .s5 {
+            bottom: 240px;
+            animation-delay: 3.3s;
+            background: var(--yw-yellow);
+        }
+
+        /* Terrace */
+
+        @keyframes assembleSlab {
+            0% {
+                opacity: 0;
+                transform: translateZ(-800px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateZ(0);
+            }
+        }
+
+        /* Central Core (The Spine) */
+        .core {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 30px;
+            height: 0;
+            background: #222;
+            transform: translateX(-50%) translateZ(-15px);
+            border-left: 2px solid var(--yw-yellow);
+            animation: growCore 2s ease-out forwards;
+        }
+
+        @keyframes growCore {
+            to {
+                height: 300px;
+            }
+        }
+
+        /* Glass Facade (Cladding installation) */
+        .glass {
+            position: absolute;
+            width: 162px;
+            height: 0;
+            left: 50%;
+            margin-left: -81px;
+            bottom: 0;
+            transform: translateZ(81px);
+            /* Wraps around concrete */
+            animation: installGlass 3s ease-in-out 3.5s forwards;
+        }
+
+        .g-lower {
+            background: var(--glass-lower);
+            backdrop-filter: blur(2px);
+        }
+
+        .g-upper {
+            bottom: 180px;
+            background: var(--glass-upper);
+            animation: installGlassUpper 1.5s ease-in-out 4.5s forwards;
+            backdrop-filter: blur(4px);
+        }
+
+        @keyframes installGlass {
+            to {
+                height: 180px;
+            }
+        }
+
+        @keyframes installGlassUpper {
+            to {
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="branding">
+        <h1>YW</h1>
+        <p>Architects</p>
+    </div>
+
+    <div class="stage">
+        <div class="core"></div>
+
+        <div class="slab s1"></div>
+        <div class="slab s2"></div>
+        <div class="slab s3"></div>
+        <div class="slab s4"></div>
+        <div class="slab s5"></div>
+        <div class="glass g-lower"></div>
+        <div class="glass g-upper"></div>
+    </div>
+
+</body>
+
+</html>

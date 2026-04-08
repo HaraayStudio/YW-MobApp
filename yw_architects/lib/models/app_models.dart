@@ -162,3 +162,28 @@ const Map<String, NavItem> navConfig = {
   'notifications': NavItem(key: 'notifications', iconData: Icons.notifications_rounded, label: 'Alerts'),
   'profile': NavItem(key: 'profile', iconData: Icons.manage_accounts_rounded, label: 'Profile'),
 };
+class Client {
+  final int id;
+  final String name;
+  final String? email;
+  final String? phone;
+  final String? address;
+
+  Client({
+    required this.id,
+    required this.name,
+    this.email,
+    this.phone,
+    this.address,
+  });
+
+  factory Client.fromJson(Map<String, dynamic> json) {
+    return Client(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? 'Unknown',
+      email: json['email'],
+      phone: json['phone']?.toString(),
+      address: json['address'],
+    );
+  }
+}
