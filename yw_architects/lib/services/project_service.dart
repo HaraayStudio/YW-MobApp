@@ -49,11 +49,9 @@ class ProjectService {
     return [];
   }
 
-  // GET /api/projects/{projectId}
   static Future<Map<String, dynamic>?> getProjectById(int projectId) async {
     final token = TokenService.accessToken;
     final client = http.Client();
-    
     try {
       final url = Uri.parse("$baseUrl/$projectId");
       debugPrint("API REQUEST: GET $url");
@@ -61,20 +59,21 @@ class ProjectService {
       final request = http.Request('GET', url)
         ..headers['Authorization'] = "Bearer $token"
         ..headers['Accept'] = "application/json"
-        ..headers['Cache-Control'] = "no-cache"
-        ..followRedirects = true;
-      
+        ..followRedirects = false; // Prevent redirect crash if Location header is missing
+        
       final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
       final response = await http.Response.fromStream(streamedResponse);
 
       print("GET PROJECT $projectId STATUS: ${response.statusCode}");
-      if (response.statusCode >= 300 && response.statusCode < 400) {
-        print("REDIRECT DETECTED: ${response.headers['location']}");
-      }
-
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        return decoded['data'] as Map<String, dynamic>?;
+      
+      // Since React accepts 302 as success, we'll parse JSON on 200...399
+      if (response.statusCode >= 200 && response.statusCode < 400) {
+        if (response.body.isNotEmpty) {
+          final decoded = jsonDecode(response.body);
+          return decoded['data'] as Map<String, dynamic>?;
+        }
+      } else {
+        debugPrint("GET PROJECT FAILED: ${response.body}");
       }
     } catch (e) {
       print("ERROR FETCHING PROJECT BY ID: $e");

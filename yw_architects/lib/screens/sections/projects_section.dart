@@ -5,6 +5,7 @@ import '../../widgets/common_widgets.dart';
 import '../../services/client_service.dart';
 import '../../services/post_sales_service.dart';
 import '../../services/project_service.dart';
+import '../../widgets/postsale_tabs/post_sale_detail_view.dart';
 import 'package:intl/intl.dart';
 
 class ProjectsSection extends StatefulWidget {
@@ -51,82 +52,188 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   void _initEditForm(Map<String, dynamic> p) {
     _editTabIndex = 0;
     _editCtrls.clear();
-    
-    // Identity
-    _editCtrls['projectName'] = TextEditingController(text: p['name'].toString().replaceFirst('Project - ', ''));
-    _editCtrls['projectCode'] = TextEditingController(text: '');
-    _editCtrls['permanentProjectId'] = TextEditingController(text: '');
-    _editCtrls['projectDetails'] = TextEditingController(text: '');
-    _editCtrls['projectStatus'] = TextEditingController(text: p['status'].toString().toUpperCase().replaceAll(' ', '_'));
-    _editCtrls['priority'] = TextEditingController(text: 'MEDIUM');
-    
-    // Location
-    _editCtrls['address'] = TextEditingController(text: '');
-    _editCtrls['city'] = TextEditingController(text: p['location']);
-    _editCtrls['latitude'] = TextEditingController(text: '');
-    _editCtrls['longitude'] = TextEditingController(text: '');
-    _editCtrls['googlePlace'] = TextEditingController(text: '');
-    
-    // Area
-    _editCtrls['plotArea'] = TextEditingController(text: '');
-    _editCtrls['totalBuiltUpArea'] = TextEditingController(text: p['area'] == 'N/A' ? '' : p['area']);
-    _editCtrls['totalCarpetArea'] = TextEditingController(text: '');
-    
-    // Timeline
-    _editCtrls['projectCreatedDateTime'] = TextEditingController(text: '');
-    _editCtrls['projectStartDateTime'] = TextEditingController(text: '');
-    _editCtrls['projectExpectedEndDate'] = TextEditingController(text: '');
-    _editCtrls['projectEndDateTime'] = TextEditingController(text: '');
 
+    // Use the raw project object stored during list fetch for immediate pre-fill
+    final raw = (p['_raw'] as Map<String, dynamic>?) ?? {};
+
+    // Helper for fallbacks
+    String getV(String camel, String snake) =>
+        (raw[camel] ?? raw[snake])?.toString() ?? '';
+
+    // Identity
+    _editCtrls['projectName'] = TextEditingController(
+      text: getV('projectName', 'project_name').isNotEmpty
+          ? getV('projectName', 'project_name')
+          : p['name'].toString(),
+    );
+    _editCtrls['projectCode'] = TextEditingController(
+      text: getV('projectCode', 'project_code'),
+    );
+    _editCtrls['permanentProjectId'] = TextEditingController(
+      text: getV('permanentProjectId', 'permanent_project_id'),
+    );
+    _editCtrls['projectDetails'] = TextEditingController(
+      text: getV('projectDetails', 'project_details'),
+    );
+    final statusVal = getV('projectStatus', 'project_status');
+    _editCtrls['projectStatus'] = TextEditingController(
+      text: statusVal.isNotEmpty
+          ? statusVal
+          : p['status'].toString().toUpperCase().replaceAll(' ', '_'),
+    );
+    _editCtrls['priority'] = TextEditingController(
+      text: getV('priority', 'priority').isNotEmpty
+          ? getV('priority', 'priority')
+          : 'MEDIUM',
+    );
+
+    // Location
+    _editCtrls['address'] = TextEditingController(text: getV('address', 'address'));
+    _editCtrls['city'] = TextEditingController(text: getV('city', 'city'));
+    _editCtrls['latitude'] = TextEditingController(text: getV('latitude', 'latitude'));
+    _editCtrls['longitude'] = TextEditingController(text: getV('longitude', 'longitude'));
+    _editCtrls['googlePlace'] = TextEditingController(text: getV('googlePlace', 'google_place'));
+
+    // Area
+    _editCtrls['plotArea'] = TextEditingController(text: getV('plotArea', 'plot_area'));
+    _editCtrls['totalBuiltUpArea'] = TextEditingController(
+      text: getV('totalBuiltUpArea', 'total_built_up_area'),
+    );
+    _editCtrls['totalCarpetArea'] = TextEditingController(
+      text: getV('totalCarpetArea', 'total_carpet_area'),
+    );
+
+    // Timeline - helpers for dates
+    String getD(String c, String s) => raw[c]?.toString() ?? raw[s]?.toString() ?? '';
+    
+    _editCtrls['projectCreatedDateTime'] = TextEditingController(
+      text: getD('projectCreatedDateTime', 'project_created_date_time').isNotEmpty
+          ? _formatDate(getD('projectCreatedDateTime', 'project_created_date_time'))
+          : '',
+    );
+    _editCtrls['projectStartDateTime'] = TextEditingController(
+      text: getD('projectStartDateTime', 'project_start_date_time').isNotEmpty
+          ? _formatDate(getD('projectStartDateTime', 'project_start_date_time'))
+          : '',
+    );
+    _editCtrls['projectExpectedEndDate'] = TextEditingController(
+      text: getD('projectExpectedEndDate', 'project_expected_end_date').isNotEmpty
+          ? _formatDate(getD('projectExpectedEndDate', 'project_expected_end_date'))
+          : '',
+    );
+    _editCtrls['projectEndDateTime'] = TextEditingController(
+      text: getD('projectEndDateTime', 'project_end_date_time').isNotEmpty
+          ? _formatDate(getD('projectEndDateTime', 'project_end_date_time'))
+          : '',
+    );
+
+    // Background refresh — if API works, it will update with latest data
     _fetchFullProjectDetails(p['id']);
   }
 
   bool _editError = false;
 
-  Future<void> _fetchFullProjectDetails(int projectId) async {
-    setState(() {
-      _isLoading = true;
-      _editError = false;
-    });
+  /// [silent] = true skips the loading spinner (for background syncs)
+  Future<void> _fetchFullProjectDetails(int projectId, {bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _editError = false;
+      });
+    }
     try {
       final res = await ProjectService.getProjectById(projectId);
       if (res != null && mounted) {
+        // Extract city, address, area from the FULL project response
+        final city = (res['city'] ?? res['projectCity'] ?? '').toString().trim();
+        final address = (res['address'] ?? res['projectAddress'] ?? '').toString().trim();
+        final plotArea = (res['plotArea'] ?? res['plot_area'] ?? '').toString().trim();
+        final builtArea = (res['totalBuiltUpArea'] ?? res['total_built_up_area'] ?? '').toString().trim();
+        final area = (() {
+          if (plotArea.isNotEmpty && plotArea != '0' && plotArea != 'null') return '$plotArea sq.ft';
+          if (builtArea.isNotEmpty && builtArea != '0' && builtArea != 'null') return '$builtArea sq.ft';
+          return 'N/A';
+        })();
+
         setState(() {
-          _selectedProject = res;
-          _initEditFormFields(res);
+          // ✅ KEY FIX: Update _projects list so the card shows real city/address
+          final idx = _projects.indexWhere((p) => p['id'] == projectId);
+          if (idx != -1) {
+            final updated = Map<String, dynamic>.from(_projects[idx]);
+            if (city.isNotEmpty && city != 'null') updated['location'] = city;
+            if (address.isNotEmpty && address != 'null') updated['address'] = address;
+            if (area != 'N/A') updated['area'] = area;
+            updated['_raw'] = res;
+            _projects[idx] = updated;
+          }
+
+          // Also update the selected project / edit form if this is the current one
+          if (_selectedProject != null && (_selectedProject!['projectId'] == projectId || _selectedProject!['id'] == projectId)) {
+            _selectedProject = res;
+            _initEditFormFields(res);
+          }
+          
           _isLoading = false;
         });
+
+        debugPrint("FULL DETAIL SYNCED: project $projectId → city=$city, address=$address");
       } else {
-        // Stay in editing mode even if full fetch fails, just show warning if needed
-        setState(() => _isLoading = false);
-        debugPrint("Warning: Full project fetch returned null, using cached list data.");
+        if (mounted) setState(() => _isLoading = false);
+        debugPrint("Warning: Full project fetch returned null for project $projectId");
       }
     } catch (e) {
       debugPrint("Error fetching full project: $e");
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _initEditFormFields(Map<String, dynamic> res) {
-    _editCtrls['projectName']?.text = res['projectName'] ?? '';
-    _editCtrls['projectCode']?.text = res['projectCode'] ?? '';
-    _editCtrls['permanentProjectId']?.text = res['permanentProjectId'] ?? '';
-    _editCtrls['projectDetails']?.text = res['projectDetails'] ?? '';
-    _editCtrls['address']?.text = res['address'] ?? '';
-    _editCtrls['city']?.text = res['city'] ?? '';
-    _editCtrls['latitude']?.text = res['latitude']?.toString() ?? '';
-    _editCtrls['longitude']?.text = res['longitude']?.toString() ?? '';
-    _editCtrls['googlePlace']?.text = res['googlePlace'] ?? '';
-    _editCtrls['plotArea']?.text = res['plotArea']?.toString() ?? '';
-    _editCtrls['totalBuiltUpArea']?.text = res['totalBuiltUpArea']?.toString() ?? '';
-    _editCtrls['totalCarpetArea']?.text = res['totalCarpetArea']?.toString() ?? '';
-    _editCtrls['projectStatus']?.text = res['projectStatus'] ?? 'PLANNING';
-    _editCtrls['priority']?.text = res['priority'] ?? 'MEDIUM';
-    
-    if (res['projectCreatedDateTime'] != null) _editCtrls['projectCreatedDateTime']?.text = _formatDate(res['projectCreatedDateTime'].toString());
-    if (res['projectStartDateTime'] != null) _editCtrls['projectStartDateTime']?.text = _formatDate(res['projectStartDateTime'].toString());
-    if (res['projectExpectedEndDate'] != null) _editCtrls['projectExpectedEndDate']?.text = _formatDate(res['projectExpectedEndDate'].toString());
-    if (res['projectEndDateTime'] != null) _editCtrls['projectEndDateTime']?.text = _formatDate(res['projectEndDateTime'].toString());
+    // Helper to get value from camelCase (default) or snake_case (fallback)
+    String getV(String camel, String snake) =>
+        (res[camel] ?? res[snake])?.toString() ?? '';
+
+    _editCtrls['projectName']?.text = getV('projectName', 'project_name');
+    _editCtrls['projectCode']?.text = getV('projectCode', 'project_code');
+    _editCtrls['permanentProjectId']?.text =
+        getV('permanentProjectId', 'permanent_project_id');
+    _editCtrls['projectDetails']?.text = getV('projectDetails', 'project_details');
+    _editCtrls['address']?.text = getV('address', 'address');
+    _editCtrls['city']?.text = getV('city', 'city');
+    _editCtrls['latitude']?.text = getV('latitude', 'latitude');
+    _editCtrls['longitude']?.text = getV('longitude', 'longitude');
+    _editCtrls['googlePlace']?.text = getV('googlePlace', 'google_place');
+    _editCtrls['plotArea']?.text = getV('plotArea', 'plot_area');
+    _editCtrls['totalBuiltUpArea']?.text =
+        getV('totalBuiltUpArea', 'total_built_up_area');
+    _editCtrls['totalCarpetArea']?.text =
+        getV('totalCarpetArea', 'total_carpet_area');
+    _editCtrls['projectStatus']?.text =
+        getV('projectStatus', 'project_status').isNotEmpty
+            ? getV('projectStatus', 'project_status')
+            : 'PLANNING';
+    _editCtrls['priority']?.text = getV('priority', 'priority').isNotEmpty
+        ? getV('priority', 'priority')
+        : 'MEDIUM';
+
+    // Dates helpers
+    String getD(String c, String s) => res[c]?.toString() ?? res[s]?.toString() ?? '';
+
+    if (getD('projectCreatedDateTime', 'project_created_date_time').isNotEmpty)
+      _editCtrls['projectCreatedDateTime']?.text = _formatDate(
+        getD('projectCreatedDateTime', 'project_created_date_time'),
+      );
+    if (getD('projectStartDateTime', 'project_start_date_time').isNotEmpty)
+      _editCtrls['projectStartDateTime']?.text = _formatDate(
+        getD('projectStartDateTime', 'project_start_date_time'),
+      );
+    if (getD('projectExpectedEndDate', 'project_expected_end_date').isNotEmpty)
+      _editCtrls['projectExpectedEndDate']?.text = _formatDate(
+        getD('projectExpectedEndDate', 'project_expected_end_date'),
+      );
+    if (getD('projectEndDateTime', 'project_end_date_time').isNotEmpty)
+      _editCtrls['projectEndDateTime']?.text = _formatDate(
+        getD('projectEndDateTime', 'project_end_date_time'),
+      );
   }
 
   @override
@@ -148,7 +255,9 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
   Future<void> _saveProjectChanges() async {
     if (_editCtrls['projectName']?.text.isEmpty ?? true) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Project Name is required")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Project Name is required")));
       return;
     }
 
@@ -167,28 +276,108 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       'longitude': double.tryParse(_editCtrls['longitude']?.text ?? ''),
       'googlePlace': _editCtrls['googlePlace']?.text,
       'plotArea': double.tryParse(_editCtrls['plotArea']?.text ?? ''),
-      'totalBuiltUpArea': double.tryParse(_editCtrls['totalBuiltUpArea']?.text ?? ''),
-      'totalCarpetArea': double.tryParse(_editCtrls['totalCarpetArea']?.text ?? ''),
-      'projectCreatedDateTime': _toIso(_editCtrls['projectCreatedDateTime']?.text),
+      'totalBuiltUpArea': double.tryParse(
+        _editCtrls['totalBuiltUpArea']?.text ?? '',
+      ),
+      'totalCarpetArea': double.tryParse(
+        _editCtrls['totalCarpetArea']?.text ?? '',
+      ),
+      'projectCreatedDateTime': _toIso(
+        _editCtrls['projectCreatedDateTime']?.text,
+      ),
       'projectStartDateTime': _toIso(_editCtrls['projectStartDateTime']?.text),
-      'projectExpectedEndDate': _toIso(_editCtrls['projectExpectedEndDate']?.text),
+      'projectExpectedEndDate': _toIso(
+        _editCtrls['projectExpectedEndDate']?.text,
+      ),
       'projectEndDateTime': _toIso(_editCtrls['projectEndDateTime']?.text),
     };
 
-    final success = await ProjectService.updateProject(
-      _selectedProject!['id'],
-      projectData,
-    );
+    final projectId = _selectedProject!['projectId'] ?? _selectedProject!['id'] ?? _selectedProject!['project_id'];
 
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Project updated successfully!")));
-      _fetchProjects();
-      setState(() => _isEditing = false);
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Failed to update project.")));
+    try {
+      final success = await ProjectService.updateProject(
+        projectId as int,
+        projectData,
+      );
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Project updated successfully!")),
+        );
+
+        // OPTIMISTIC UPDATE: Update local list immediately
+        setState(() {
+          final idx = _projects.indexWhere((p) => p['id'] == projectId);
+          if (idx != -1) {
+            final p = Map<String, dynamic>.from(_projects[idx]);
+
+            // Identity
+            p['name'] = projectData['projectName'] ?? p['name'];
+            p['code'] = projectData['projectCode']?.toString().isNotEmpty == true
+                ? projectData['projectCode']
+                : '—';
+            p['status'] = _normalizeStatus(
+              projectData['projectStatus']?.toString() ?? 'PLANNING',
+            );
+
+            // Location/Address
+            final newCity = projectData['city']?.toString().trim() ?? '';
+            final newAddr = projectData['address']?.toString().trim() ?? '';
+            p['location'] = newCity.isNotEmpty ? newCity : 'N/A';
+            p['address'] = newAddr.isNotEmpty ? newAddr : 'N/A';
+
+            // Area mapping logic
+            final plot = projectData['plotArea']?.toString() ?? '';
+            final built = projectData['totalBuiltUpArea']?.toString() ?? '';
+            if (plot.isNotEmpty && plot != '0' && plot != 'null') {
+              p['area'] = '$plot sq.ft';
+            } else if (built.isNotEmpty && built != '0' && built != 'null') {
+              p['area'] = '$built sq.ft';
+            } else {
+              p['area'] = 'N/A';
+            }
+
+            // Dates
+            if (projectData['projectStartDateTime'] != null) {
+              p['start'] = _formatDate(
+                projectData['projectStartDateTime'].toString(),
+              );
+            }
+            if (projectData['projectExpectedEndDate'] != null) {
+              p['deadline'] = _formatDate(
+                projectData['projectExpectedEndDate'].toString(),
+              );
+            }
+
+            // Update raw data
+            final raw = Map<String, dynamic>.from(p['_raw'] ?? {});
+            raw.addAll(projectData);
+            p['_raw'] = raw;
+
+            _projects[idx] = p;
+          }
+          _isEditing = false;
+        });
+
+        // Background fetch to ensure sync
+        Future.delayed(const Duration(milliseconds: 500), () => _fetchProjects());
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to update project.")),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error saving project: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("An error occurred while saving")),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
-
-    setState(() => _isSaving = false);
   }
 
   Future<void> _fetchProjects() async {
@@ -202,31 +391,69 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         final project = d['project'] ?? {};
         final client = d['client'] ?? {};
 
-        String pName =
-            (project['projectName'] != null &&
-                project['projectName'].toString().isNotEmpty)
-            ? project['projectName']
-            : (client['name'] ?? 'Unknown Project');
-
-        if (!pName.toLowerCase().startsWith('project')) {
-          pName = "Project - $pName";
+        // DIAGNOSTIC: Print keys to console so we can see exactly what the server sends
+        if (data.indexOf(d) == 0) {
+          debugPrint("--- PROJECT DATA DEBUG ---");
+          debugPrint("PROJECT KEYS: ${project.keys.toList()}");
+          debugPrint("RAW CITY: ${project['city']}");
+          debugPrint("RAW ADDR: ${project['address']}");
+          debugPrint("-------------------------");
         }
 
+        // 1. IDENTITY
+        String pName = (project['projectName'] ?? project['project_name'])?.toString() ?? '';
+        if (pName.isEmpty) pName = (client['name'] ?? 'Unknown Project');
+
+        // 2. LOCATION - EXHAUSTIVE CHECK
+        // We look for every possible variation of 'city' and 'address'
+        final city = (project['city'] ?? 
+                      project['projectCity'] ?? 
+                      project['project_city'] ?? 
+                      project['location'] ?? 
+                      d['city'] ?? 
+                      d['project_city'] ?? 
+                      '')
+                     .toString().trim();
+
+        final fullAddress = (project['address'] ?? 
+                             project['projectAddress'] ?? 
+                             project['project_address'] ?? 
+                             project['location_address'] ?? 
+                             d['address'] ?? 
+                             d['project_address'] ?? 
+                             '')
+                            .toString().trim();
+
+        // 3. AREA - EXHAUSTIVE CHECK
+        final area = (() {
+          final plot = (project['plotArea'] ?? project['plot_area'] ?? project['area'] ?? '').toString().trim();
+          final built = (project['totalBuiltUpArea'] ?? project['total_built_up_area'] ?? '').toString().trim();
+          
+          if (plot.isNotEmpty && plot != '0' && plot != 'null' && plot != 'N/A') return '$plot sq.ft';
+          if (built.isNotEmpty && built != '0' && built != 'null' && built != 'N/A') return '$built sq.ft';
+          return 'N/A';
+        })();
+
+        // 4. CODE
+        final code = (project['projectCode'] ?? project['project_code'] ?? project['code'] ?? '').toString().trim();
+
         return {
-          'id': project['projectId'] ?? 0,
+          'id': project['projectId'] ?? project['project_id'] ?? 0,
           'psId': d['id'],
           'name': pName,
           'client': client['name'] ?? 'No Client',
-          'location': project['city'] ?? 'N/A',
-          'area': project['totalBuiltUpArea']?.toString() ?? 'N/A',
+          'location': (city.isNotEmpty && city != 'null') ? city : 'N/A',
+          'address': (fullAddress.isNotEmpty && fullAddress != 'null') ? fullAddress : 'N/A',
+          'area': area,
+          'code': code.isNotEmpty ? code : '—',
           'type': 'Architectural',
           'pct': 0.0,
-          'status': _normalizeStatus(project['projectStatus'] ?? 'PLANNING'),
-          'budget': 'N/A',
+          'status': _normalizeStatus((project['projectStatus'] ?? project['project_status'] ?? 'PLANNING').toString()),
           'team': ['YW'],
-          'start': _formatDate(d['postSalesdateTime']),
-          'deadline': _formatDate(project['projectExpectedEndDate']),
+          'start': _formatDate((project['projectStartDateTime'] ?? project['project_start_date_time'] ?? d['postSalesdateTime'])?.toString()),
+          'deadline': _formatDate((project['projectExpectedEndDate'] ?? project['project_expected_end_date'])?.toString()),
           'updates': 0,
+          '_raw': project,
         };
       }).toList();
 
@@ -241,6 +468,21 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           _projects = mappedProjects;
           _isLoading = false;
         });
+
+        // BACKGROUND SYNC: Fill in the "N/A" holes left by the shallow list API
+        for (var p in mappedProjects) {
+          if (p['location'] == 'N/A' || p['address'] == 'N/A') {
+            // Slight delay between background calls to avoid overwhelming the server
+            Future.delayed(
+              Duration(milliseconds: 500 * mappedProjects.indexOf(p)),
+              () {
+                if (mounted && _detailId == null) {
+                  _fetchFullProjectDetails(p['id'] as int, silent: true);
+                }
+              },
+            );
+          }
+        }
       }
     } catch (e) {
       debugPrint("FETCH PROJECTS ERROR: $e");
@@ -281,7 +523,11 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     try {
       final parts = ddMMyyyy.split('/');
       if (parts.length == 3) {
-        final date = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+        final date = DateTime(
+          int.parse(parts[2]),
+          int.parse(parts[1]),
+          int.parse(parts[0]),
+        );
         return date.toIso8601String();
       }
       return DateTime.parse(ddMMyyyy).toIso8601String();
@@ -322,7 +568,29 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   Widget build(BuildContext context) {
     if (_isEditing) return _buildEditScreen();
     if (_showCreateForm) return _buildCreateForm();
-    if (_detailId != null) return _buildDetail(_detailId!);
+    if (_detailId != null) {
+      return PostSaleDetailView(
+        projectId: _detailId!,
+        onBack: () => setState(() => _detailId = null),
+        onEdit: (data) {
+          setState(() {
+            // Mapping the dynamic POST-SALE graph back to what the edit form expects
+            final projectNode = data['project'] ?? {};
+            final p = Map<String, dynamic>.from(projectNode);
+            
+            // Robustly extract the project ID to avoid int/null subtype crashes
+            final rawId = projectNode['projectId'] ?? projectNode['id'] ?? projectNode['project_id'];
+            p['id'] = rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '0') ?? 0;
+            p['client'] = data['client']?['name'] ?? 'Unknown';
+            p['psId'] = data['id']; // PostSale record ID
+            
+            _selectedProject = p;
+            _initEditForm(p);
+            _isEditing = true;
+          });
+        },
+      );
+    }
     return _buildList();
   }
 
@@ -336,16 +604,30 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           children: [
             const Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 20),
-            const Text("Server Communication Error", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+            const Text(
+              "Server Communication Error",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.onSurface,
+              ),
+            ),
             const SizedBox(height: 8),
-            const Text("We couldn't retrieve the project details from the backend. This might be a temporary issue or an authentication timeout.", 
-              textAlign: TextAlign.center, style: TextStyle(color: AppColors.onSurfaceVariant)),
+            const Text(
+              "We couldn't retrieve the project details from the backend. This might be a temporary issue or an authentication timeout.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.onSurfaceVariant),
+            ),
             const SizedBox(height: 32),
             GoldGradientButton(
               text: "Retry Connection",
               onTap: () {
-                 final pid = _selectedProject?['projectId'] ?? _selectedProject?['id'];
-                 if (pid != null) _fetchFullProjectDetails(pid is int ? pid : int.parse(pid.toString()));
+                final pid =
+                    _selectedProject?['projectId'] ?? _selectedProject?['id'];
+                if (pid != null)
+                  _fetchFullProjectDetails(
+                    pid is int ? pid : int.parse(pid.toString()),
+                  );
               },
             ),
             const SizedBox(height: 12),
@@ -358,9 +640,10 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       );
     }
 
-    final statusKey = (_editCtrls['projectStatus']?.text ?? 'PLANNING').toUpperCase();
+    final statusKey = (_editCtrls['projectStatus']?.text ?? 'PLANNING')
+        .toUpperCase();
     final statusCfg = _STATUS_CONFIG[statusKey] ?? _STATUS_CONFIG['PLANNING']!;
-    
+
     // Use absolute screen dimensions to bypass "infinite width" errors from parent scrollviews
     final size = MediaQuery.of(context).size;
     final screenWidth = size.width;
@@ -368,11 +651,19 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
     return Container(
       width: screenWidth,
-      height: screenHeight * 0.85, // Fixed height to satisfy the dashboard's constraints
+      height:
+          screenHeight *
+          0.85, // Fixed height to satisfy the dashboard's constraints
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, -5))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -404,27 +695,50 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
   Widget _buildEditHeader(Map<String, dynamic> statusCfg) {
     return Container(
-      padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 10, 20, 20),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.of(context).padding.top + 10,
+        20,
+        20,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5))),
+        border: Border(
+          bottom: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
+        ),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              IconButton(onPressed: () => setState(() => _isEditing = false), icon: const Icon(Icons.close_rounded)),
+              IconButton(
+                onPressed: () => setState(() => _isEditing = false),
+                icon: const Icon(Icons.close_rounded),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text("Editing Project", style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
-                    Text(_editCtrls['projectName']?.text ?? "Untitled", 
+                    const Text(
+                      "Editing Project",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppColors.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      _editCtrls['projectName']?.text ?? "Untitled",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.onSurface)),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -433,7 +747,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                 text: _isSaving ? '...' : 'Save',
                 icon: _isSaving ? null : Icons.save_rounded,
                 onTap: _isSaving ? null : _saveProjectChanges,
-                width: 95, 
+                width: 95,
                 verticalPadding: 8,
               ),
             ],
@@ -441,11 +755,20 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           const SizedBox(height: 12),
           Row(
             children: [
-              _statusChipSmall(_editCtrls['projectStatus']?.text ?? 'PLANNING', statusCfg),
+              _statusChipSmall(
+                _editCtrls['projectStatus']?.text ?? 'PLANNING',
+                statusCfg,
+              ),
               const SizedBox(width: 8),
-              _chipSmall('📍 ${_editCtrls['city']?.text}', AppColors.surfaceContainerLow),
+              _chipSmall(
+                '📍 ${_editCtrls['city']?.text}',
+                AppColors.surfaceContainerLow,
+              ),
               const SizedBox(width: 8),
-              _chipSmall('ID: ${_selectedProject!['psId']}', AppColors.surfaceContainerLow),
+              _chipSmall(
+                'ID: ${_selectedProject!['psId']}',
+                AppColors.surfaceContainerLow,
+              ),
             ],
           ),
         ],
@@ -466,7 +789,9 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       height: 50,
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5))),
+        border: Border(
+          bottom: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
+        ),
       ),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -479,13 +804,32 @@ class _ProjectsSectionState extends State<ProjectsSection> {
             child: Container(
               margin: const EdgeInsets.only(right: 20),
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: active ? AppColors.primary : Colors.transparent, width: 2.5)),
+                border: Border(
+                  bottom: BorderSide(
+                    color: active ? AppColors.primary : Colors.transparent,
+                    width: 2.5,
+                  ),
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(tabs[i]['icon'] as IconData, size: 18, color: active ? AppColors.primary : AppColors.onSurfaceVariant),
+                  Icon(
+                    tabs[i]['icon'] as IconData,
+                    size: 18,
+                    color: active
+                        ? AppColors.primary
+                        : AppColors.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 8),
-                  Text(tabs[i]['label'] as String, style: TextStyle(fontWeight: active ? FontWeight.bold : FontWeight.normal, color: active ? AppColors.primary : AppColors.onSurfaceVariant)),
+                  Text(
+                    tabs[i]['label'] as String,
+                    style: TextStyle(
+                      fontWeight: active ? FontWeight.bold : FontWeight.normal,
+                      color: active
+                          ? AppColors.primary
+                          : AppColors.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -499,23 +843,60 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _editField('PROJECT NAME', _editCtrls['projectName'] ?? TextEditingController(), "e.g. Adhya Ratan"),
+        _editField(
+          'PROJECT NAME',
+          _editCtrls['projectName'] ?? TextEditingController(),
+          "e.g. Adhya Ratan",
+        ),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _editField('PROJECT CODE', _editCtrls['projectCode'] ?? TextEditingController(), "ABC-001")),
+            Expanded(
+              child: _editField(
+                'PROJECT CODE',
+                _editCtrls['projectCode'] ?? TextEditingController(),
+                "ABC-001",
+              ),
+            ),
             const SizedBox(width: 16),
-            Expanded(child: _editField('PERMANENT ID', _editCtrls['permanentProjectId'] ?? TextEditingController(), "P-2026-X")),
+            Expanded(
+              child: _editField(
+                'PERMANENT ID',
+                _editCtrls['permanentProjectId'] ?? TextEditingController(),
+                "P-2026-X",
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
-        _editField('DESCRIPTION', _editCtrls['projectDetails'] ?? TextEditingController(), "Detailed project description...", lines: 3),
+        _editField(
+          'DESCRIPTION',
+          _editCtrls['projectDetails'] ?? TextEditingController(),
+          "Detailed project description...",
+          lines: 3,
+        ),
         const SizedBox(height: 24),
-        const Text("STATUS", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1, color: AppColors.onSurfaceVariant)),
+        const Text(
+          "STATUS",
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(height: 12),
         _buildEditStatusPicker(),
         const SizedBox(height: 24),
-        const Text("PRIORITY", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1, color: AppColors.onSurfaceVariant)),
+        const Text(
+          "PRIORITY",
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(height: 12),
         _buildEditPriorityPicker(),
       ],
@@ -526,46 +907,113 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _editField('ADDRESS', _editCtrls['address'] ?? TextEditingController(), "Full project address", lines: 2),
+        _editField(
+          'ADDRESS',
+          _editCtrls['address'] ?? TextEditingController(),
+          "Full project address",
+          lines: 2,
+        ),
         const SizedBox(height: 16),
-        _editField('CITY', _editCtrls['city'] ?? TextEditingController(), "e.g. Pune"),
+        _editField(
+          'CITY',
+          _editCtrls['city'] ?? TextEditingController(),
+          "e.g. Pune",
+        ),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _editField('LATITUDE', _editCtrls['latitude'] ?? TextEditingController(), "18.5204", type: TextInputType.number)),
+            Expanded(
+              child: _editField(
+                'LATITUDE',
+                _editCtrls['latitude'] ?? TextEditingController(),
+                "18.5204",
+                type: TextInputType.number,
+              ),
+            ),
             const SizedBox(width: 16),
-            Expanded(child: _editField('LONGITUDE', _editCtrls['longitude'] ?? TextEditingController(), "73.8567", type: TextInputType.number)),
+            Expanded(
+              child: _editField(
+                'LONGITUDE',
+                _editCtrls['longitude'] ?? TextEditingController(),
+                "73.8567",
+                type: TextInputType.number,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
-        _editField('GOOGLE MAPS LINK', _editCtrls['googlePlace'] ?? TextEditingController(), "Paste share link here", icon: Icons.map_outlined),
+        _editField(
+          'GOOGLE MAPS LINK',
+          _editCtrls['googlePlace'] ?? TextEditingController(),
+          "Paste share link here",
+          icon: Icons.map_outlined,
+        ),
       ],
     );
   }
 
   Widget _buildEditAreaTab() {
     final plot = double.tryParse(_editCtrls['plotArea']?.text ?? '0') ?? 0;
-    final built = double.tryParse(_editCtrls['totalBuiltUpArea']?.text ?? '0') ?? 0;
-    final carpet = double.tryParse(_editCtrls['totalCarpetArea']?.text ?? '0') ?? 0;
-    
+    final built =
+        double.tryParse(_editCtrls['totalBuiltUpArea']?.text ?? '0') ?? 0;
+    final carpet =
+        double.tryParse(_editCtrls['totalCarpetArea']?.text ?? '0') ?? 0;
+
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
         Row(
           children: [
-            Expanded(child: _editField('PLOT AREA', _editCtrls['plotArea'] ?? TextEditingController(), "sq.ft", type: TextInputType.number)),
+            Expanded(
+              child: _editField(
+                'PLOT AREA',
+                _editCtrls['plotArea'] ?? TextEditingController(),
+                "sq.ft",
+                type: TextInputType.number,
+              ),
+            ),
             const SizedBox(width: 16),
-            Expanded(child: _editField('TOTAL BUILT-UP', _editCtrls['totalBuiltUpArea'] ?? TextEditingController(), "sq.ft", type: TextInputType.number)),
+            Expanded(
+              child: _editField(
+                'TOTAL BUILT-UP',
+                _editCtrls['totalBuiltUpArea'] ?? TextEditingController(),
+                "sq.ft",
+                type: TextInputType.number,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
-        _editField('TOTAL CARPET AREA', _editCtrls['totalCarpetArea'] ?? TextEditingController(), "sq.ft", type: TextInputType.number),
+        _editField(
+          'TOTAL CARPET AREA',
+          _editCtrls['totalCarpetArea'] ?? TextEditingController(),
+          "sq.ft",
+          type: TextInputType.number,
+        ),
         const SizedBox(height: 30),
-        const Text("AREA SUMMARY VISUALIZATION", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1, color: AppColors.onSurfaceVariant)),
+        const Text(
+          "AREA SUMMARY VISUALIZATION",
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(height: 20),
         _buildAreaBar("Plot Area", plot, Colors.blue.shade100, Colors.blue),
-        _buildAreaBar("Built-up Area", built, Colors.orange.shade100, Colors.orange),
-        _buildAreaBar("Carpet Area", carpet, Colors.green.shade100, Colors.green),
+        _buildAreaBar(
+          "Built-up Area",
+          built,
+          Colors.orange.shade100,
+          Colors.orange,
+        ),
+        _buildAreaBar(
+          "Carpet Area",
+          carpet,
+          Colors.green.shade100,
+          Colors.green,
+        ),
       ],
     );
   }
@@ -574,13 +1022,27 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _editField('CREATED AT', _editCtrls['projectCreatedDateTime'] ?? TextEditingController(), "Read-only", readOnly: true),
+        _editField(
+          'CREATED AT',
+          _editCtrls['projectCreatedDateTime'] ?? TextEditingController(),
+          "Read-only",
+          readOnly: true,
+        ),
         const SizedBox(height: 16),
-        _editDateField('PROJECT START DATE', _editCtrls['projectStartDateTime'] ?? TextEditingController(),),
+        _editDateField(
+          'PROJECT START DATE',
+          _editCtrls['projectStartDateTime'] ?? TextEditingController(),
+        ),
         const SizedBox(height: 16),
-        _editDateField('EXPECTED END DATE', _editCtrls['projectExpectedEndDate'] ?? TextEditingController(),),
+        _editDateField(
+          'EXPECTED END DATE',
+          _editCtrls['projectExpectedEndDate'] ?? TextEditingController(),
+        ),
         const SizedBox(height: 16),
-        _editDateField('ACTUAL END DATE', _editCtrls['projectEndDateTime'] ?? TextEditingController(),),
+        _editDateField(
+          'ACTUAL END DATE',
+          _editCtrls['projectEndDateTime'] ?? TextEditingController(),
+        ),
       ],
     );
   }
@@ -591,13 +1053,27 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 120, height: 120,
-            decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(20)),
-            child: const Icon(Icons.add_photo_alternate_rounded, size: 40, color: AppColors.outline),
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.add_photo_alternate_rounded,
+              size: 40,
+              color: AppColors.outline,
+            ),
           ),
           const SizedBox(height: 16),
-          const Text("Project Logo Management", style: TextStyle(fontWeight: FontWeight.bold)),
-          const Text("Coming soon: Logo upload and preview", style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant)),
+          const Text(
+            "Project Logo Management",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const Text(
+            "Coming soon: Logo upload and preview",
+            style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+          ),
         ],
       ),
     );
@@ -606,29 +1082,68 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   Widget _buildEditFooter() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)))),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
+        ),
+      ),
       child: Row(
         children: [
-          Expanded(child: OutlinedButton(onPressed: () => setState(() => _isEditing = false), child: const Text("Discard Changes"))),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => setState(() => _isEditing = false),
+              child: const Text("Discard Changes"),
+            ),
+          ),
           const SizedBox(width: 16),
-          Expanded(child: GoldGradientButton(text: "Save Changes", onTap: _saveProjectChanges)),
+          Expanded(
+            child: GoldGradientButton(
+              text: "Save Changes",
+              onTap: _saveProjectChanges,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _editField(String label, TextEditingController ctrl, String hintText, {int lines = 1, TextInputType type = TextInputType.text, bool readOnly = false, IconData? icon}) {
+  Widget _editField(
+    String label,
+    TextEditingController ctrl,
+    String hintText, {
+    int lines = 1,
+    TextInputType type = TextInputType.text,
+    bool readOnly = false,
+    IconData? icon,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1, color: AppColors.onSurfaceVariant)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(height: 8),
         TextField(
-          controller: ctrl, maxLines: lines, keyboardType: type, readOnly: readOnly,
+          controller: ctrl,
+          maxLines: lines,
+          keyboardType: type,
+          readOnly: readOnly,
           decoration: InputDecoration(
-            hintText: hintText, prefixIcon: icon != null ? Icon(icon, size: 18) : null,
-            filled: readOnly, fillColor: readOnly ? AppColors.surfaceContainerLow : null,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.outlineVariant)),
+            hintText: hintText,
+            prefixIcon: icon != null ? Icon(icon, size: 18) : null,
+            filled: readOnly,
+            fillColor: readOnly ? AppColors.surfaceContainerLow : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.outlineVariant),
+            ),
           ),
           onChanged: (_) => setState(() {}),
         ),
@@ -639,10 +1154,23 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   Widget _editDateField(String label, TextEditingController ctrl) {
     return GestureDetector(
       onTap: () async {
-        final date = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime(2100));
-        if (date != null) setState(() => ctrl.text = DateFormat('dd/MM/yyyy').format(date));
+        final date = await showDatePicker(
+          context: context,
+          initialDate: DateTime.now(),
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+        );
+        if (date != null)
+          setState(() => ctrl.text = DateFormat('dd/MM/yyyy').format(date));
       },
-      child: AbsorbPointer(child: _editField(label, ctrl, "Select date", icon: Icons.calendar_month_rounded)),
+      child: AbsorbPointer(
+        child: _editField(
+          label,
+          ctrl,
+          "Select date",
+          icon: Icons.calendar_month_rounded,
+        ),
+      ),
     );
   }
 
@@ -652,9 +1180,26 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(fontSize: 12)), Text('${val.toStringAsFixed(0)} sq.ft', style: const TextStyle(fontWeight: FontWeight.bold))]),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label, style: const TextStyle(fontSize: 12)),
+              Text(
+                '${val.toStringAsFixed(0)} sq.ft',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
           const SizedBox(height: 6),
-          ClipRRect(borderRadius: BorderRadius.circular(4), child: LinearProgressIndicator(value: (val / 10000).clamp(0.0, 1.0), backgroundColor: bg, color: bar, minHeight: 8)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (val / 10000).clamp(0.0, 1.0),
+              backgroundColor: bg,
+              color: bar,
+              minHeight: 8,
+            ),
+          ),
         ],
       ),
     );
@@ -662,11 +1207,13 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
   Widget _buildEditStatusPicker() {
     return Wrap(
-      spacing: 8, runSpacing: 8,
+      spacing: 8,
+      runSpacing: 8,
       children: _STATUS_CONFIG.entries.map((e) {
         bool active = _editCtrls['projectStatus']?.text == e.key;
         return GestureDetector(
-          onTap: () => setState(() => _editCtrls['projectStatus']?.text = e.key),
+          onTap: () =>
+              setState(() => _editCtrls['projectStatus']?.text = e.key),
           child: _statusChipSmall(e.key, e.value, active: active),
         );
       }).toList(),
@@ -675,9 +1222,21 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
   Widget _buildEditPriorityPicker() {
     final priorities = {
-      'HIGH': {'label': 'High', 'bg': const Color(0xFFFEF2F2), 'fg': const Color(0xFF991B1B)},
-      'MEDIUM': {'label': 'Medium', 'bg': const Color(0xFFFEF9C3), 'fg': const Color(0xFF854D0E)},
-      'LOW': {'label': 'Low', 'bg': const Color(0xFFEFF6FF), 'fg': const Color(0xFF1E40AF)},
+      'HIGH': {
+        'label': 'High',
+        'bg': const Color(0xFFFEF2F2),
+        'fg': const Color(0xFF991B1B),
+      },
+      'MEDIUM': {
+        'label': 'Medium',
+        'bg': const Color(0xFFFEF9C3),
+        'fg': const Color(0xFF854D0E),
+      },
+      'LOW': {
+        'label': 'Low',
+        'bg': const Color(0xFFEFF6FF),
+        'fg': const Color(0xFF1E40AF),
+      },
     };
     return Wrap(
       spacing: 8,
@@ -690,44 +1249,112 @@ class _ProjectsSectionState extends State<ProjectsSection> {
             decoration: BoxDecoration(
               color: active ? (e.value['bg'] as Color) : Colors.white,
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: active ? (e.value['fg'] as Color) : AppColors.outlineVariant),
+              border: Border.all(
+                color: active
+                    ? (e.value['fg'] as Color)
+                    : AppColors.outlineVariant,
+              ),
             ),
-            child: Text(e.value['label'] as String, style: TextStyle(color: active ? (e.value['fg'] as Color) : AppColors.onSurfaceVariant, fontWeight: FontWeight.bold, fontSize: 12)),
+            child: Text(
+              e.value['label'] as String,
+              style: TextStyle(
+                color: active
+                    ? (e.value['fg'] as Color)
+                    : AppColors.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
           ),
         );
       }).toList(),
     );
   }
 
-  Widget _statusChipSmall(String key, Map<String, dynamic> cfg, {bool active = true}) {
+  Widget _statusChipSmall(
+    String key,
+    Map<String, dynamic> cfg, {
+    bool active = true,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: active ? cfg['bg'] : Colors.white,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: active ? cfg['dot'] : AppColors.outlineVariant),
+        border: Border.all(
+          color: active ? cfg['dot'] : AppColors.outlineVariant,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 6, height: 6, decoration: BoxDecoration(color: cfg['dot'] as Color, shape: BoxShape.circle)),
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: cfg['dot'] as Color,
+              shape: BoxShape.circle,
+            ),
+          ),
           const SizedBox(width: 6),
-          Text(cfg['label'] as String, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: active ? cfg['color'] : AppColors.onSurfaceVariant)),
+          Text(
+            cfg['label'] as String,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: active ? cfg['color'] : AppColors.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _chipSmall(String label, Color bg) {
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)), child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600)));
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+      ),
+    );
   }
 
   final Map<String, Map<String, dynamic>> _STATUS_CONFIG = {
-    'PLANNING': {'label': 'Planning', 'bg': const Color(0xFFE0F2FE), 'color': const Color(0xFF0369A1), 'dot': const Color(0xFF0284C7)},
-    'IN_PROGRESS': {'label': 'In Progress', 'bg': const Color(0xFFFEF9C3), 'color': const Color(0xFF854D0E), 'dot': const Color(0xFFCA8A04)},
-    'COMPLETED': {'label': 'Completed', 'bg': const Color(0xFFDCFCE7), 'color': const Color(0xFF166534), 'dot': const Color(0xFF16A34A)},
-    'ON_HOLD': {'label': 'On Hold', 'bg': const Color(0xFFF3F4F6), 'color': const Color(0xFF374151), 'dot': const Color(0xFF6B7280)},
-    'REVIEW': {'label': 'In Review', 'bg': const Color(0xFFF3E8FF), 'color': const Color(0xFF6B21A8), 'dot': const Color(0xFF9333EA)},
+    'PLANNING': {
+      'label': 'Planning',
+      'bg': const Color(0xFFE0F2FE),
+      'color': const Color(0xFF0369A1),
+      'dot': const Color(0xFF0284C7),
+    },
+    'IN_PROGRESS': {
+      'label': 'In Progress',
+      'bg': const Color(0xFFFEF9C3),
+      'color': const Color(0xFF854D0E),
+      'dot': const Color(0xFFCA8A04),
+    },
+    'COMPLETED': {
+      'label': 'Completed',
+      'bg': const Color(0xFFDCFCE7),
+      'color': const Color(0xFF166534),
+      'dot': const Color(0xFF16A34A),
+    },
+    'ON_HOLD': {
+      'label': 'On Hold',
+      'bg': const Color(0xFFF3F4F6),
+      'color': const Color(0xFF374151),
+      'dot': const Color(0xFF6B7280),
+    },
+    'REVIEW': {
+      'label': 'In Review',
+      'bg': const Color(0xFFF3E8FF),
+      'color': const Color(0xFF6B21A8),
+      'dot': const Color(0xFF9333EA),
+    },
   };
 
   Widget _buildList() {
@@ -798,7 +1425,11 @@ class _ProjectsSectionState extends State<ProjectsSection> {
               (p) => Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: GestureDetector(
-                  onTap: () => setState(() => _detailId = p['id'] as int),
+                  onTap: () {
+                    setState(() => _detailId = p['id'] as int);
+                    // Fetch full data silently to replace "N/A" with real database data
+                    _fetchFullProjectDetails(p['id'] as int, silent: true);
+                  },
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppColors.surfaceContainerLowest,
@@ -904,9 +1535,12 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                               const SizedBox(height: 14),
                               Row(
                                 children: [
-                                  _infoBox('Budget', p['budget'] as String),
+                                  _infoBox('Code', p['code'] as String? ?? '—'),
                                   const SizedBox(width: 8),
-                                  _infoBox('Area', p['area'] as String),
+                                  _infoBox(
+                                    'Area',
+                                    p['area'] as String? ?? 'N/A',
+                                  ),
                                   const SizedBox(width: 8),
                                   _infoBox('Updates', '${p['updates']}'),
                                 ],
@@ -1675,7 +2309,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                 Switch(
                   value: _isNotified,
                   onChanged: (v) => setState(() => _isNotified = v),
-                  activeColor: AppColors.primary,
+                  activeThumbColor: AppColors.primary,
                 ),
               ],
             ),
@@ -1890,30 +2524,6 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
   Widget _buildDetail(int id) {
     final p = _projects.firstWhere((x) => x['id'] == id);
-    final teamMembers = [
-      {'name': 'Rahul Kapoor', 'role': 'Senior Architect', 'init': 'RK'},
-      {'name': 'Priya Singh', 'role': 'Interior Designer', 'init': 'PS'},
-      {'name': 'Amit Joshi', 'role': 'Site Engineer', 'init': 'AJ'},
-      {'name': 'Varun Rao', 'role': '3D Visualizer', 'init': 'VR'},
-    ];
-    final activity = [
-      {
-        'icon': Icons.photo_camera_rounded,
-        'text': 'Amit uploaded 8 site progress photos',
-        'time': '2 hrs ago',
-      },
-      {
-        'icon': Icons.task_alt_rounded,
-        'text': 'Floor plan drawings marked complete',
-        'time': 'Yesterday',
-      },
-      {
-        'icon': Icons.comment_rounded,
-        'text': 'Client approved plumbing layout',
-        'time': '3 days ago',
-      },
-    ];
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       child: Column(
@@ -2029,11 +2639,11 @@ class _ProjectsSectionState extends State<ProjectsSection> {
             childAspectRatio: 2.5,
             children:
                 [
-                      ['Budget', p['budget'] as String],
-                      ['Area', p['area'] as String],
+                      ['Code', p['code'] as String? ?? '—'],
+                      ['Area', p['area'] as String? ?? 'N/A'],
                       ['Start', p['start'] as String],
                       ['Deadline', p['deadline'] as String],
-                      ['Phase', 'Construction'],
+                      ['Address', p['address'] as String? ?? 'N/A'],
                       ['Updates', '${p['updates']}'],
                     ]
                     .map(
@@ -2067,104 +2677,6 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                       ),
                     )
                     .toList(),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Project Team',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: AppColors.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...teamMembers.map(
-            (m) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: CardContainer(
-                padding: const EdgeInsets.all(14),
-                child: Row(
-                  children: [
-                    AvatarWidget(initials: m['init']!, size: 40, fontSize: 14),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          m['name']!,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: AppColors.onSurface,
-                          ),
-                        ),
-                        Text(
-                          m['role']!,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Recent Activity',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: AppColors.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...activity.map(
-            (a) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      a['icon'] as IconData,
-                      color: AppColors.primary,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            a['text'] as String,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.onSurface,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            a['time'] as String,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ),
         ],
       ),
