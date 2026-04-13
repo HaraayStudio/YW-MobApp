@@ -50,51 +50,44 @@ class TokenService {
   static late SharedPreferences _prefs;
  
  // 🔥 SAVE TOKENS (PERMANENT)
-    // Initialize SharedPreferences once
- 
   static Future<void> init() async {
     try {
       print("[TokenService] Initializing SharedPreferences...");
       _prefs = await SharedPreferences.getInstance()
-          .timeout(const Duration(seconds: 5));
-      await loadTokens();
-      print("[TokenService] Initialization successful. Tokens loaded.");
+          .timeout(const Duration(seconds: 4));
+      await _loadToMemory();
+      print("[TokenService] Initialization successful.");
     } catch (e) {
       print("[TokenService] ERROR during initialization: $e");
-      // Fallback: we still set _prefs to avoid late initialization errors if possible
-      // though getInstance failing is usually fatal.
     }
   }
-  static Future<void> saveTokens(
-      String access, String? refresh) async {
-    final prefs = await SharedPreferences.getInstance();
 
-    await prefs.setString('accessToken', access);
-    if (refresh != null) {
-      await prefs.setString('refreshToken', refresh);
-    }
+  // Private helper to populate memory variables
+  static Future<void> _loadToMemory() async {
+    accessToken = _prefs.getString('accessToken');
+    refreshToken = _prefs.getString('refreshToken');
+  }
 
-    // also keep in memory
+  static Future<void> saveTokens(String access, String? refresh) async {
     accessToken = access;
     refreshToken = refresh;
+
+    await _prefs.setString('accessToken', access);
+    if (refresh != null) {
+      await _prefs.setString('refreshToken', refresh);
+    }
   }
 
-  // 🔥 LOAD TOKENS (APP START)
+  // This is now redundant but kept for any external direct calls, 
+  // though we prefer init() + static accessors.
   static Future<void> loadTokens() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    accessToken = prefs.getString('accessToken');
-    refreshToken = prefs.getString('refreshToken');
+    await _loadToMemory();
   }
 
-  // 🔥 CLEAR TOKENS (LOGOUT)
   static Future<void> clearTokens() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.remove('accessToken');
-    await prefs.remove('refreshToken');
-
     accessToken = null;
     refreshToken = null;
+    await _prefs.remove('accessToken');
+    await _prefs.remove('refreshToken');
   }
 }

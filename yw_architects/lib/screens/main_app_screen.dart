@@ -30,6 +30,7 @@ import 'sections/clients_section.dart';
 import 'sections/reports_section.dart';
 import 'sections/notifications_section.dart';
 import 'sections/profile_section.dart';
+import 'sections/enquiry_section.dart';
 
 class MainAppScreen extends StatefulWidget {
   final AppUser user;
@@ -101,7 +102,10 @@ class _MainAppScreenState extends State<MainAppScreen> {
       case 'dashboard':     return _buildDashboard();
       case 'projects':      return ProjectsSection(user: widget.user, onToast: _toast, editProjectId: _projectToEdit);
       case 'tasks':         return TasksSection(user: widget.user, onToast: _toast);
-      case 'attendance':    return AttendanceSection(user: widget.user, onToast: _toast);
+      case 'attendance':    if ([UserRole.admin, UserRole.hr].contains(widget.user.role)) {
+                              return EmployeesSection(onToast: _toast, initialTabIndex: 1);
+                            }
+                            return AttendanceSection(user: widget.user, onToast: _toast);
       case 'leaves':        return LeavesSection(user: widget.user, onToast: _toast);
       case 'site':          return SitesScreen(
                               user: widget.user, 
@@ -120,6 +124,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
       case 'reports':       return ReportsSection(onToast: _toast);
       case 'notifications': return NotificationsSection(onToast: _toast);
       case 'profile':       return ProfileSection(user: widget.user, onLogout: widget.onLogout, onToast: _toast);
+      case 'enquiry':       return EnquirySection(user: widget.user, onToast: _toast);
       default:              return _buildDashboard();
     }
   }

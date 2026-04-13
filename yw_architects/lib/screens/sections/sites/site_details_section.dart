@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -10,6 +12,10 @@ import '../../../services/post_sales_service.dart';
 import '../../../services/project_service.dart';
 import '../../../services/site_visit_service.dart';
 import '../../../services/meeting_service.dart';
+import '../../../services/rera_service.dart';
+import '../../../services/stage_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart' as fp;
 
 class SiteDetailsSection extends StatefulWidget {
   final Site site;
@@ -32,7 +38,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
   late TabController _tabController;
   late Site _detailedSite;
   bool _isLoading = false;
-  
+
   // NUCLEAR DEBUG STORAGE
   String? _rawPostSalesJson;
   String? _rawProjectJson;
@@ -100,15 +106,21 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       // Reads directly from raw JSON, no Site.fromJson() transformation.
       try {
         final raw = await ProjectService.getProjectById(idToFetch);
-        final meetingsRaw = await MeetingService.getMeetingsByProject(idToFetch);
+        final meetingsRaw = await MeetingService.getMeetingsByProject(
+          idToFetch,
+        );
+        final reraRaw = await ReraService.getReraByProjectId(idToFetch);
         if (mounted && raw != null) {
           _rawProjectJson = raw.toString();
           debugPrint("✅ RAW PROJECT FETCHED — keys: ${raw.keys.toList()}");
-          debugPrint("   city=${raw['city']}, address=${raw['address']}, priority=${raw['priority']}");
+          debugPrint(
+            "   city=${raw['city']}, address=${raw['address']}, priority=${raw['priority']}",
+          );
 
           // Helper: safely parse a double from dynamic value
-          double? parseDbl(dynamic v) =>
-              v == null ? null : (v is num ? v.toDouble() : double.tryParse(v.toString()));
+          double? parseDbl(dynamic v) => v == null
+              ? null
+              : (v is num ? v.toDouble() : double.tryParse(v.toString()));
 
           setState(() {
             _detailedSite = _detailedSite.copyWith(
@@ -122,10 +134,13 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               projectCode: (raw['projectCode'] ?? '').toString().isNotEmpty
                   ? raw['projectCode'].toString()
                   : _detailedSite.projectCode,
-              permanentProjectId: (raw['permanentProjectId'] ?? '').toString().isNotEmpty
+              permanentProjectId:
+                  (raw['permanentProjectId'] ?? '').toString().isNotEmpty
                   ? raw['permanentProjectId'].toString()
                   : _detailedSite.permanentProjectId,
-              projectDetails: raw['projectDetails']?.toString() ?? _detailedSite.projectDetails,
+              projectDetails:
+                  raw['projectDetails']?.toString() ??
+                  _detailedSite.projectDetails,
               logoUrl: raw['logoUrl']?.toString() ?? _detailedSite.logoUrl,
               priority: (raw['priority'] ?? '').toString().isNotEmpty
                   ? raw['priority'].toString()
@@ -143,30 +158,58 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
 
               // Area — read exactly like web app: p.plotArea, p.totalBuiltUpArea
               plotArea: parseDbl(raw['plotArea']) ?? _detailedSite.plotArea,
-              builtUpArea: parseDbl(raw['totalBuiltUpArea']) ?? _detailedSite.builtUpArea,
-              totalCarpetArea: parseDbl(raw['totalCarpetArea']) ?? _detailedSite.totalCarpetArea,
+              builtUpArea:
+                  parseDbl(raw['totalBuiltUpArea']) ??
+                  _detailedSite.builtUpArea,
+              totalCarpetArea:
+                  parseDbl(raw['totalCarpetArea']) ??
+                  _detailedSite.totalCarpetArea,
 
               // Dates — read exactly like web app: p.projectCreatedDateTime etc.
-              createdAt: DateTime.tryParse(raw['projectCreatedDateTime']?.toString() ?? '')
-                  ?? _detailedSite.createdAt,
-              projectStartDateTime: DateTime.tryParse(raw['projectStartDateTime']?.toString() ?? '')
-                  ?? _detailedSite.projectStartDateTime,
-              projectExpectedEndDate: DateTime.tryParse(raw['projectExpectedEndDate']?.toString() ?? '')
-                  ?? _detailedSite.projectExpectedEndDate,
-              projectEndDateTime: DateTime.tryParse(raw['projectEndDateTime']?.toString() ?? '')
-                  ?? _detailedSite.projectEndDateTime,
+              createdAt:
+                  DateTime.tryParse(
+                    raw['projectCreatedDateTime']?.toString() ?? '',
+                  ) ??
+                  _detailedSite.createdAt,
+              projectStartDateTime:
+                  DateTime.tryParse(
+                    raw['projectStartDateTime']?.toString() ?? '',
+                  ) ??
+                  _detailedSite.projectStartDateTime,
+              projectExpectedEndDate:
+                  DateTime.tryParse(
+                    raw['projectExpectedEndDate']?.toString() ?? '',
+                  ) ??
+                  _detailedSite.projectExpectedEndDate,
+              projectEndDateTime:
+                  DateTime.tryParse(
+                    raw['projectEndDateTime']?.toString() ?? '',
+                  ) ??
+                  _detailedSite.projectEndDateTime,
 
               // Team members — backend key is 'workingEmployees'
               team: (raw['workingEmployees'] as List?) ?? _detailedSite.team,
-              stages: (raw['stages'] as List?)?.map((s) => SiteStage.fromJson(s)).toList()
-                  ?? _detailedSite.stages,
-              structures: (raw['structures'] as List?)?.map((s) => SiteStructure.fromJson(s)).toList()
-                  ?? _detailedSite.structures,
-              visits: (raw['siteVisits'] as List?)?.map((v) => SiteVisit.fromJson(v)).toList()
-                  ?? _detailedSite.visits,
+              stages:
+                  (raw['stages'] as List?)
+                      ?.map((s) => SiteStage.fromJson(s))
+                      .toList() ??
+                  _detailedSite.stages,
+              structures:
+                  (raw['structures'] as List?)
+                      ?.map((s) => SiteStructure.fromJson(s))
+                      .toList() ??
+                  _detailedSite.structures,
+              visits:
+                  (raw['siteVisits'] as List?)
+                      ?.map((v) => SiteVisit.fromJson(v))
+                      .toList() ??
+                  _detailedSite.visits,
               meetings: meetingsRaw.map((m) => Meeting.fromJson(m)).toList(),
-              reraProjects: (raw['reraProjects'] as List?)?.map((r) => ReraProject.fromJson(r)).toList()
-                  ?? _detailedSite.reraProjects,
+              reraProjects:
+                  (raw['reraProjects'] as List?)
+                      ?.map((r) => ReraProject.fromJson(r))
+                      .toList() ??
+                  [],
             );
           });
 
@@ -184,7 +227,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
 
       // SECONDARY: PostSales only used for the postSalesId number
       try {
-        final postSaleMap = await PostSalesService.getPostSaleByProjectId(idToFetch);
+        final postSaleMap = await PostSalesService.getPostSaleByProjectId(
+          idToFetch,
+        );
         if (mounted && postSaleMap != null) {
           _rawPostSalesJson = jsonEncode(postSaleMap);
           final int? psId = postSaleMap['id'] as int?;
@@ -197,7 +242,6 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       } catch (e) {
         debugPrint("⚠️ POST-SALE FETCH ERROR: $e");
       }
-
     } catch (e) {
       debugPrint("GLOBAL FETCH ERROR: $e");
     } finally {
@@ -221,7 +265,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         'Concept Drawings',
         'Massing Study',
         'Basic Floor Plans',
-        'Client Approval on Concept'
+        'Client Approval on Concept',
       ],
     },
     {
@@ -233,7 +277,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         'Sections & Elevations',
         'Parking Layout',
         'Area Statement',
-        '3D Views'
+        '3D Views',
       ],
     },
     {
@@ -245,7 +289,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         '7/12 Extract / Property Card',
         'Latest Demarcation Copy',
         'Power of Attorney',
-        'DP Opinion'
+        'DP Opinion',
       ],
     },
     {
@@ -260,7 +304,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             'Application',
             'Water Line Layout',
             'Tank Capacity Calculation',
-            'Fire Water Requirement'
+            'Fire Water Requirement',
           ],
         },
         {
@@ -271,7 +315,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             'Drainage Layout',
             'Hamipatr',
             'STP Calculation',
-            'Google Location Map'
+            'Google Location Map',
           ],
         },
         {
@@ -279,7 +323,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           'items': [
             'Tree Marking Plan',
             'Site Images',
-            'Plot Area as per 7/12'
+            'Plot Area as per 7/12',
           ],
         },
         {
@@ -289,7 +333,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             'Driveway Width Marking',
             'Entry/Exit Gate Width',
             'Ramp Details',
-            'Fire Water Calculations'
+            'Fire Water Calculations',
           ],
         },
         {
@@ -298,15 +342,12 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             'Elevation Drawing',
             'Section with Building Height',
             'Crane Height Marking',
-            'Monarch Report'
+            'Monarch Report',
           ],
         },
         {
           'group': 'C & D Waste NOC',
-          'items': [
-            'C&D Waste Calculation',
-            'Disposal Plan'
-          ],
+          'items': ['C&D Waste Calculation', 'Disposal Plan'],
         },
       ],
     },
@@ -318,7 +359,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         'Demarcation Nakal',
         'Demarcation K-Prat',
         'Tree Survey',
-        'DP Abhipray'
+        'DP Abhipray',
       ],
     },
     {
@@ -334,7 +375,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         'Challan Calculation & Payment',
         'Demand Sheet Entry',
         'Sanction Number Generation',
-        'Sanction Copy Collection'
+        'Sanction Copy Collection',
       ],
     },
     {
@@ -345,7 +386,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         'Application',
         'Sanctioned Plan Copy',
         'Commencement Certificate',
-        'Total Station Survey'
+        'Total Station Survey',
       ],
     },
     {
@@ -357,7 +398,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         'Structural Stability Certificate',
         'NA Order',
         'Water & Drainage NOCs',
-        'Condition Compliance'
+        'Condition Compliance',
       ],
     },
     {
@@ -371,7 +412,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           'items': [
             'Search & Title Report',
             'Ownership Documents',
-            'Prapatra A & B'
+            'Prapatra A & B',
           ],
         },
         {
@@ -379,7 +420,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           'items': [
             'TDR Undertaking',
             'Development Agreement',
-            'Sanctioned Plan'
+            'Sanctioned Plan',
           ],
         },
       ],
@@ -393,7 +434,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         'Foundation Work',
         'Superstructure',
         'Services Installation',
-        'Finishing Work'
+        'Finishing Work',
       ],
     },
     {
@@ -411,7 +452,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         'STP Certificate',
         'Consent to Operate / Establish',
         'Completion Certificate Approval',
-        'Final Outward & Certificate Collection'
+        'Final Outward & Certificate Collection',
       ],
     },
   ];
@@ -507,6 +548,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -519,8 +561,8 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               const SizedBox(width: 4),
               // Logo
               Container(
-                width: 64,
-                height: 64,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(16),
@@ -540,7 +582,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                         child: Text(
                           _detailedSite.siteName[0].toUpperCase(),
                           style: GoogleFonts.plusJakartaSans(
-                            fontSize: 24,
+                            fontSize: 22,
                             fontWeight: FontWeight.w800,
                             color: AppColors.primary,
                           ),
@@ -548,7 +590,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                       ),
               ),
               const SizedBox(width: 16),
-              // Name & Chips
+              // Name
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -559,49 +601,81 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
                         color: AppColors.onSurface,
+                        height: 1.2,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _SmallChip(
-                          text: _detailedSite.city.isNotEmpty
-                              ? _detailedSite.city.toUpperCase()
-                              : "LOCATION",
-                          icon: Icons.location_on_rounded,
-                          color: Colors.pink.shade50,
-                          textColor: Colors.pink.shade700,
-                        ),
-                        const SizedBox(width: 8),
-                        if (_detailedSite.priority != null && _detailedSite.priority!.isNotEmpty)
-                          _SmallChip(
-                            text: "${_detailedSite.priority!.toUpperCase()} PRIORITY",
-                            icon: null,
-                            color: Colors.red.shade50,
-                            textColor: Colors.red.shade700,
-                          ),
-                      ],
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              // Right side Actions
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Metadata Row (Chips on Left, Actions Stack on Right)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _SmallChip(
+                    text: _detailedSite.city.isNotEmpty
+                        ? _detailedSite.city.toUpperCase()
+                        : "LOCATION",
+                    icon: Icons.location_on_rounded,
+                    color: Colors.pink.shade50,
+                    textColor: Colors.pink.shade700,
+                  ),
+                  if (_detailedSite.priority != null &&
+                      _detailedSite.priority!.isNotEmpty)
+                    _SmallChip(
+                      text: "${_detailedSite.priority!.toUpperCase()} PRIORITY",
+                      icon: null,
+                      color: Colors.orange.shade50,
+                      textColor: Colors.orange.shade800,
+                    ),
+                ],
+              ),
+              // Action Stack: [Edit] -> [Status] -> [Date]
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _StatusBadge(status: _detailedSite.status),
-                  const SizedBox(height: 12),
-                  _EditSiteButton(onPressed: () => widget.onEditProject(_detailedSite.projectId > 0 ? _detailedSite.projectId : _detailedSite.id)),
-                  const SizedBox(height: 8),
-                    Text(
-                      _detailedSite.createdAt != null
-                          ? DateFormat('dd MMM yyyy').format(_detailedSite.createdAt!)
-                          : "—",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onSurfaceVariant,
+                  _EditSiteButton(
+                    onPressed: () => widget.onEditProject(
+                      _detailedSite.projectId > 0
+                          ? _detailedSite.projectId
+                          : _detailedSite.id,
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  _StatusBadge(status: _detailedSite.status),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 10,
+                        color: AppColors.onSurfaceVariant.withOpacity(0.5),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _detailedSite.createdAt != null
+                            ? DateFormat(
+                                'dd MMM yyyy',
+                              ).format(_detailedSite.createdAt!)
+                            : "—",
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -640,6 +714,8 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
   }
 
   Widget _buildStagesTab() {
+    final stages = _detailedSite.stages;
+
     return ListView(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -662,13 +738,24 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         ),
         const SizedBox(height: 12),
         // Stage Tiles
-        ..._mockStages.map((stage) => _StageTile(stage: stage)).toList(),
+        ...stages
+            .map(
+              (stage) => _StageTile(stage: stage, onRefresh: _fetchFullDetails),
+            )
+            .toList(),
         const SizedBox(height: 40),
       ],
     );
   }
 
   Widget _buildStagesSummaryCard() {
+    final stages = _detailedSite.stages;
+    final total = stages.length > 0 ? stages.length : 11;
+    final completed = stages.where((s) => s.status == 'COMPLETED').length;
+    final inProgress = stages.where((s) => s.status == 'IN_PROGRESS').length;
+    final notStarted = total - completed - inProgress;
+    final progress = total > 0 ? (completed / total) : 0.0;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -690,22 +777,22 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             children: [
               _StageStatItem(
                 label: "Total Phases",
-                value: "11",
+                value: total.toString(),
                 color: AppColors.primary,
               ),
               _StageStatItem(
                 label: "Completed",
-                value: "0",
+                value: completed.toString(),
                 color: AppColors.chipDoneFg,
               ),
               _StageStatItem(
                 label: "In Progress",
-                value: "0",
+                value: inProgress.toString(),
                 color: AppColors.chipProgressFg,
               ),
               _StageStatItem(
                 label: "Not Started",
-                value: "11",
+                value: notStarted.toString(),
                 color: AppColors.outline,
               ),
             ],
@@ -716,7 +803,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Overall: 0%", // TODO: Link to actual progress if available
+                "Overall: ${(progress * 100).toInt()}%",
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -729,7 +816,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           ClipRRect(
             borderRadius: BorderRadius.circular(99),
             child: LinearProgressIndicator(
-              value: 0.0,
+              value: progress,
               minHeight: 8,
               backgroundColor: AppColors.surfaceContainerHigh,
               valueColor: const AlwaysStoppedAnimation<Color>(
@@ -762,21 +849,25 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             label: "Total Stages",
             value: "11",
             color: AppColors.chipPlanningFg,
+            onTap: () => _tabController.animateTo(1),
           ),
           _SummaryItem(
             label: "Employees",
-            value: "4",
+            value: _detailedSite.team.length.toString(),
             color: AppColors.chipReviewFg,
+            onTap: () => _tabController.animateTo(3),
           ),
           _SummaryItem(
             label: "Site Visits",
-            value: "1",
+            value: _detailedSite.visits.length.toString(),
             color: AppColors.chipProgressFg,
+            onTap: () => _tabController.animateTo(4),
           ),
           _SummaryItem(
             label: "Structures",
-            value: "1",
+            value: _detailedSite.structures.length.toString(),
             color: AppColors.chipDoneFg,
+            onTap: () => _tabController.animateTo(5),
           ),
         ],
       ),
@@ -819,23 +910,46 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: Text("Nuclear Data Inspector", style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(
+          "Nuclear Data Inspector",
+          style: GoogleFonts.plusJakartaSans(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: SizedBox(
           width: double.maxFinite,
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _debugSection("Final UI Mapping", _detailedSite.toJson().toString()),
+                _debugSection(
+                  "Final UI Mapping",
+                  _detailedSite.toJson().toString(),
+                ),
                 const Divider(color: Colors.white24),
-                _debugSection("Raw Post-Sales API", _rawPostSalesJson ?? "Not Fetched Yet"),
+                _debugSection(
+                  "Raw Post-Sales API",
+                  _rawPostSalesJson ?? "Not Fetched Yet",
+                ),
                 const Divider(color: Colors.white24),
-                _debugSection("Raw Project API", _rawProjectJson ?? "Not Fetched Yet"),
+                _debugSection(
+                  "Raw Project API",
+                  _rawProjectJson ?? "Not Fetched Yet",
+                ),
                 const Divider(color: Colors.white24),
-                Text("Hint: Look for keys like 'city', 'address', or 'plot' in the blocks above.", 
-                  style: GoogleFonts.plusJakartaSans(color: Colors.blueAccent, fontSize: 12)),
+                Text(
+                  "Hint: Look for keys like 'city', 'address', or 'plot' in the blocks above.",
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.blueAccent,
+                    fontSize: 12,
+                  ),
+                ),
                 const SizedBox(height: 16),
-                _debugSection("Diagnostic Instructions", "If City/Address is missing but exists in the raw JSON below, please take a screenshot and tell me the key name."),
+                _debugSection(
+                  "Diagnostic Instructions",
+                  "If City/Address is missing but exists in the raw JSON below, please take a screenshot and tell me the key name.",
+                ),
               ],
             ),
           ),
@@ -854,13 +968,31 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: GoogleFonts.plusJakartaSans(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12)),
+        Text(
+          title,
+          style: GoogleFonts.plusJakartaSans(
+            color: Colors.amber,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
         const SizedBox(height: 8),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white12)),
-          child: SelectableText(content, style: const TextStyle(color: Colors.greenAccent, fontSize: 11, fontFamily: 'monospace')),
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: SelectableText(
+            content,
+            style: const TextStyle(
+              color: Colors.greenAccent,
+              fontSize: 11,
+              fontFamily: 'monospace',
+            ),
+          ),
         ),
         const SizedBox(height: 16),
       ],
@@ -1076,10 +1208,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
-        children: [
-          _buildDocumentTableHeader(),
-          _buildEmptyDocumentsState(),
-        ],
+        children: [_buildDocumentTableHeader(), _buildEmptyDocumentsState()],
       ),
     );
   }
@@ -1105,8 +1234,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     );
   }
 
-  Widget _headerText(String label,
-      {double flex = 1.0, TextAlign align = TextAlign.left}) {
+  Widget _headerText(
+    String label, {
+    double flex = 1.0,
+    TextAlign align = TextAlign.left,
+  }) {
     int flexInt = (flex * 10).toInt();
     return Expanded(
       flex: flexInt,
@@ -1219,7 +1351,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               ),
               ElevatedButton.icon(
                 onPressed: _showAddEmployeeDialog,
-                icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                icon: const Icon(
+                  Icons.add_rounded,
+                  size: 18,
+                  color: Colors.white,
+                ),
                 label: Text(
                   "Add Employee",
                   style: GoogleFonts.plusJakartaSans(
@@ -1231,7 +1367,10 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF705C00),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1247,7 +1386,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             Wrap(
               spacing: 16,
               runSpacing: 16,
-              children: _detailedSite.team.map((emp) => _buildEmployeeCard(emp)).toList(),
+              children: _detailedSite.team
+                  .map((emp) => _buildEmployeeCard(emp))
+                  .toList(),
             ),
         ],
       ),
@@ -1265,7 +1406,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.people_outline_rounded, size: 48, color: AppColors.outline.withOpacity(0.5)),
+            Icon(
+              Icons.people_outline_rounded,
+              size: 48,
+              color: AppColors.outline.withOpacity(0.5),
+            ),
             const SizedBox(height: 12),
             Text(
               "No employees assigned to this site",
@@ -1285,9 +1430,21 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     final String fName = emp['firstName']?.toString() ?? '';
     final String lName = emp['lastName']?.toString() ?? '';
     final String constructedName = '$fName $lName'.trim();
-    final String name = (emp['fullName'] ?? emp['name'] ?? (constructedName.isNotEmpty ? constructedName : 'Unknown Employee')).toString();
-    final String role = (emp['role'] ?? emp['designation'] ?? 'Employee').toString().replaceAll('_', ' ');
-    final String initials = name.split(' ').take(2).map((e) => e.isNotEmpty ? e[0].toUpperCase() : '').join('');
+    final String name =
+        (emp['fullName'] ??
+                emp['name'] ??
+                (constructedName.isNotEmpty
+                    ? constructedName
+                    : 'Unknown Employee'))
+            .toString();
+    final String role = (emp['role'] ?? emp['designation'] ?? 'Employee')
+        .toString()
+        .replaceAll('_', ' ');
+    final String initials = name
+        .split(' ')
+        .take(2)
+        .map((e) => e.isNotEmpty ? e[0].toUpperCase() : '')
+        .join('');
 
     return Container(
       width: (MediaQuery.of(context).size.width - 56) / 2,
@@ -1416,71 +1573,133 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               const SizedBox(height: 20),
               Expanded(
                 child: allEmployees.isEmpty
-                    ? Center(child: Text("No registered employees found", style: GoogleFonts.plusJakartaSans()))
+                    ? Center(
+                        child: Text(
+                          "No registered employees found",
+                          style: GoogleFonts.plusJakartaSans(),
+                        ),
+                      )
                     : ListView.separated(
                         itemCount: allEmployees.length,
-                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1),
                         itemBuilder: (context, index) {
                           final emp = allEmployees[index];
-                          final String fName = emp['firstName']?.toString() ?? '';
-                          final String lName = emp['lastName']?.toString() ?? '';
+                          final String fName =
+                              emp['firstName']?.toString() ?? '';
+                          final String lName =
+                              emp['lastName']?.toString() ?? '';
                           final String constructedName = '$fName $lName'.trim();
-                          final String name = (emp['fullName'] ?? emp['name'] ?? (constructedName.isNotEmpty ? constructedName : 'Unknown')).toString();
-                          final String role = (emp['role'] ?? emp['designation'] ?? 'Employee').toString().replaceAll('_', ' ');
-                          final bool alreadyAdded = _detailedSite.team.any((e) => e['id'] == emp['id']);
+                          final String name =
+                              (emp['fullName'] ??
+                                      emp['name'] ??
+                                      (constructedName.isNotEmpty
+                                          ? constructedName
+                                          : 'Unknown'))
+                                  .toString();
+                          final String role =
+                              (emp['role'] ?? emp['designation'] ?? 'Employee')
+                                  .toString()
+                                  .replaceAll('_', ' ');
+                          final bool alreadyAdded = _detailedSite.team.any(
+                            (e) => e['id'] == emp['id'],
+                          );
 
                           return ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: CircleAvatar(
-                              backgroundColor: AppColors.primary.withOpacity(0.1),
-                              child: Text(name[0].toUpperCase(), style: const TextStyle(color: AppColors.primary)),
+                              backgroundColor: AppColors.primary.withOpacity(
+                                0.1,
+                              ),
+                              child: Text(
+                                name[0].toUpperCase(),
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                ),
+                              ),
                             ),
                             title: Text(
                               name,
-                              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                              style: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             subtitle: Text(role.replaceAll('_', ' ')),
                             trailing: IconButton(
                               icon: Icon(
-                                alreadyAdded ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
-                                color: alreadyAdded ? AppColors.chipDoneFg : AppColors.primary,
+                                alreadyAdded
+                                    ? Icons.check_circle_rounded
+                                    : Icons.add_circle_outline_rounded,
+                                color: alreadyAdded
+                                    ? AppColors.chipDoneFg
+                                    : AppColors.primary,
                               ),
-                              onPressed: alreadyAdded ? null : () async {
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (_) => const Center(child: CircularProgressIndicator()),
-                                );
+                              onPressed: alreadyAdded
+                                  ? null
+                                  : () async {
+                                      showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (_) => const Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      );
 
-                                // We need to send ALL user IDs (existing + new) based on the web app's `userIds` array logic.
-                                final existingIds = _detailedSite.team.map((e) => e['id'] as int).toList();
-                                final newIds = [...existingIds, emp['id'] as int];
-                                
-                                int idToFetch = _detailedSite.projectId > 0 ? _detailedSite.projectId : _detailedSite.id;
-                                final success = await ProjectService.addUsersToProject(idToFetch, newIds);
+                                      // We need to send ALL user IDs (existing + new) based on the web app's `userIds` array logic.
+                                      final existingIds = _detailedSite.team
+                                          .map((e) => e['id'] as int)
+                                          .toList();
+                                      final newIds = [
+                                        ...existingIds,
+                                        emp['id'] as int,
+                                      ];
 
-                                if (mounted) Navigator.pop(context); // Close loading indicator
+                                      int idToFetch =
+                                          _detailedSite.projectId > 0
+                                          ? _detailedSite.projectId
+                                          : _detailedSite.id;
+                                      final success =
+                                          await ProjectService.addUsersToProject(
+                                            idToFetch,
+                                            newIds,
+                                          );
 
-                                if (success) {
-                                  if (mounted) Navigator.pop(context); // Close dialog
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text("$name added to site team successfully"),
-                                      behavior: SnackBarBehavior.floating,
-                                      backgroundColor: AppColors.primary,
-                                    ),
-                                  );
-                                  _fetchFullDetails(); // Refresh from backend
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Failed to add team member"),
-                                      behavior: SnackBarBehavior.floating,
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
-                              },
+                                      if (mounted)
+                                        Navigator.pop(
+                                          context,
+                                        ); // Close loading indicator
+
+                                      if (success) {
+                                        if (mounted)
+                                          Navigator.pop(
+                                            context,
+                                          ); // Close dialog
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              "$name added to site team successfully",
+                                            ),
+                                            behavior: SnackBarBehavior.floating,
+                                            backgroundColor: AppColors.primary,
+                                          ),
+                                        );
+                                        _fetchFullDetails(); // Refresh from backend
+                                      } else {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "Failed to add team member",
+                                            ),
+                                            behavior: SnackBarBehavior.floating,
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    },
                             ),
                           );
                         },
@@ -1514,7 +1733,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               ),
               ElevatedButton.icon(
                 onPressed: _showAddSiteVisitDialog,
-                icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                icon: const Icon(
+                  Icons.add_rounded,
+                  size: 18,
+                  color: Colors.white,
+                ),
                 label: Text(
                   "Add Site Visit",
                   style: GoogleFonts.plusJakartaSans(
@@ -1526,7 +1749,10 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF705C00),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1558,7 +1784,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.location_on_outlined, size: 48, color: AppColors.outline.withOpacity(0.5)),
+            Icon(
+              Icons.location_on_outlined,
+              size: 48,
+              color: AppColors.outline.withOpacity(0.5),
+            ),
             const SizedBox(height: 12),
             Text(
               "No site visits logged yet",
@@ -1616,16 +1846,23 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
-                    onTap: () {}, // Edit logic
+                    onTap: () => _showEditSiteVisitDialog(visit),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.edit_rounded, size: 12, color: AppColors.primary),
+                          const Icon(
+                            Icons.edit_rounded,
+                            size: 12,
+                            color: AppColors.primary,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             "Edit",
@@ -1647,14 +1884,98 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           _buildVisitDetailRow("Title", visit.title),
           const SizedBox(height: 8),
           _buildVisitDetailRow("Description", visit.description),
+          if (visit.photos.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(
+              "Photos (${visit.photos.length})",
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 60,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: visit.photos.length,
+                separatorBuilder: (c, i) => const SizedBox(width: 8),
+                itemBuilder: (c, i) => ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    visit.photos[i].imageUrl,
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                    errorBuilder: (c, e, s) => Container(
+                      color: Colors.grey.shade200,
+                      width: 60,
+                      height: 60,
+                      child: const Icon(Icons.broken_image, size: 20),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+          if (visit.documents.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: visit.documents
+                  .map(
+                    (doc) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3E5F5),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFE1BEE7)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.description,
+                            size: 14,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            doc.documentName,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
           const SizedBox(height: 8),
           _buildVisitDetailRow("Location Note", visit.locationNote ?? "N/A"),
           const SizedBox(height: 16),
           Row(
             children: [
-              _buildAttachmentBadge(Icons.camera_alt_rounded, "${visit.photoCount} Photo", const Color(0xFFF7F2E9)),
+              _buildAttachmentBadge(
+                Icons.camera_alt_rounded,
+                "${visit.photos.length} Photo",
+                const Color(0xFFF7F2E9),
+              ),
               const SizedBox(width: 12),
-              _buildAttachmentBadge(Icons.description_rounded, "${visit.docCount} Document", const Color(0xFFEEF2FF)),
+              _buildAttachmentBadge(
+                Icons.description_rounded,
+                "${visit.documents.length} Document",
+                const Color(0xFFEEF2FF),
+              ),
             ],
           ),
         ],
@@ -1716,6 +2037,937 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     );
   }
 
+  void _showEditSiteVisitDialog(SiteVisit visit) {
+    int activeTabIndex = 0;
+    final titleController = TextEditingController(text: visit.title);
+    final descController = TextEditingController(text: visit.description);
+    final noteController = TextEditingController(text: visit.locationNote);
+    final dateController = TextEditingController(
+      text: DateFormat('dd-MM-yyyy HH:mm').format(visit.visitDate),
+    );
+
+    final ImagePicker _picker = ImagePicker();
+    List<XFile> pickedPhotos = [];
+    List<XFile> pickedDocs = [];
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Widget _buildLabel(String text) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  text,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.outline.withOpacity(0.8),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              );
+            }
+
+            Widget _buildTexfield(
+              TextEditingController controller, {
+              int lines = 1,
+              IconData? icon,
+            }) {
+              return TextField(
+                controller: controller,
+                maxLines: lines,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  color: AppColors.onSurface,
+                ),
+                decoration: InputDecoration(
+                  suffixIcon: icon != null
+                      ? Icon(icon, size: 16, color: AppColors.onSurface)
+                      : null,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: BorderSide(
+                      color: AppColors.outlineVariant.withOpacity(0.5),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: BorderSide(
+                      color: AppColors.outlineVariant.withOpacity(0.5),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: BorderSide(color: AppColors.primary),
+                  ),
+                ),
+              );
+            }
+
+            return Dialog(
+              backgroundColor: const Color(0xFFFBFBF9),
+              insetPadding: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Stack(
+                  children: [
+                    SizedBox(
+                      width: 500,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Header
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 20,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "Edit Site Visit",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.onSurface,
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: () => Navigator.pop(context),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.close,
+                                      size: 14,
+                                      color: AppColors.outline,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Tabs
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: AppColors.outlineVariant.withOpacity(
+                                    0.3,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () => setDialogState(
+                                      () => activeTabIndex = 0,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          bottom: BorderSide(
+                                            color: activeTabIndex == 0
+                                                ? const Color(0xFF705C00)
+                                                : Colors.transparent,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.description,
+                                            size: 14,
+                                            color: activeTabIndex == 0
+                                                ? const Color(0xFF705C00)
+                                                : AppColors.outline.withOpacity(
+                                                    0.4,
+                                                  ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            "Info",
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 13,
+                                              color: activeTabIndex == 0
+                                                  ? const Color(0xFF705C00)
+                                                  : AppColors.outline
+                                                        .withOpacity(0.6),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () => setDialogState(
+                                      () => activeTabIndex = 1,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          bottom: BorderSide(
+                                            color: activeTabIndex == 1
+                                                ? const Color(0xFF705C00)
+                                                : Colors.transparent,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.attach_file,
+                                            size: 14,
+                                            color: activeTabIndex == 1
+                                                ? const Color(0xFF705C00)
+                                                : AppColors.outline,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            "Documents",
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 13,
+                                              color: activeTabIndex == 1
+                                                  ? const Color(0xFF705C00)
+                                                  : AppColors.outline
+                                                        .withOpacity(0.6),
+                                            ),
+                                          ),
+                                          if (visit.photos.length +
+                                                  visit.documents.length +
+                                                  pickedPhotos.length +
+                                                  pickedDocs.length >
+                                              0) ...[
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFFFC107),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              child: Text(
+                                                (visit.photos.length +
+                                                        visit.documents.length +
+                                                        pickedPhotos.length +
+                                                        pickedDocs.length)
+                                                    .toString(),
+                                                style:
+                                                    GoogleFonts.plusJakartaSans(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      color: Colors.black,
+                                                    ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Body
+                          Container(
+                            color: Colors.white,
+                            padding: const EdgeInsets.all(24),
+                            height: 400,
+                            child: activeTabIndex == 0
+                                ? ListView(
+                                    children: [
+                                      _buildLabel("VISIT TITLE"),
+                                      _buildTexfield(titleController),
+                                      const SizedBox(height: 16),
+                                      _buildLabel("DESCRIPTION"),
+                                      _buildTexfield(descController, lines: 4),
+                                      const SizedBox(height: 16),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                _buildLabel("LOCATION NOTE"),
+                                                _buildTexfield(noteController),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                _buildLabel(
+                                                  "VISIT DATE & TIME",
+                                                ),
+                                                _buildTexfield(
+                                                  dateController,
+                                                  icon: Icons
+                                                      .calendar_today_outlined,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  )
+                                : ListView(
+                                    children: [
+                                      _buildLabel("PHOTOS"),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFBFBF9),
+                                          border: Border.all(
+                                            color: AppColors.outlineVariant
+                                                .withOpacity(0.5),
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Wrap(
+                                              spacing: 8,
+                                              runSpacing: 8,
+                                              children: [
+                                                // Existing photos from server
+                                                ...visit.photos.map(
+                                                  (p) => Stack(
+                                                    children: [
+                                                      ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              6,
+                                                            ),
+                                                        child: Image.network(
+                                                          p.imageUrl,
+                                                          height: 70,
+                                                          width: 70,
+                                                          fit: BoxFit.cover,
+                                                          errorBuilder:
+                                                              (
+                                                                c,
+                                                                e,
+                                                                s,
+                                                              ) => Container(
+                                                                height: 70,
+                                                                width: 70,
+                                                                color: Colors
+                                                                    .grey
+                                                                    .shade300,
+                                                                child:
+                                                                    const Icon(
+                                                                      Icons
+                                                                          .image,
+                                                                    ),
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      Positioned(
+                                                        top: 2,
+                                                        right: 2,
+                                                        child: InkWell(
+                                                          onTap: () async {
+                                                            // Immediate delete or track for deletion
+                                                            final ok =
+                                                                await SiteVisitService.deletePhoto(
+                                                                  visit.id,
+                                                                  p.id,
+                                                                );
+                                                            if (ok)
+                                                              _fetchFullDetails();
+                                                          },
+                                                          child: Container(
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  2,
+                                                                ),
+                                                            decoration:
+                                                                const BoxDecoration(
+                                                                  color: Colors
+                                                                      .red,
+                                                                  shape: BoxShape
+                                                                      .circle,
+                                                                ),
+                                                            child: const Icon(
+                                                              Icons.close,
+                                                              size: 10,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                // Newly picked photos
+                                                ...pickedPhotos.map(
+                                                  (f) => Stack(
+                                                    children: [
+                                                      ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              6,
+                                                            ),
+                                                        child: kIsWeb
+                                                            ? Image.network(
+                                                                f.path,
+                                                                height: 70,
+                                                                width: 70,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                              )
+                                                            : Image.file(
+                                                                File(f.path),
+                                                                height: 70,
+                                                                width: 70,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                              ),
+                                                      ),
+                                                      Positioned(
+                                                        top: 2,
+                                                        right: 2,
+                                                        child: InkWell(
+                                                          onTap: () =>
+                                                              setDialogState(
+                                                                () =>
+                                                                    pickedPhotos
+                                                                        .remove(
+                                                                          f,
+                                                                        ),
+                                                              ),
+                                                          child: Container(
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  2,
+                                                                ),
+                                                            decoration:
+                                                                const BoxDecoration(
+                                                                  color: Colors
+                                                                      .black54,
+                                                                  shape: BoxShape
+                                                                      .circle,
+                                                                ),
+                                                            child: const Icon(
+                                                              Icons.close,
+                                                              size: 10,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            InkWell(
+                                              onTap: () async {
+                                                final images = await _picker
+                                                    .pickMultiImage();
+                                                if (images.isNotEmpty) {
+                                                  setDialogState(
+                                                    () => pickedPhotos.addAll(
+                                                      images,
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 8,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  border: Border.all(
+                                                    color: AppColors
+                                                        .outlineVariant
+                                                        .withOpacity(0.5),
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(30),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.add,
+                                                      size: 14,
+                                                      color: AppColors.outline,
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      "Add Photos",
+                                                      style:
+                                                          GoogleFonts.plusJakartaSans(
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            color: AppColors
+                                                                .outline,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      _buildLabel("DOCUMENTS"),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFBFBF9),
+                                          border: Border.all(
+                                            color: AppColors.outlineVariant
+                                                .withOpacity(0.5),
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // Existing documents
+                                            ...visit.documents.map(
+                                              (d) => Container(
+                                                margin: const EdgeInsets.only(
+                                                  bottom: 8,
+                                                ),
+                                                padding: const EdgeInsets.all(
+                                                  12,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  border: Border.all(
+                                                    color: AppColors
+                                                        .outlineVariant
+                                                        .withOpacity(0.4),
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.description,
+                                                      size: 16,
+                                                      color: Color(0xFFD3C1F4),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Text(
+                                                        d.documentName,
+                                                        style:
+                                                            GoogleFonts.plusJakartaSans(
+                                                              fontSize: 13,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color: AppColors
+                                                                  .onSurface,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    InkWell(
+                                                      onTap: () async {
+                                                        final ok =
+                                                            await SiteVisitService.deleteDocument(
+                                                              visit.id,
+                                                              d.id,
+                                                            );
+                                                        if (ok)
+                                                          _fetchFullDetails();
+                                                      },
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              4,
+                                                            ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                              color: Colors.grey
+                                                                  .withOpacity(
+                                                                    0.1,
+                                                                  ),
+                                                              shape: BoxShape
+                                                                  .circle,
+                                                            ),
+                                                        child: const Icon(
+                                                          Icons.close,
+                                                          size: 10,
+                                                          color:
+                                                              AppColors.outline,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            // Newly picked "documents" (as images for now since no file_picker)
+                                            ...pickedDocs.map(
+                                              (f) => Container(
+                                                margin: const EdgeInsets.only(
+                                                  bottom: 8,
+                                                ),
+                                                padding: const EdgeInsets.all(
+                                                  12,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  border: Border.all(
+                                                    color: AppColors
+                                                        .outlineVariant
+                                                        .withOpacity(0.4),
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.upload_file,
+                                                      size: 16,
+                                                      color: Colors.blue,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Text(
+                                                        f.name,
+                                                        style:
+                                                            GoogleFonts.plusJakartaSans(
+                                                              fontSize: 13,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color: AppColors
+                                                                  .onSurface,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    InkWell(
+                                                      onTap: () =>
+                                                          setDialogState(
+                                                            () => pickedDocs
+                                                                .remove(f),
+                                                          ),
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              4,
+                                                            ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                              color: Colors.grey
+                                                                  .withOpacity(
+                                                                    0.1,
+                                                                  ),
+                                                              shape: BoxShape
+                                                                  .circle,
+                                                            ),
+                                                        child: const Icon(
+                                                          Icons.close,
+                                                          size: 10,
+                                                          color:
+                                                              AppColors.outline,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            InkWell(
+                                              onTap: () async {
+                                                final file = await _picker
+                                                    .pickImage(
+                                                      source:
+                                                          ImageSource.gallery,
+                                                    );
+                                                if (file != null)
+                                                  setDialogState(
+                                                    () => pickedDocs.add(file),
+                                                  );
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 8,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  border: Border.all(
+                                                    color: AppColors
+                                                        .outlineVariant
+                                                        .withOpacity(0.5),
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(30),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.add,
+                                                      size: 14,
+                                                      color: AppColors.outline,
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      "Add Documents",
+                                                      style:
+                                                          GoogleFonts.plusJakartaSans(
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            color: AppColors
+                                                                .outline,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+
+                          // Footer
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border(
+                                top: BorderSide(
+                                  color: AppColors.outlineVariant.withOpacity(
+                                    0.3,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  style: OutlinedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    side: BorderSide(
+                                      color: AppColors.outlineVariant
+                                          .withOpacity(0.5),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    "Cancel",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF1E3A8A),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                ElevatedButton(
+                                  onPressed: isSaving
+                                      ? null
+                                      : () async {
+                                          setDialogState(() => isSaving = true);
+
+                                          // 1. Update Info
+                                          final infoOk =
+                                              await SiteVisitService.updateSiteVisit(
+                                                id: visit.id,
+                                                title: titleController.text,
+                                                description:
+                                                    descController.text,
+                                                locationNote:
+                                                    noteController.text,
+                                              );
+
+                                          if (infoOk) {
+                                            // 2. Upload Photos
+                                            if (pickedPhotos.isNotEmpty) {
+                                              await SiteVisitService.addVisitPhotos(
+                                                visit.id,
+                                                pickedPhotos
+                                                    .map((e) => e.path)
+                                                    .toList(),
+                                              );
+                                            }
+                                            // 3. Upload Documents
+                                            if (pickedDocs.isNotEmpty) {
+                                              await SiteVisitService.addVisitDocuments(
+                                                visit.id,
+                                                pickedDocs
+                                                    .map(
+                                                      (e) => {
+                                                        'path': e.path,
+                                                        'name': e.name,
+                                                      },
+                                                    )
+                                                    .toList(),
+                                              );
+                                            }
+
+                                            Navigator.pop(context);
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "Site visit updated successfully",
+                                                ),
+                                              ),
+                                            );
+                                            _fetchFullDetails();
+                                          } else {
+                                            setDialogState(
+                                              () => isSaving = false,
+                                            );
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "Failed to update site visit",
+                                                ),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF8C6D23),
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: isSaving
+                                      ? const SizedBox(
+                                          height: 14,
+                                          width: 14,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : Text(
+                                          "Update Visit",
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isSaving)
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.white60,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF8C6D23),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showAddSiteVisitDialog() {
     final titleController = TextEditingController();
     final descController = TextEditingController();
@@ -1730,7 +2982,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             return Dialog(
               backgroundColor: Colors.white,
               insetPadding: const EdgeInsets.all(20),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -1761,7 +3015,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                       const SizedBox(height: 8),
                       TextField(
                         controller: titleController,
-                        decoration: _modalInputDecoration("Foundation inspection"),
+                        decoration: _modalInputDecoration(
+                          "Foundation inspection",
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text("Description", style: _modalLabelStyle),
@@ -1769,7 +3025,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                       TextField(
                         controller: descController,
                         maxLines: 4,
-                        decoration: _modalInputDecoration("Enter visit description..."),
+                        decoration: _modalInputDecoration(
+                          "Enter visit description...",
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -1782,7 +3040,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                 const SizedBox(height: 8),
                                 TextField(
                                   controller: noteController,
-                                  decoration: _modalInputDecoration("Basement / Terrace"),
+                                  decoration: _modalInputDecoration(
+                                    "Basement / Terrace",
+                                  ),
                                 ),
                               ],
                             ),
@@ -1805,32 +3065,51 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                     if (date != null) {
                                       final time = await showTimePicker(
                                         context: context,
-                                        initialTime: TimeOfDay.fromDateTime(selectedDate),
+                                        initialTime: TimeOfDay.fromDateTime(
+                                          selectedDate,
+                                        ),
                                       );
                                       if (time != null) {
                                         setDialogState(() {
                                           selectedDate = DateTime(
-                                            date.year, date.month, date.day,
-                                            time.hour, time.minute,
+                                            date.year,
+                                            date.month,
+                                            date.day,
+                                            time.hour,
+                                            time.minute,
                                           );
                                         });
                                       }
                                     }
                                   },
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 12,
+                                    ),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: AppColors.outlineVariant),
+                                      border: Border.all(
+                                        color: AppColors.outlineVariant,
+                                      ),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          DateFormat('dd-MM-yyyy HH:mm').format(selectedDate),
-                                          style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                                          DateFormat(
+                                            'dd-MM-yyyy HH:mm',
+                                          ).format(selectedDate),
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 13,
+                                          ),
                                         ),
-                                        const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.outline),
+                                        const Icon(
+                                          Icons.calendar_today_rounded,
+                                          size: 16,
+                                          color: AppColors.outline,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -1855,17 +3134,29 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                           OutlinedButton(
                             onPressed: () => Navigator.pop(context),
                             style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
-                            child: Text("Cancel", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+                            child: Text(
+                              "Cancel",
+                              style: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton(
                             onPressed: () async {
                               if (titleController.text.trim().isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Title is required")),
+                                  const SnackBar(
+                                    content: Text("Title is required"),
+                                  ),
                                 );
                                 return;
                               }
@@ -1873,24 +3164,35 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                               showDialog(
                                 context: context,
                                 barrierDismissible: false,
-                                builder: (_) => const Center(child: CircularProgressIndicator()),
+                                builder: (_) => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
                               );
 
-                              final success = await SiteVisitService.createSiteVisit(
-                                projectId: _detailedSite.projectId > 0 ? _detailedSite.projectId : _detailedSite.id,
-                                title: titleController.text.trim(),
-                                description: descController.text.trim(),
-                                locationNote: noteController.text.trim(),
-                                visitDateTime: selectedDate,
-                              );
+                              final success =
+                                  await SiteVisitService.createSiteVisit(
+                                    projectId: _detailedSite.projectId > 0
+                                        ? _detailedSite.projectId
+                                        : _detailedSite.id,
+                                    title: titleController.text.trim(),
+                                    description: descController.text.trim(),
+                                    locationNote: noteController.text.trim(),
+                                    visitDateTime: selectedDate,
+                                  );
 
-                              if (mounted) Navigator.pop(context); // Close loading indicator
+                              if (mounted)
+                                Navigator.pop(
+                                  context,
+                                ); // Close loading indicator
 
                               if (success) {
-                                if (mounted) Navigator.pop(context); // Close add dialog
+                                if (mounted)
+                                  Navigator.pop(context); // Close add dialog
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: const Text("Site visit logged successfully"),
+                                    content: const Text(
+                                      "Site visit logged successfully",
+                                    ),
                                     behavior: SnackBarBehavior.floating,
                                     backgroundColor: AppColors.primary,
                                   ),
@@ -1908,12 +3210,20 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF705C00),
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
                             child: Text(
                               "Create Visit",
-                              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white),
+                              style: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
@@ -1930,24 +3240,27 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
   }
 
   TextStyle get _modalLabelStyle => GoogleFonts.plusJakartaSans(
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-        color: AppColors.onSurface.withOpacity(0.8),
-      );
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+    color: AppColors.onSurface.withOpacity(0.8),
+  );
 
   InputDecoration _modalInputDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.outline.withOpacity(0.5)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.outlineVariant),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.outlineVariant),
-        ),
-      );
+    hintText: hint,
+    hintStyle: GoogleFonts.plusJakartaSans(
+      fontSize: 13,
+      color: AppColors.outline.withOpacity(0.5),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.outlineVariant),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.outlineVariant),
+    ),
+  );
 
   Widget _buildFilePickerButton(String label) {
     return Container(
@@ -1967,13 +3280,19 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             ),
             child: Text(
               label,
-              style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           const SizedBox(width: 8),
           Text(
             "No file chosen",
-            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.outline),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              color: AppColors.outline,
+            ),
           ),
         ],
       ),
@@ -2003,7 +3322,10 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -2021,7 +3343,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               ),
               ElevatedButton.icon(
                 onPressed: _showScheduleMeetingDialog,
-                icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                icon: const Icon(
+                  Icons.add_rounded,
+                  size: 18,
+                  color: Colors.white,
+                ),
                 label: Text(
                   "Schedule Meeting",
                   style: GoogleFonts.plusJakartaSans(
@@ -2033,7 +3359,10 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF705C00),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -2050,23 +3379,47 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           if (_detailedSite.meetings.isEmpty)
             _buildEmptyMeetingsState()
           else
-            ..._detailedSite.meetings.map((m) => _buildMeetingCard(m)).toList(),
+            ..._detailedSite.meetings
+                .where((m) {
+                  final statusMatch =
+                      _selectedStatusFilter == 'All' ||
+                      m.status.toUpperCase() ==
+                          _selectedStatusFilter.toUpperCase();
+                  final typeMatch =
+                      _selectedTypeFilter == 'All' ||
+                      m.type.toUpperCase() == _selectedTypeFilter.toUpperCase();
+                  return statusMatch && typeMatch;
+                })
+                .map((m) => _buildMeetingCard(m))
+                .toList(),
         ],
       ),
     );
   }
 
   Widget _buildMeetingSummaryCards() {
-    final scheduled = _detailedSite.meetings.where((m) => m.status == "SCHEDULED").length;
-    final ongoing = _detailedSite.meetings.where((m) => m.status == "ONGOING").length;
-    final completed = _detailedSite.meetings.where((m) => m.status == "COMPLETED").length;
-    final cancelled = _detailedSite.meetings.where((m) => m.status == "CANCELLED").length;
+    final scheduled = _detailedSite.meetings
+        .where((m) => m.status == "SCHEDULED")
+        .length;
+    final ongoing = _detailedSite.meetings
+        .where((m) => m.status == "ONGOING")
+        .length;
+    final completed = _detailedSite.meetings
+        .where((m) => m.status == "COMPLETED")
+        .length;
+    final cancelled = _detailedSite.meetings
+        .where((m) => m.status == "CANCELLED")
+        .length;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          _buildSummaryCard("Total", _detailedSite.meetings.length, Colors.blue),
+          _buildSummaryCard(
+            "Total",
+            _detailedSite.meetings.length,
+            Colors.blue,
+          ),
           _buildSummaryCard("Scheduled", scheduled, Colors.indigo),
           _buildSummaryCard("Ongoing", ongoing, Colors.orange),
           _buildSummaryCard("Completed", completed, Colors.green),
@@ -2087,20 +3440,21 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             "$count",
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.w800,
               color: color.withOpacity(0.8),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             label,
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 12,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
               color: AppColors.outline,
             ),
@@ -2143,7 +3497,13 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     );
   }
 
-  Widget _buildFilterRow(String label, List<String> options, String selected, Function(String) onSelect, {bool hasIcons = false}) {
+  Widget _buildFilterRow(
+    String label,
+    List<String> options,
+    String selected,
+    Function(String) onSelect, {
+    bool hasIcons = false,
+  }) {
     return Row(
       children: [
         SizedBox(
@@ -2167,11 +3527,20 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   onTap: () => onSelect(opt),
                   child: Container(
                     margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF705C00) : Colors.white,
+                      color: isSelected
+                          ? const Color(0xFF705C00)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: isSelected ? Colors.transparent : AppColors.outlineVariant),
+                      border: Border.all(
+                        color: isSelected
+                            ? Colors.transparent
+                            : AppColors.outlineVariant,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -2179,7 +3548,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                           Icon(
                             _getMeetingTypeIcon(opt),
                             size: 14,
-                            color: isSelected ? Colors.white : AppColors.outline,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.outline,
                           ),
                           const SizedBox(width: 6),
                         ],
@@ -2188,7 +3559,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: isSelected ? Colors.white : AppColors.outline,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.outline,
                           ),
                         ),
                       ],
@@ -2205,12 +3578,18 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
 
   IconData _getMeetingTypeIcon(String type) {
     switch (type.toUpperCase()) {
-      case 'CALL': return Icons.phone_rounded;
-      case 'ZOOM': return Icons.videocam_rounded;
-      case 'GOOGLE MEET': return Icons.video_camera_front_rounded;
-      case 'FACE TO FACE': return Icons.back_hand_rounded;
-      case 'TEAMS': return Icons.groups_rounded;
-      default: return Icons.handshake_outlined;
+      case 'CALL':
+        return Icons.phone_rounded;
+      case 'ZOOM':
+        return Icons.videocam_rounded;
+      case 'GOOGLE MEET':
+        return Icons.video_camera_front_rounded;
+      case 'FACE TO FACE':
+        return Icons.back_hand_rounded;
+      case 'TEAMS':
+        return Icons.groups_rounded;
+      default:
+        return Icons.handshake_outlined;
     }
   }
 
@@ -2228,7 +3607,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             height: 4,
             decoration: BoxDecoration(
               color: _getStatusColor(meeting.status),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
             ),
           ),
           Padding(
@@ -2242,7 +3623,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                     color: const Color(0xFFF7F2E9),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.handshake_rounded, size: 24, color: Color(0xFF705C00)),
+                  child: const Icon(
+                    Icons.handshake_rounded,
+                    size: 24,
+                    color: Color(0xFF705C00),
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -2250,48 +3635,59 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            meeting.title,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.onSurface,
+                          Expanded(
+                            child: Text(
+                              meeting.title,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurface,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Row(
-                            children: [
-                              _buildStatusChip(meeting.status),
-                              const SizedBox(width: 8),
-                              _buildTypeChip(meeting.type),
-                            ],
-                          ),
+                          const SizedBox(width: 8),
+                          _buildStatusChip(meeting.status),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
                         meeting.agenda,
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
+                          fontSize: 12,
                           color: AppColors.outline,
                           fontWeight: FontWeight.w500,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          _buildMeetingTime(Icons.schedule_rounded, meeting.scheduledAt),
-                          const SizedBox(width: 12),
-                          if (meeting.startedAt != null)
-                            _buildMeetingTime(Icons.play_circle_outline_rounded, meeting.startedAt!),
-                          const SizedBox(width: 12),
-                          if (meeting.endedAt != null)
-                            _buildMeetingTime(Icons.stop_circle_outlined, meeting.endedAt!),
-                          const Spacer(),
-                          if (meeting.mom != null && meeting.mom!.isNotEmpty)
-                            _buildMomBadge(),
-                        ],
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildMeetingTime(
+                              Icons.schedule_rounded,
+                              meeting.scheduledAt,
+                            ),
+                            if (meeting.startedAt != null) ...[
+                              const SizedBox(width: 8),
+                              _buildMeetingTime(
+                                Icons.play_circle_outline_rounded,
+                                meeting.startedAt!,
+                              ),
+                            ],
+                            const SizedBox(width: 8),
+                            _buildTypeChip(meeting.type),
+                            if (meeting.mom != null &&
+                                meeting.mom!.isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              _buildMomBadge(),
+                            ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -2300,32 +3696,265 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                 Column(
                   children: [
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () => _showMeetingDetailDialog(meeting),
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
-                          side: const BorderSide(color: AppColors.outlineVariant),
+                          side: const BorderSide(
+                            color: AppColors.outlineVariant,
+                          ),
                         ),
                       ),
-                      child: Text("View", style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
+                      child: Text(
+                        "View",
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () =>
+                          _handleDeleteMeeting(meeting.id, meeting.title),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         backgroundColor: Colors.red.withOpacity(0.05),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: Text("Delete", style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700)),
+                      child: Text(
+                        "Delete",
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleDeleteMeeting(int id, String title) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          "Delete Meeting",
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          "Are you sure you want to delete '$title'? This cannot be undone.",
+          style: GoogleFonts.plusJakartaSans(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Cancel",
+              style: GoogleFonts.plusJakartaSans(color: AppColors.outline),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) =>
+                    const Center(child: CircularProgressIndicator()),
+              );
+              final success = await MeetingService.deleteMeeting(id);
+              if (mounted) Navigator.pop(context);
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Meeting deleted successfully")),
+                );
+                _fetchFullDetails();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Failed to delete meeting"),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text(
+              "Delete",
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMeetingDetailDialog(Meeting meeting) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final statusCfg = _getStatusColor(meeting.status);
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Meeting Details",
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  _buildDetailRow("Title", meeting.title),
+                  _buildDetailRow("Status", meeting.status.toUpperCase()),
+                  _buildDetailRow("Type", meeting.type.replaceAll('_', ' ')),
+                  _buildDetailRow(
+                    "Scheduled",
+                    DateFormat(
+                      'dd MMM yyyy, hh:mm a',
+                    ).format(meeting.scheduledAt),
+                  ),
+                  if (meeting.meetingLink != null &&
+                      meeting.meetingLink!.isNotEmpty)
+                    _buildDetailRow("Link", meeting.meetingLink!, isLink: true),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Agenda",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    meeting.agenda,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: AppColors.outline,
+                      fontSize: 13,
+                    ),
+                  ),
+                  if (meeting.mom != null && meeting.mom!.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Text(
+                      "Minutes of Meeting (MOM)",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Text(
+                        meeting.mom!,
+                        style: GoogleFonts.robotoMono(
+                          fontSize: 12,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        "Close",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, {bool isLink = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.outline,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isLink ? Colors.blue : AppColors.onSurface,
+              ),
             ),
           ),
         ],
@@ -2346,7 +3975,10 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(color: _getStatusColor(status), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: _getStatusColor(status),
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 6),
           Text(
@@ -2372,7 +4004,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_getMeetingTypeIcon(type), size: 12, color: const Color(0xFF705C00)),
+          Icon(
+            _getMeetingTypeIcon(type),
+            size: 12,
+            color: const Color(0xFF705C00),
+          ),
           const SizedBox(width: 6),
           Text(
             type,
@@ -2413,7 +4049,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       ),
       child: Row(
         children: [
-          const Icon(Icons.description_outlined, size: 12, color: Color(0xFF705C00)),
+          const Icon(
+            Icons.description_outlined,
+            size: 12,
+            color: Color(0xFF705C00),
+          ),
           const SizedBox(width: 4),
           Text(
             "MOM",
@@ -2430,11 +4070,16 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
 
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
-      case 'SCHEDULED': return Colors.blue;
-      case 'ONGOING': return Colors.orange;
-      case 'COMPLETED': return Colors.green;
-      case 'CANCELLED': return Colors.red;
-      default: return Colors.grey;
+      case 'SCHEDULED':
+        return Colors.blue;
+      case 'ONGOING':
+        return Colors.orange;
+      case 'COMPLETED':
+        return Colors.green;
+      case 'CANCELLED':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -2449,7 +4094,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.handshake_outlined, size: 56, color: AppColors.outline.withOpacity(0.3)),
+            Icon(
+              Icons.handshake_outlined,
+              size: 56,
+              color: AppColors.outline.withOpacity(0.3),
+            ),
             const SizedBox(height: 16),
             Text(
               "No meetings scheduled yet",
@@ -2484,7 +4133,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             return Dialog(
               backgroundColor: Colors.white,
               insetPadding: const EdgeInsets.all(16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: SingleChildScrollView(
@@ -2493,7 +4144,10 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                     children: [
                       // Premium Header
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 20,
+                        ),
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
                             colors: [Color(0xFF705C00), Color(0xFF2E3228)],
@@ -2509,7 +4163,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                 color: Colors.white.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.handshake_rounded, color: Color(0xFFFCDE6C), size: 24),
+                              child: const Icon(
+                                Icons.handshake_rounded,
+                                color: Color(0xFFFCDE6C),
+                                size: 24,
+                              ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -2537,25 +4195,33 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                             ),
                             IconButton(
                               onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.close_rounded, color: Colors.white),
+                              icon: const Icon(
+                                Icons.close_rounded,
+                                color: Colors.white,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      
+
                       Padding(
                         padding: const EdgeInsets.all(24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Basic Info Section
-                            _buildModalSectionHeader("BASIC INFO", Icons.description_outlined),
+                            _buildModalSectionHeader(
+                              "BASIC INFO",
+                              Icons.description_outlined,
+                            ),
                             const SizedBox(height: 16),
                             _buildModalLabel("TITLE", required: true),
                             const SizedBox(height: 8),
                             TextField(
                               controller: titleController,
-                              decoration: _modalInputDecoration("e.g. Site Progress Review Q2"),
+                              decoration: _modalInputDecoration(
+                                "e.g. Site Progress Review Q2",
+                              ),
                             ),
                             const SizedBox(height: 16),
                             _buildModalLabel("AGENDA"),
@@ -2563,21 +4229,32 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                             TextField(
                               controller: agendaController,
                               maxLines: 2,
-                              decoration: _modalInputDecoration("What will be discussed..."),
+                              decoration: _modalInputDecoration(
+                                "What will be discussed...",
+                              ),
                             ),
                             const SizedBox(height: 16),
                             Row(
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       _buildModalLabel("MEETING TYPE"),
                                       const SizedBox(height: 8),
                                       _buildModalDropdown(
-                                        ['Face to Face', 'Call', 'Zoom', 'Google Meet', 'Teams'],
+                                        [
+                                          'Face to Face',
+                                          'Call',
+                                          'Zoom',
+                                          'Google Meet',
+                                          'Teams',
+                                        ],
                                         selectedType,
-                                        (val) => setDialogState(() => selectedType = val!),
+                                        (val) => setDialogState(
+                                          () => selectedType = val!,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -2585,36 +4262,53 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       _buildModalLabel("STATUS"),
                                       const SizedBox(height: 8),
                                       _buildModalDropdown(
-                                        ['Scheduled', 'Ongoing', 'Completed', 'Cancelled'],
+                                        [
+                                          'Scheduled',
+                                          'Ongoing',
+                                          'Completed',
+                                          'Cancelled',
+                                        ],
                                         selectedStatus,
-                                        (val) => setDialogState(() => selectedStatus = val!),
+                                        (val) => setDialogState(
+                                          () => selectedStatus = val!,
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
-                            
+
                             const SizedBox(height: 32),
                             // Schedule & Link Section
-                            _buildModalSectionHeader("SCHEDULE & LINK", Icons.calendar_today_outlined),
+                            _buildModalSectionHeader(
+                              "SCHEDULE & LINK",
+                              Icons.calendar_today_outlined,
+                            ),
                             const SizedBox(height: 16),
                             Row(
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      _buildModalLabel("SCHEDULED AT", required: true),
+                                      _buildModalLabel(
+                                        "SCHEDULED AT",
+                                        required: true,
+                                      ),
                                       const SizedBox(height: 8),
                                       _buildDateTimePicker(
                                         scheduledAt,
-                                        (dt) => setDialogState(() => scheduledAt = dt),
+                                        (dt) => setDialogState(
+                                          () => scheduledAt = dt,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -2622,13 +4316,16 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       _buildModalLabel("MEETING LINK"),
                                       const SizedBox(height: 8),
                                       TextField(
                                         controller: linkController,
-                                        decoration: _modalInputDecoration("https://meet.google.com/..."),
+                                        decoration: _modalInputDecoration(
+                                          "https://meet.google.com/...",
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -2640,13 +4337,16 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       _buildModalLabel("STARTED AT"),
                                       const SizedBox(height: 8),
                                       _buildDateTimePicker(
                                         startedAt ?? DateTime.now(),
-                                        (dt) => setDialogState(() => startedAt = dt),
+                                        (dt) => setDialogState(
+                                          () => startedAt = dt,
+                                        ),
                                         isNull: startedAt == null,
                                       ),
                                     ],
@@ -2655,13 +4355,15 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       _buildModalLabel("ENDED AT"),
                                       const SizedBox(height: 8),
                                       _buildDateTimePicker(
                                         endedAt ?? DateTime.now(),
-                                        (dt) => setDialogState(() => endedAt = dt),
+                                        (dt) =>
+                                            setDialogState(() => endedAt = dt),
                                         isNull: endedAt == null,
                                       ),
                                     ],
@@ -2675,12 +4377,20 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                _buildModalSectionHeader("MINUTES OF MEETING (MOM)", Icons.history_edu_outlined),
+                                _buildModalSectionHeader(
+                                  "MINUTES OF MEETING (MOM)",
+                                  Icons.history_edu_outlined,
+                                ),
                                 TextButton.icon(
-                                  onPressed: () => _showTemplatePicker(context, (text) {
-                                    momController.text = text;
-                                  }),
-                                  icon: const Icon(Icons.bolt_rounded, size: 16, color: Color(0xFF705C00)),
+                                  onPressed: () =>
+                                      _showTemplatePicker(context, (text) {
+                                        momController.text = text;
+                                      }),
+                                  icon: const Icon(
+                                    Icons.bolt_rounded,
+                                    size: 16,
+                                    color: Color(0xFF705C00),
+                                  ),
                                   label: Text(
                                     "Use Template",
                                     style: GoogleFonts.plusJakartaSans(
@@ -2690,11 +4400,17 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                     ),
                                   ),
                                   style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
                                     backgroundColor: const Color(0xFFFFF9DB),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20),
-                                      side: const BorderSide(color: Color(0xFF705C00), width: 1),
+                                      side: const BorderSide(
+                                        color: Color(0xFF705C00),
+                                        width: 1,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -2708,7 +4424,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                 "Type minutes of meeting here, or click '⚡ Use Template' above to auto-fill a structured format...",
                               ),
                             ),
-                            
+
                             const SizedBox(height: 32),
                             // Actions
                             Row(
@@ -2717,17 +4433,31 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                 OutlinedButton(
                                   onPressed: () => Navigator.pop(context),
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
-                                  child: Text("Cancel", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+                                  child: Text(
+                                    "Cancel",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 ElevatedButton(
                                   onPressed: () async {
                                     if (titleController.text.trim().isEmpty) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text("Title is required")),
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text("Title is required"),
+                                        ),
                                       );
                                       return;
                                     }
@@ -2735,48 +4465,77 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                     showDialog(
                                       context: context,
                                       barrierDismissible: false,
-                                      builder: (_) => const Center(child: CircularProgressIndicator()),
+                                      builder: (_) => const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
                                     );
 
                                     // Map UI concepts to Backend Enums
-                                    final String mappedType = selectedType.toUpperCase().replaceAll(' ', '_');
-                                    final String mappedStatus = selectedStatus.toUpperCase();
+                                    final String mappedType = selectedType
+                                        .toUpperCase()
+                                        .replaceAll(' ', '_');
+                                    final String mappedStatus = selectedStatus
+                                        .toUpperCase();
 
                                     final meetingData = {
                                       "title": titleController.text.trim(),
-                                      if (agendaController.text.isNotEmpty) "agenda": agendaController.text.trim(),
+                                      if (agendaController.text.isNotEmpty)
+                                        "agenda": agendaController.text.trim(),
                                       "meetingType": mappedType,
                                       "status": mappedStatus,
-                                      "scheduledAt": scheduledAt.toIso8601String(),
-                                      if (startedAt != null) "startedAt": startedAt!.toIso8601String(),
-                                      if (endedAt != null) "endedAt": endedAt!.toIso8601String(),
-                                      if (linkController.text.isNotEmpty) "meetingLink": linkController.text.trim(),
-                                      if (momController.text.isNotEmpty) "mom": momController.text.trim(),
+                                      "scheduledAt": scheduledAt
+                                          .toIso8601String(),
+                                      if (startedAt != null)
+                                        "startedAt": startedAt!
+                                            .toIso8601String(),
+                                      if (endedAt != null)
+                                        "endedAt": endedAt!.toIso8601String(),
+                                      if (linkController.text.isNotEmpty)
+                                        "meetingLink": linkController.text
+                                            .trim(),
+                                      if (momController.text.isNotEmpty)
+                                        "mom": momController.text.trim(),
                                     };
 
-                                    int idToFetch = _detailedSite.projectId > 0 ? _detailedSite.projectId : _detailedSite.id;
-                                    final success = await MeetingService.createMeeting(
-                                      projectId: idToFetch,
-                                      createdBy: 1, // Fallback administrator ID
-                                      meetingData: meetingData,
-                                    );
+                                    int idToFetch = _detailedSite.projectId > 0
+                                        ? _detailedSite.projectId
+                                        : _detailedSite.id;
+                                    final success =
+                                        await MeetingService.createMeeting(
+                                          projectId: idToFetch,
+                                          createdBy:
+                                              1, // Fallback administrator ID
+                                          meetingData: meetingData,
+                                        );
 
-                                    if (mounted) Navigator.pop(context); // Close loading spinner
+                                    if (mounted)
+                                      Navigator.pop(
+                                        context,
+                                      ); // Close loading spinner
 
                                     if (success) {
-                                      if (mounted) Navigator.pop(context); // Close modal
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      if (mounted)
+                                        Navigator.pop(context); // Close modal
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         const SnackBar(
-                                          content: Text("Meeting scheduled successfully"),
+                                          content: Text(
+                                            "Meeting scheduled successfully",
+                                          ),
                                           behavior: SnackBarBehavior.floating,
                                           backgroundColor: AppColors.primary,
                                         ),
                                       );
                                       _fetchFullDetails(); // Reload data from backend
                                     } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         const SnackBar(
-                                          content: Text("Failed to schedule meeting"),
+                                          content: Text(
+                                            "Failed to schedule meeting",
+                                          ),
                                           behavior: SnackBarBehavior.floating,
                                           backgroundColor: Colors.red,
                                         ),
@@ -2785,12 +4544,21 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF705C00),
-                                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 32,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.check_rounded, color: Colors.white, size: 18),
+                                      const Icon(
+                                        Icons.check_rounded,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
                                       const SizedBox(width: 8),
                                       Text(
                                         "Save Meeting",
@@ -2850,13 +4618,21 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         if (required)
           Text(
             " *",
-            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: Colors.red, fontWeight: FontWeight.bold),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 14,
+              color: Colors.red,
+              fontWeight: FontWeight.bold,
+            ),
           ),
       ],
     );
   }
 
-  Widget _buildModalDropdown(List<String> items, String selected, Function(String?) onChange) {
+  Widget _buildModalDropdown(
+    List<String> items,
+    String selected,
+    Function(String?) onChange,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -2868,19 +4644,41 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         child: DropdownButton<String>(
           value: selected,
           isExpanded: true,
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.plusJakartaSans(fontSize: 14)))).toList(),
+          items: items
+              .map(
+                (e) => DropdownMenuItem(
+                  value: e,
+                  child: Text(
+                    e,
+                    style: GoogleFonts.plusJakartaSans(fontSize: 14),
+                  ),
+                ),
+              )
+              .toList(),
           onChanged: onChange,
         ),
       ),
     );
   }
 
-  Widget _buildDateTimePicker(DateTime dt, Function(DateTime) onSelect, {bool isNull = false}) {
+  Widget _buildDateTimePicker(
+    DateTime dt,
+    Function(DateTime) onSelect, {
+    bool isNull = false,
+  }) {
     return InkWell(
       onTap: () async {
-        final d = await showDatePicker(context: context, initialDate: dt, firstDate: DateTime(2000), lastDate: DateTime(2100));
+        final d = await showDatePicker(
+          context: context,
+          initialDate: dt,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+        );
         if (d != null) {
-          final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(dt));
+          final t = await showTimePicker(
+            context: context,
+            initialTime: TimeOfDay.fromDateTime(dt),
+          );
           if (t != null) {
             onSelect(DateTime(d.year, d.month, d.day, t.hour, t.minute));
           }
@@ -2897,13 +4695,21 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              isNull ? "dd-mm-yyyy --:--" : DateFormat('dd-MM-yyyy HH:mm').format(dt),
+              isNull
+                  ? "dd-mm-yyyy --:--"
+                  : DateFormat('dd-MM-yyyy HH:mm').format(dt),
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 13,
-                color: isNull ? AppColors.outline.withOpacity(0.5) : AppColors.onSurface,
+                color: isNull
+                    ? AppColors.outline.withOpacity(0.5)
+                    : AppColors.onSurface,
               ),
             ),
-            Icon(Icons.calendar_month_rounded, size: 18, color: AppColors.outline.withOpacity(0.8)),
+            Icon(
+              Icons.calendar_month_rounded,
+              size: 18,
+              color: AppColors.outline.withOpacity(0.8),
+            ),
           ],
         ),
       ),
@@ -2916,7 +4722,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -2928,9 +4736,15 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   children: [
                     Text(
                       "MOM Templates",
-                      style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                    IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -2938,10 +4752,34 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    _buildTemplateOption("Standard MOM", Icons.assignment_outlined, "Basic minutes with agenda & decisions", _getStandardMomTemplate(), onPick),
-                    _buildTemplateOption("Site Review MOM", Icons.construction_outlined, "For on-site progress review meetings", _getSiteReviewMomTemplate(), onPick),
-                    _buildTemplateOption("Client Call Summary", Icons.phone_in_talk_outlined, "Quick summary for client calls", _getClientCallTemplate(), onPick),
-                    _buildTemplateOption("Design Review MOM", Icons.design_services_outlined, "For design presentation sessions", _getDesignReviewTemplate(), onPick),
+                    _buildTemplateOption(
+                      "Standard MOM",
+                      Icons.assignment_outlined,
+                      "Basic minutes with agenda & decisions",
+                      _getStandardMomTemplate(),
+                      onPick,
+                    ),
+                    _buildTemplateOption(
+                      "Site Review MOM",
+                      Icons.construction_outlined,
+                      "For on-site progress review meetings",
+                      _getSiteReviewMomTemplate(),
+                      onPick,
+                    ),
+                    _buildTemplateOption(
+                      "Client Call Summary",
+                      Icons.phone_in_talk_outlined,
+                      "Quick summary for client calls",
+                      _getClientCallTemplate(),
+                      onPick,
+                    ),
+                    _buildTemplateOption(
+                      "Design Review MOM",
+                      Icons.design_services_outlined,
+                      "For design presentation sessions",
+                      _getDesignReviewTemplate(),
+                      onPick,
+                    ),
                   ],
                 ),
               ],
@@ -2952,7 +4790,13 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     );
   }
 
-  Widget _buildTemplateOption(String title, IconData icon, String subtitle, String template, Function(String) onPick) {
+  Widget _buildTemplateOption(
+    String title,
+    IconData icon,
+    String subtitle,
+    String template,
+    Function(String) onPick,
+  ) {
     return GestureDetector(
       onTap: () {
         onPick(template);
@@ -2971,11 +4815,20 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           children: [
             Icon(icon, color: const Color(0xFF705C00), size: 24),
             const SizedBox(height: 12),
-            Text(title, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700)),
+            Text(
+              title,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.outline),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                color: AppColors.outline,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -2985,7 +4838,8 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     );
   }
 
-  String _getStandardMomTemplate() => '''Standard MOM MINUTES OF MEETING
+  String _getStandardMomTemplate() =>
+      '''Standard MOM MINUTES OF MEETING
 ==================
 Project      : ${_detailedSite.siteName}
 Client       : [Client Name]
@@ -3023,7 +4877,8 @@ Agenda :
 Prepared by : _______________
 Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
 
-  String _getSiteReviewMomTemplate() => '''SITE REVIEW — MINUTES OF MEETING
+  String _getSiteReviewMomTemplate() =>
+      '''SITE REVIEW — MINUTES OF MEETING
 ==================================
 Project      : ${_detailedSite.siteName}
 Client       : [Client Name]
@@ -3065,7 +4920,8 @@ Inspection Points :
 Prepared by : _______________
 Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
 
-  String _getClientCallTemplate() => '''CLIENT CALL SUMMARY
+  String _getClientCallTemplate() =>
+      '''CLIENT CALL SUMMARY
 ====================
 Project      : ${_detailedSite.siteName}
 Client       : [Client Name]
@@ -3102,7 +4958,8 @@ Notes:
 Prepared by : _______________
 Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
 
-  String _getDesignReviewTemplate() => '''DESIGN REVIEW — MINUTES OF MEETING
+  String _getDesignReviewTemplate() =>
+      '''DESIGN REVIEW — MINUTES OF MEETING
 =====================================
 Project      : ${_detailedSite.siteName}
 Client       : [Client Name]
@@ -3165,7 +5022,10 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF9DB),
                       borderRadius: BorderRadius.circular(20),
@@ -3188,7 +5048,10 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF705C00),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -3203,23 +5066,39 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
           if (_detailedSite.reraProjects.isEmpty)
             _buildEmptyReraState()
           else
-            ..._detailedSite.reraProjects.map((r) => _buildReraCard(r)).toList(),
+            ..._detailedSite.reraProjects
+                .map((r) => _buildReraCard(r))
+                .toList(),
         ],
       ),
     );
   }
 
   Widget _buildReraSummaryCards() {
-    final active = _detailedSite.reraProjects.where((r) => r.status == "ACTIVE").length;
-    final inactive = _detailedSite.reraProjects.where((r) => r.status == "INACTIVE").length;
-    final totalCerts = _detailedSite.reraProjects.fold<int>(0, (sum, r) => sum + r.certificates.length);
-    final totalUpdates = _detailedSite.reraProjects.fold<int>(0, (sum, r) => sum + r.quarterUpdates.length);
+    final active = _detailedSite.reraProjects
+        .where((r) => r.status == "ACTIVE")
+        .length;
+    final inactive = _detailedSite.reraProjects
+        .where((r) => r.status == "INACTIVE")
+        .length;
+    final totalCerts = _detailedSite.reraProjects.fold<int>(
+      0,
+      (sum, r) => sum + r.certificates.length,
+    );
+    final totalUpdates = _detailedSite.reraProjects.fold<int>(
+      0,
+      (sum, r) => sum + r.quarterUpdates.length,
+    );
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          _buildSummaryCard("TOTAL", _detailedSite.reraProjects.length, Colors.blue),
+          _buildSummaryCard(
+            "TOTAL",
+            _detailedSite.reraProjects.length,
+            Colors.blue,
+          ),
           _buildSummaryCard("ACTIVE", active, Colors.green),
           _buildSummaryCard("INACTIVE", inactive, Colors.orange),
           _buildSummaryCard("CERTIFICATES", totalCerts, Colors.teal),
@@ -3240,7 +5119,11 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.assignment_outlined, size: 56, color: AppColors.outline.withOpacity(0.3)),
+            Icon(
+              Icons.assignment_outlined,
+              size: 56,
+              color: AppColors.outline.withOpacity(0.3),
+            ),
             const SizedBox(height: 16),
             Text(
               "No RERA registrations found",
@@ -3261,82 +5144,177 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.4)),
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          title: Row(
-            children: [
-              Text(
-                "#" + rera.id.toString(),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.outline,
-                ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: rera.status.toUpperCase() == 'ACTIVE'
+                    ? Colors.green
+                    : Colors.grey.shade400,
+                width: 4,
               ),
-              const SizedBox(width: 8),
-              Text(
-                rera.reraNumber,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
-                ),
-              ),
-              const Spacer(),
-              _buildReraStatusBadge(rera.status),
-            ],
+            ),
           ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Row(
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 8,
+              ),
+              title: Row(
+                children: [
+                  Text(
+                    "#${rera.id}",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.outline,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          rera.reraNumber,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildReraSmallInfo(
+                                Icons.assignment_outlined,
+                                "Reg: ${DateFormat('d MMM yyyy').format(rera.registrationDate)}",
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildReraSmallInfo(
+                                Icons.hourglass_bottom_rounded,
+                                "End: ${DateFormat('d MMM yyyy').format(rera.expectedCompletionDate)}",
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  _buildCompactReraStatus(rera.status),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () => _handleDeleteRera(rera.id, rera.reraNumber),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: Colors.red.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(6),
+                      child: const Icon(
+                        Icons.delete_outline,
+                        size: 14,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               children: [
-                _buildReraSmallInfo(Icons.assignment_outlined, "Reg: ${DateFormat('d Mar 2026').format(rera.registrationDate)}"),
-                const SizedBox(width: 16),
-                _buildReraSmallInfo(Icons.hourglass_bottom_rounded, "Completion: ${DateFormat('d Mar 2026').format(rera.expectedCompletionDate)}"),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildReraSectionTitle(
+                        "REGISTRATION INFO",
+                        Icons.auto_awesome_rounded,
+                      ),
+                      const SizedBox(height: 20),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        childAspectRatio: 4,
+                        mainAxisSpacing: 20,
+                        children: [
+                          _buildReraDetailItem("RERA NUMBER", rera.reraNumber),
+                          _buildReraDetailItem(
+                            "REGISTRATION DATE",
+                            DateFormat(
+                              'd MMM yyyy',
+                            ).format(rera.registrationDate),
+                          ),
+                          _buildReraDetailItem(
+                            "EXPECTED COMPLETION",
+                            DateFormat(
+                              'd MMM yyyy',
+                            ).format(rera.expectedCompletionDate),
+                          ),
+                          _buildReraDetailItem("RERA RECORD ID", "#${rera.id}"),
+                          _buildReraDetailItem(
+                            "CREATED AT",
+                            DateFormat(
+                              'd MMM yyyy, HH:mm',
+                            ).format(rera.createdAt),
+                          ),
+                          _buildReraDetailItem(
+                            "LAST UPDATED",
+                            DateFormat(
+                              'd MMM yyyy, HH:mm',
+                            ).format(rera.lastUpdated),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      _buildReraSectionTitle(
+                        "CERTIFICATES",
+                        Icons.article_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      if (rera.certificates.isEmpty)
+                        _buildReraEmptyBox("No certificates attached.")
+                      else
+                        ...rera.certificates.map(
+                          (cert) => _buildReraCertCard(cert),
+                        ),
+                      const SizedBox(height: 32),
+                      _buildReraSectionTitle(
+                        "QUARTER UPDATES",
+                        Icons.calendar_month_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      if (rera.quarterUpdates.isEmpty)
+                        _buildReraEmptyBox("No quarterly updates recorded.")
+                      else
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: rera.quarterUpdates
+                              .map((q) => _buildReraQuarterCard(q))
+                              .toList(),
+                        ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          children: [
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildReraSectionTitle("REGISTRATION INFO", Icons.auto_awesome_rounded),
-                  const SizedBox(height: 20),
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    childAspectRatio: 4,
-                    mainAxisSpacing: 20,
-                    children: [
-                      _buildReraDetailItem("RERA NUMBER", rera.reraNumber),
-                      _buildReraDetailItem("REGISTRATION DATE", DateFormat('d MMM yyyy').format(rera.registrationDate)),
-                      _buildReraDetailItem("EXPECTED COMPLETION", DateFormat('d MMM yyyy').format(rera.expectedCompletionDate)),
-                      _buildReraDetailItem("RERA RECORD ID", "#${rera.id}"),
-                      _buildReraDetailItem("CREATED AT", DateFormat('d MMM yyyy, HH:mm').format(rera.createdAt)),
-                      _buildReraDetailItem("LAST UPDATED", DateFormat('d MMM yyyy, HH:mm').format(rera.lastUpdated)),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-                  _buildReraSectionTitle("CERTIFICATES", Icons.article_outlined),
-                  const SizedBox(height: 16),
-                  _buildReraEmptyBox("No certificates attached."),
-                  const SizedBox(height: 32),
-                  _buildReraSectionTitle("QUARTER UPDATES", Icons.calendar_month_outlined),
-                  const SizedBox(height: 16),
-                  _buildReraEmptyBox("No quarterly updates recorded."),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -3364,7 +5342,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
           Text(
             status.toUpperCase(),
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: FontWeight.w800,
               color: color,
             ),
@@ -3377,14 +5355,18 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
   Widget _buildReraSmallInfo(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: AppColors.outline.withOpacity(0.5)),
+        Icon(icon, size: 12, color: AppColors.outline),
         const SizedBox(width: 4),
-        Text(
-          text,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 11,
-            color: AppColors.outline,
-            fontWeight: FontWeight.w600,
+        Flexible(
+          child: Text(
+            text,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 10,
+              color: AppColors.outline,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -3441,7 +5423,10 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
       decoration: BoxDecoration(
         color: const Color(0xFFFBFBF9),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3), style: BorderStyle.none),
+        border: Border.all(
+          color: AppColors.outlineVariant.withOpacity(0.3),
+          style: BorderStyle.none,
+        ),
       ),
       child: Container(
         decoration: BoxDecoration(
@@ -3451,7 +5436,11 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Icon(Icons.description_outlined, size: 24, color: AppColors.outline.withOpacity(0.2)),
+            Icon(
+              Icons.description_outlined,
+              size: 24,
+              color: AppColors.outline.withOpacity(0.2),
+            ),
             const SizedBox(height: 12),
             Text(
               text,
@@ -3463,6 +5452,125 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReraCertCard(ReraCertificate cert) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.description_outlined,
+                    size: 16,
+                    color: Color(0xFF705C00),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Date: ${DateFormat('d MMM yyyy').format(cert.certificateDate)}",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              if (cert.certificateFileUrl != null &&
+                  cert.certificateFileUrl!.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.attach_file,
+                        size: 12,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "File attached",
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          color: Colors.green,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 24,
+            runSpacing: 16,
+            children: [
+              _buildReraDetailItem("CERTIFIED BY", cert.certifiedBy ?? "—"),
+              _buildReraDetailItem(
+                "ADDED ON",
+                DateFormat('d MMM yyyy, HH:mm').format(cert.createdAt),
+              ),
+            ],
+          ),
+          if (cert.remarks != null && cert.remarks!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildReraDetailItem("REMARKS", cert.remarks!),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReraQuarterCard(ReraQuarterUpdate q) {
+    return Container(
+      width: 180,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.date_range, size: 16, color: Color(0xFF705C00)),
+              const SizedBox(width: 8),
+              Text(
+                DateFormat('MMM yyyy').format(q.quarterDate),
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildReraDetailItem("CONSTRUCTION", q.constructionStatus ?? "—"),
+          const SizedBox(height: 12),
+          _buildReraDetailItem("SALES", q.salesStatus ?? "—"),
+        ],
       ),
     );
   }
@@ -3481,7 +5589,9 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
             return Dialog(
               backgroundColor: Colors.white,
               insetPadding: const EdgeInsets.all(16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
                 child: SingleChildScrollView(
@@ -3490,7 +5600,10 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                     children: [
                       // Header
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 24,
+                        ),
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
                             colors: [Color(0xFF705C00), Color(0xFF2E3228)],
@@ -3506,7 +5619,11 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                                 color: Colors.white.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.account_balance_rounded, color: Colors.white, size: 28),
+                              child: const Icon(
+                                Icons.account_balance_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -3525,7 +5642,9 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                                     "Register a new RERA project",
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 13,
-                                      color: Colors.white.withValues(alpha: 0.7),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.7,
+                                      ),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -3534,12 +5653,15 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                             ),
                             IconButton(
                               onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.close_rounded, color: Colors.white),
+                              icon: const Icon(
+                                Icons.close_rounded,
+                                color: Colors.white,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      
+
                       Padding(
                         padding: const EdgeInsets.all(24),
                         child: Column(
@@ -3551,7 +5673,11 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                                 children: [
                                   Row(
                                     children: [
-                                      const Icon(Icons.article_outlined, size: 16, color: Color(0xFF705C00)),
+                                      const Icon(
+                                        Icons.article_outlined,
+                                        size: 16,
+                                        color: Color(0xFF705C00),
+                                      ),
                                       const SizedBox(width: 8),
                                       Text(
                                         "REGISTRATION DETAILS",
@@ -3565,24 +5691,34 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                                     ],
                                   ),
                                   const SizedBox(height: 24),
-                                  _buildModalLabel("RERA NUMBER", required: true),
+                                  _buildModalLabel(
+                                    "RERA NUMBER",
+                                    required: true,
+                                  ),
                                   const SizedBox(height: 10),
                                   TextField(
                                     controller: numberController,
-                                    decoration: _modalInputDecoration("E.G. P52100012345"),
+                                    decoration: _modalInputDecoration(
+                                      "E.G. P52100012345",
+                                    ),
                                   ),
                                   const SizedBox(height: 24),
                                   Row(
                                     children: [
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            _buildModalLabel("REGISTRATION DATE"),
+                                            _buildModalLabel(
+                                              "REGISTRATION DATE",
+                                            ),
                                             const SizedBox(height: 10),
                                             _buildDateTimePicker(
                                               registrationDate,
-                                              (dt) => setDialogState(() => registrationDate = dt),
+                                              (dt) => setDialogState(
+                                                () => registrationDate = dt,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -3590,13 +5726,18 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            _buildModalLabel("EXPECTED COMPLETION DATE"),
+                                            _buildModalLabel(
+                                              "EXPECTED COMPLETION DATE",
+                                            ),
                                             const SizedBox(height: 10),
                                             _buildDateTimePicker(
                                               expectedDate,
-                                              (dt) => setDialogState(() => expectedDate = dt),
+                                              (dt) => setDialogState(
+                                                () => expectedDate = dt,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -3611,7 +5752,9 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                                       Switch(
                                         value: isActive,
                                         activeThumbColor: Colors.green,
-                                        onChanged: (val) => setDialogState(() => isActive = val),
+                                        onChanged: (val) => setDialogState(
+                                          () => isActive = val,
+                                        ),
                                       ),
                                       const SizedBox(width: 12),
                                       Text(
@@ -3619,7 +5762,9 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w700,
-                                          color: isActive ? Colors.green : AppColors.outline,
+                                          color: isActive
+                                              ? Colors.green
+                                              : AppColors.outline,
                                         ),
                                       ),
                                     ],
@@ -3627,7 +5772,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                                 ],
                               ),
                             ),
-                            
+
                             const SizedBox(height: 32),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -3635,41 +5780,117 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                                 OutlinedButton(
                                   onPressed: () => Navigator.pop(context),
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 40,
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                   ),
-                                  child: Text("Cancel", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+                                  child: Text(
+                                    "Cancel",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                                 const SizedBox(width: 16),
                                 ElevatedButton.icon(
-                                  onPressed: () {
-                                    final newRera = ReraProject(
-                                      id: _detailedSite.reraProjects.length + 1,
-                                      reraNumber: numberController.text,
-                                      registrationDate: registrationDate,
-                                      expectedCompletionDate: expectedDate,
-                                      status: isActive ? 'ACTIVE' : 'INACTIVE',
-                                      createdAt: DateTime.now(),
-                                      lastUpdated: DateTime.now(),
-                                    );
-                                    setState(() {
-                                      _detailedSite.reraProjects.insert(0, newRera);
-                                    });
-                                    Navigator.pop(context);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text("RERA registration added successfully"),
-                                        behavior: SnackBarBehavior.floating,
+                                  onPressed: () async {
+                                    if (numberController.text.trim().isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "RERA Number is required",
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (_) => const Center(
+                                        child: CircularProgressIndicator(),
                                       ),
                                     );
+
+                                    final payload = {
+                                      "reraNumber": numberController.text
+                                          .trim(),
+                                      "registrationDate": DateFormat(
+                                        'yyyy-MM-dd',
+                                      ).format(registrationDate),
+                                      "expectedCompletionDate": DateFormat(
+                                        'yyyy-MM-dd',
+                                      ).format(expectedDate),
+                                      "active": isActive,
+                                    };
+
+                                    int idToFetch = _detailedSite.projectId > 0
+                                        ? _detailedSite.projectId
+                                        : _detailedSite.id;
+                                    final success =
+                                        await ReraService.createReraProject(
+                                          projectId: idToFetch,
+                                          data: payload,
+                                        );
+
+                                    if (mounted)
+                                      Navigator.pop(
+                                        context,
+                                      ); // Close loading spinner
+
+                                    if (success) {
+                                      if (mounted)
+                                        Navigator.pop(context); // Close modal
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "RERA registration added successfully",
+                                          ),
+                                          behavior: SnackBarBehavior.floating,
+                                          backgroundColor: AppColors.primary,
+                                        ),
+                                      );
+                                      _fetchFullDetails(); // Force refresh directly from API
+                                    } else {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Failed to add RERA registration",
+                                          ),
+                                          behavior: SnackBarBehavior.floating,
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
                                   },
-                                  icon: const Icon(Icons.account_balance_rounded, size: 18),
+                                  icon: const Icon(
+                                    Icons.account_balance_rounded,
+                                    size: 18,
+                                  ),
                                   label: const Text("Add RERA"),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF705C00).withValues(alpha: 0.6),
+                                    backgroundColor: const Color(
+                                      0xFF705C00,
+                                    ).withValues(alpha: 0.6),
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 40,
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                     elevation: 0,
                                   ),
                                 ),
@@ -3695,14 +5916,108 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
       decoration: BoxDecoration(
         color: const Color(0xFFFBFBF9),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.2),
+        ),
       ),
       child: child,
     );
   }
 
-  Widget _buildPlaceholderTab(String title) {
+  void _handleDeleteRera(int id, String reraNum) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          "Delete RERA Project",
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          "Are you sure you want to delete '$reraNum'? This will remove all associated logs and certificates.",
+          style: GoogleFonts.plusJakartaSans(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Cancel",
+              style: GoogleFonts.plusJakartaSans(color: AppColors.outline),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) =>
+                    const Center(child: CircularProgressIndicator()),
+              );
+              final success = await ReraService.deleteReraProject(id);
+              if (mounted) Navigator.pop(context);
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("RERA project deleted successfully"),
+                  ),
+                );
+                _fetchFullDetails();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Failed to delete RERA project"),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text(
+              "Delete",
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildCompactReraStatus(String status) {
+    final bool isActive = status.toUpperCase() == 'ACTIVE';
+    final Color color = isActive ? Colors.green : Colors.red;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            status.toUpperCase(),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderTab(String title) {
     return const SizedBox(height: 100);
   }
 }
@@ -3823,7 +6138,15 @@ class _PriorityPill extends StatelessWidget {
 class _StatusBadge extends StatelessWidget {
   final String status;
   final bool small;
-  const _StatusBadge({required this.status, this.small = false});
+  final bool onlyDot;
+  final bool hasDocuments;
+
+  const _StatusBadge({
+    required this.status,
+    this.small = false,
+    this.onlyDot = false,
+    this.hasDocuments = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -3851,34 +6174,35 @@ class _StatusBadge extends StatelessWidget {
         bg = AppColors.surfaceContainerHigh;
         fg = AppColors.onSurfaceVariant;
     }
+
+    if (onlyDot) {
+      // Force green if documents are present, otherwise use status color
+      final dotColor = hasDocuments ? AppColors.chipDoneFg : fg;
+
+      return Container(
+        width: 10,
+        height: 10,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+      );
+    }
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: small ? 8 : 12,
-        vertical: small ? 4 : 6,
+        vertical: small ? 4 : 4,
       ),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: fg.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(small ? 8 : 12),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              color: fg,
-            ),
-          ),
-        ],
+      child: Text(
+        label.toUpperCase(),
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: small ? 10 : 11,
+          fontWeight: FontWeight.w800,
+          color: fg,
+        ),
       ),
     );
   }
@@ -3888,52 +6212,62 @@ class _SummaryItem extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
+  final VoidCallback? onTap;
 
   const _SummaryItem({
     required this.label,
     required this.value,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            value,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.outline.withOpacity(0.8),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: AppColors.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
 class _StageTile extends StatelessWidget {
-  final Map<String, dynamic> stage;
+  final SiteStage stage;
+  final VoidCallback onRefresh;
 
-  const _StageTile({required this.stage});
+  const _StageTile({required this.stage, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
-    bool isGrouped = stage['isGrouped'] ?? false;
-    List subStages = stage['subStages'] ?? [];
+    bool isGrouped = stage.childStages.isNotEmpty;
+    List<SiteStage> subStages = stage.childStages;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -3955,7 +6289,7 @@ class _StageTile extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                stage['id'].toString(),
+                stage.id.toString(),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -3965,7 +6299,7 @@ class _StageTile extends StatelessWidget {
             ),
           ),
           title: Text(
-            stage['name'],
+            stage.customStageName ?? stage.stageName,
             style: GoogleFonts.plusJakartaSans(
               fontWeight: FontWeight.w700,
               fontSize: 13,
@@ -3975,24 +6309,27 @@ class _StageTile extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _StatusBadge(status: stage['status'], small: true),
+              _StatusBadge(
+                status: stage.status,
+                onlyDot: true,
+                hasDocuments: stage.documents.isNotEmpty,
+              ),
+              const SizedBox(width: 8),
+              // Non-functional icon for parent titles
+              const Icon(
+                Icons.add_circle_outline_rounded,
+                size: 20,
+                color: AppColors.chipDoneFg,
+              ),
               const SizedBox(width: 4),
-              _AddDocButton(itemName: stage['name']),
               const Icon(Icons.expand_more_rounded, size: 20),
             ],
           ),
           children: [
             const Divider(height: 1, indent: 16, endIndent: 16),
-            if (isGrouped)
-              ...subStages
-                  .map((group) => _GroupedSubStages(group: group))
-                  .toList()
-            else
-              ...subStages
-                  .map(
-                    (sub) => _SubStageTile(name: sub, status: stage['status']),
-                  )
-                  .toList(),
+            ...subStages.map(
+              (sub) => _SubStageTile(stage: sub, onRefresh: onRefresh),
+            ),
             const SizedBox(height: 8),
           ],
         ),
@@ -4001,54 +6338,18 @@ class _StageTile extends StatelessWidget {
   }
 }
 
-class _GroupedSubStages extends StatelessWidget {
-  final Map<String, dynamic> group;
-  const _GroupedSubStages({required this.group});
-
-  @override
-  Widget build(BuildContext context) {
-    List items = group['items'] ?? [];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(60, 12, 16, 4),
-          child: Text(
-            group['group'].toUpperCase(),
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primary,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-        ...items
-            .map(
-              (item) =>
-                  _SubStageTile(name: item, status: 'PENDING', isChild: true),
-            )
-            .toList(),
-      ],
-    );
-  }
-}
+// GroupedSubStages removed as it is no longer used in the refactored backend-driven Stages tab.
 
 class _SubStageTile extends StatelessWidget {
-  final String name;
-  final String status;
-  final bool isChild;
+  final SiteStage stage;
+  final VoidCallback onRefresh;
 
-  const _SubStageTile({
-    required this.name,
-    required this.status,
-    this.isChild = false,
-  });
+  const _SubStageTile({required this.stage, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(isChild ? 72 : 60, 10, 16, 10),
+      padding: const EdgeInsets.fromLTRB(60, 10, 16, 10),
       child: Row(
         children: [
           Container(
@@ -4065,7 +6366,7 @@ class _SubStageTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  stage.customStageName ?? stage.stageName,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -4083,18 +6384,13 @@ class _SubStageTile extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            status == 'COMPLETED' ? "Completed" : "Pending",
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: status == 'COMPLETED'
-                  ? AppColors.chipDoneFg
-                  : AppColors.outline,
-            ),
+          _StatusBadge(
+            status: stage.status,
+            onlyDot: true,
+            hasDocuments: stage.documents.isNotEmpty,
           ),
           const SizedBox(width: 4),
-          _AddDocButton(itemName: name, isSmall: true),
+          _AddDocButton(stage: stage, onSuccess: onRefresh),
         ],
       ),
     );
@@ -4142,52 +6438,344 @@ class _StageStatItem extends StatelessWidget {
 }
 
 class _AddDocButton extends StatelessWidget {
-  final String itemName;
-  final bool isSmall;
+  final SiteStage stage;
+  final VoidCallback onSuccess;
 
-  const _AddDocButton({required this.itemName, this.isSmall = false});
+  const _AddDocButton({required this.stage, required this.onSuccess});
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Upload document for: $itemName"),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: AppColors.primary,
-            duration: const Duration(seconds: 2),
-            action: SnackBarAction(
-              label: 'OK',
-              textColor: Colors.white,
-              onPressed: () {},
-            ),
+    return IconButton(
+      onPressed: () => _showAddDocumentDialog(context, stage, onSuccess),
+      icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
+      color: AppColors.chipDoneFg,
+      tooltip: "Add Document",
+    );
+  }
+}
+
+void _showAddDocumentDialog(
+  BuildContext context,
+  SiteStage stage,
+  VoidCallback onSuccess,
+) {
+  final nameController = TextEditingController(
+    text: stage.customStageName ?? stage.stageName,
+  );
+  final descController = TextEditingController();
+  const Map<String, String> types = {
+    'APPLICATION': 'Application',
+    'NOC': 'NOC',
+    'CERTIFICATE': 'Certificate',
+    'DRAWING': 'Drawing',
+    'LEGAL_DOCUMENT': 'Legal Document',
+    'REPORT': 'Report',
+    'CLEARANCE': 'Clearance',
+    'RECEIPT': 'Receipt',
+    'OTHER': 'Other',
+  };
+  String selectedType = 'OTHER';
+  fp.PlatformFile? pickedFile;
+  bool isUploading = false;
+
+  showDialog(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Add Document",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const Divider(height: 32),
+
+              const _FormLabel(label: "Stage"),
+              Text(
+                stage.customStageName ?? stage.stageName,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurface.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              const _FormLabel(label: "Document Name"),
+              _FormInput(
+                controller: nameController,
+                hint: "Enter document name",
+              ),
+              const SizedBox(height: 16),
+
+              const _FormLabel(label: "Document Type"),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.outlineVariant.withOpacity(0.5),
+                  ),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: selectedType,
+                    isExpanded: true,
+                    items: types.entries
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e.key,
+                            child: Text(
+                              e.value,
+                              style: GoogleFonts.plusJakartaSans(fontSize: 14),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) => setState(() => selectedType = val!),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              const _FormLabel(label: "Description"),
+              _FormInput(
+                controller: descController,
+                hint: "Optional description",
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+
+              const _FormLabel(label: "Upload File"),
+              InkWell(
+                onTap: () async {
+                  fp.FilePickerResult? result = await fp.FilePicker.pickFiles(
+                    type: fp.FileType.any,
+                    // allowedExtensions is ignored when type is any, but keeping for logic
+                  );
+                  if (result != null) {
+                    setState(() => pickedFile = result.files.first);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.outlineVariant.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.outlineVariant.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.outline),
+                        ),
+                        child: Text(
+                          "Choose File",
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          pickedFile?.name ?? "No file chosen",
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            color: AppColors.outline,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: isUploading
+                        ? null
+                        : () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: Text(
+                      "Cancel",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.outline,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: (isUploading || pickedFile == null)
+                        ? null
+                        : () async {
+                            setState(() => isUploading = true);
+                            final success = await StageService.addStageDocument(
+                              stageId: stage.id,
+                              file: File(pickedFile!.path!),
+                              documentName: nameController.text,
+                              documentType: selectedType,
+                              description: descController.text,
+                            );
+                            if (success) {
+                              onSuccess();
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Document uploaded successfully!",
+                                    ),
+                                    backgroundColor: AppColors.chipDoneFg,
+                                  ),
+                                );
+                              }
+                            } else {
+                              setState(() => isUploading = false);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Upload failed. Verify server connection.",
+                                    ),
+                                    backgroundColor: Colors.redAccent,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: isUploading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            "Upload Document",
+                            style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        );
-      },
-      style: TextButton.styleFrom(
-        padding: EdgeInsets.symmetric(horizontal: isSmall ? 4 : 8),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.add_circle_outline_rounded,
-            size: isSmall ? 14 : 16,
-            color: AppColors.chipDoneFg,
+    ),
+  );
+}
+
+class _FormLabel extends StatelessWidget {
+  final String label;
+  const _FormLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        label,
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.onSurface.withOpacity(0.8),
+        ),
+      ),
+    );
+  }
+}
+
+class _FormInput extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final int maxLines;
+
+  const _FormInput({
+    required this.controller,
+    required this.hint,
+    this.maxLines = 1,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: GoogleFonts.plusJakartaSans(fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 14,
+          color: AppColors.outline.withOpacity(0.5),
+        ),
+        isDense: true,
+        contentPadding: const EdgeInsets.all(12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: AppColors.outlineVariant.withOpacity(0.5),
           ),
-          const SizedBox(width: 4),
-          Text(
-            "Add Doc",
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: isSmall ? 11 : 12,
-              fontWeight: FontWeight.w700,
-              color: AppColors.chipDoneFg,
-            ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: AppColors.outlineVariant.withOpacity(0.5),
           ),
-        ],
+        ),
       ),
     );
   }

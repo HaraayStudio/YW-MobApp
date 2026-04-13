@@ -10,8 +10,9 @@ import 'services/token_service.dart';
 import 'services/auth_service.dart';
 
 final themeNotifier = ValueNotifier<ThemeMode>(ThemeMode.light);
+late final Future<void> initializationFuture;
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Setup global error handling
@@ -20,9 +21,18 @@ void main() async {
     debugPrint("[GlobalError] ${details.exception}");
   };
 
+  // 1. Kick off non-blocking initialization
+  // We don't 'await' here so runApp() hits the screen immediately.
+  initializationFuture = _onBackgroundInit();
+
+  runApp(const YWArchitectsApp());
+}
+
+Future<void> _onBackgroundInit() async {
   try {
     print("[Main] Starting initialization...");
-    // Initialize critical services
+    
+    // Critical: Initialize TokenService (storage)
     await TokenService.init();
     
     // Status bar: transparent + dark icons
@@ -41,11 +51,9 @@ void main() async {
 
     print("[Main] Initialization complete.");
   } catch (e, stack) {
-    print("[Main] CRITICAL ERROR during startup: $e");
+    print("[Main] ERROR during background startup: $e");
     print(stack);
   }
-
-  runApp(const YWArchitectsApp());
 }
 
 class YWArchitectsApp extends StatelessWidget {
@@ -128,20 +136,35 @@ class _AppRootState extends State<AppRoot> {
   @override
   void initState() {
     super.initState();
-    _checkAutoLogin();
+    // Start waiting for init immediately
+    _initAndCheckAutoLogin();
   }
 
-  void _checkAutoLogin() {
+  Future<void> _initAndCheckAutoLogin() async {
+    // Wait for main's background init to finish
+    await initializationFuture;
+    
     final user = AuthService.tryAutoLogin();
-    if (user != null) {
-      _currentUser = user;
+    if (user != null && mounted) {
+      setState(() {
+        _currentUser = user;
+      });
     }
   }
 
-  void _onSplashComplete() {
-    setState(() {
-      _state = _currentUser != null ? _AppState.main : _AppState.login;
-    });
+  void _checkAutoLogin() {
+    // Moved logic into _initAndCheckAutoLogin for async safety
+  }
+
+  Future<void> _onSplashComplete() async {
+    // Ensure initialization is ABSOLUTELY DONE before leaving splash
+    await initializationFuture;
+
+    if (mounted) {
+      setState(() {
+        _state = _currentUser != null ? _AppState.main : _AppState.login;
+      });
+    }
   }
   void _onForgotPassword()  => setState(() => _state = _AppState.forgotPassword);
   void _onBackToLogin()     => setState(() => _state = _AppState.login);

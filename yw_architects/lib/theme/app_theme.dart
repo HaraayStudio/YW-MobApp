@@ -81,6 +81,29 @@ class AppTheme {
       useMaterial3: true,
     );
   }
+
+  static InputDecoration inputDecoration(String hint, {Widget? prefixIcon, Widget? suffixIcon}) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: AppColors.surfaceContainerLowest,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.outlineVariant),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.outlineVariant),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primary),
+      ),
+    );
+  }
 }
 
 LinearGradient get goldGradient => const LinearGradient(

@@ -64,4 +64,43 @@ class MeetingService {
       return [];
     }
   }
+
+  /// Update meeting
+  /// PUT /api/meetings/update/{meetingId}
+  static Future<bool> updateMeeting(int id, Map<String, dynamic> meetingData) async {
+    try {
+      final token = TokenService.accessToken;
+      final response = await http.put(
+        Uri.parse("$baseUrl/update/$id"),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(meetingData),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      debugPrint("UPDATE MEETING ERROR: $e");
+      return false;
+    }
+  }
+
+  /// Delete meeting
+  /// DELETE /api/meetings/delete/{meetingId}
+  static Future<bool> deleteMeeting(int id) async {
+    try {
+      final token = TokenService.accessToken;
+      final response = await http.delete(
+        Uri.parse("$baseUrl/delete/$id"),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint("DELETE MEETING ERROR: $e");
+      return false;
+    }
+  }
 }

@@ -59,7 +59,7 @@ class AppUser {
 }
 
 // Full access: 'dashboard', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile'
-const List<String> fullNav = ['dashboard', 'clients', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile'];
+const List<String> fullNav = ['dashboard', 'clients', 'enquiry', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile'];
 const List<String> hrNav = fullNav; // HR now has same access as Admin/Co-Founder
 const List<String> srNav = ['dashboard', 'clients', 'projects', 'tasks', 'leaves', 'notifications', 'profile'];
 const List<String> jrNav = ['dashboard', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
@@ -160,6 +160,7 @@ const Map<String, NavItem> navConfig = {
   'renders': NavItem(key: 'renders', iconData: Icons.view_in_ar_rounded, label: 'Renders'),
   'reports': NavItem(key: 'reports', iconData: Icons.analytics_rounded, label: 'Reports'),
   'notifications': NavItem(key: 'notifications', iconData: Icons.notifications_rounded, label: 'Alerts'),
+  'enquiry': NavItem(key: 'enquiry', iconData: Icons.question_answer_rounded, label: 'Enquiries'),
   'profile': NavItem(key: 'profile', iconData: Icons.manage_accounts_rounded, label: 'Profile'),
 };
 class Client {

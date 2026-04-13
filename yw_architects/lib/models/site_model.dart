@@ -8,7 +8,7 @@ class Site {
   final String city;
   final double builtUpArea;
   final int projectId;
-  
+
   // New aligned fields
   final String? projectCode;
   final String? permanentProjectId;
@@ -93,7 +93,8 @@ class Site {
     debugPrint("TOP KEYS: ${json.keys.toList()}");
     final project = json['project'] ?? {};
     final client = json['client'] ?? {};
-    if (project.isNotEmpty) debugPrint("NESTED PROJECT KEYS: ${project.keys.toList()}");
+    if (project.isNotEmpty)
+      debugPrint("NESTED PROJECT KEYS: ${project.keys.toList()}");
 
     var structList = json['structures'] as List?;
     var stageList = json['stages'] as List?;
@@ -106,24 +107,28 @@ class Site {
     // FUZZY MAPPING: Search every key in every object for a pattern
     dynamic fuzzyGet(List<String> patterns, {double? defaultValue}) {
       final allObjects = [json, project, client];
-      
+
       for (var obj in allObjects) {
         if (obj.isEmpty) continue;
-        
+
         // 1. Try Exact Matches first for performance
         for (var p in patterns) {
-          if (obj[p] != null && obj[p].toString().isNotEmpty && obj[p].toString() != 'null') {
+          if (obj[p] != null &&
+              obj[p].toString().isNotEmpty &&
+              obj[p].toString() != 'null') {
             return obj[p];
           }
         }
-        
+
         // 2. Try Case-Insensitive Regex Search
         for (var key in obj.keys.toList()) {
           final keyLower = key.toString().toLowerCase();
           for (var p in patterns) {
             final pLower = p.toLowerCase();
             // If the key contains our pattern (e.g., 'city' contains 'city')
-            if (keyLower.contains(pLower) && obj[key] != null && obj[key].toString().isNotEmpty) {
+            if (keyLower.contains(pLower) &&
+                obj[key] != null &&
+                obj[key].toString().isNotEmpty) {
               return obj[key];
             }
           }
@@ -138,7 +143,7 @@ class Site {
     }
 
     final rawId = fuzzyGet(['project_id', 'projectId', 'id']) ?? 0;
-    
+
     // Safely parse a dynamic value into a double
     double parseDoubleSafely(dynamic value) {
       if (value == null) return 0.0;
@@ -148,36 +153,87 @@ class Site {
 
     return Site(
       id: rawId is int ? rawId : (int.tryParse(rawId.toString()) ?? 0),
-      siteName: getField('projectName', ['project_name', 'siteName', 'name'])?.toString() ?? 'Unnamed Site',
-      status: getField('projectStatus', ['project_status', 'status'])?.toString() ?? 'PLANNING',
-      address: getField('address', ['locationAddress', 'full_address'])?.toString() ?? '',
-      city: getField('city', ['location', 'town', 'district'])?.toString() ?? '',
-      builtUpArea: parseDoubleSafely(getField('totalBuiltUpArea', ['total_built_up_area', 'builtUpArea'])),
+      siteName:
+          getField('projectName', [
+            'project_name',
+            'siteName',
+            'name',
+          ])?.toString() ??
+          'Unnamed Site',
+      status:
+          getField('projectStatus', ['project_status', 'status'])?.toString() ??
+          'PLANNING',
+      address:
+          getField('address', [
+            'locationAddress',
+            'full_address',
+          ])?.toString() ??
+          '',
+      city:
+          getField('city', ['location', 'town', 'district'])?.toString() ?? '',
+      builtUpArea: parseDoubleSafely(
+        getField('totalBuiltUpArea', ['total_built_up_area', 'builtUpArea']),
+      ),
       projectId: rawId is int ? rawId : (int.tryParse(rawId.toString()) ?? 0),
-      projectCode: getField('projectCode', ['project_code', 'code'])?.toString(),
-      permanentProjectId: getField('permanentProjectId', ['permanent_project_id'])?.toString(),
-      projectDetails: getField('projectDetails', ['project_details', 'details'])?.toString(),
+      projectCode: getField('projectCode', [
+        'project_code',
+        'code',
+      ])?.toString(),
+      permanentProjectId: getField('permanentProjectId', [
+        'permanent_project_id',
+      ])?.toString(),
+      projectDetails: getField('projectDetails', [
+        'project_details',
+        'details',
+      ])?.toString(),
       logoUrl: getField('logoUrl', ['logo_url'])?.toString(),
       priority: getField('priority', ['projectPriority'])?.toString(),
       latitude: parseDoubleSafely(getField('latitude', ['lat'])),
       longitude: parseDoubleSafely(getField('longitude', ['lng'])),
       plotArea: parseDoubleSafely(getField('plotArea', ['plot_area', 'area'])),
-      totalCarpetArea: parseDoubleSafely(getField('totalCarpetArea', ['total_carpet_area', 'carpetArea'])),
-      projectStartDateTime: getField('projectStartDateTime', ['project_start_date_time']) != null
-          ? DateTime.tryParse(getField('projectStartDateTime', ['project_start_date_time']).toString())
+      totalCarpetArea: parseDoubleSafely(
+        getField('totalCarpetArea', ['total_carpet_area', 'carpetArea']),
+      ),
+      projectStartDateTime:
+          getField('projectStartDateTime', ['project_start_date_time']) != null
+          ? DateTime.tryParse(
+              getField('projectStartDateTime', [
+                'project_start_date_time',
+              ]).toString(),
+            )
           : null,
-      projectExpectedEndDate: getField('projectExpectedEndDate', ['project_expected_end_date']) != null
-          ? DateTime.tryParse(getField('projectExpectedEndDate', ['project_expected_end_date']).toString())
+      projectExpectedEndDate:
+          getField('projectExpectedEndDate', ['project_expected_end_date']) !=
+              null
+          ? DateTime.tryParse(
+              getField('projectExpectedEndDate', [
+                'project_expected_end_date',
+              ]).toString(),
+            )
           : null,
-      projectEndDateTime: getField('projectEndDateTime', ['project_end_date_time']) != null
-          ? DateTime.tryParse(getField('projectEndDateTime', ['project_end_date_time']).toString())
+      projectEndDateTime:
+          getField('projectEndDateTime', ['project_end_date_time']) != null
+          ? DateTime.tryParse(
+              getField('projectEndDateTime', [
+                'project_end_date_time',
+              ]).toString(),
+            )
           : null,
-      createdAt: getField('projectCreatedDateTime', ['project_created_date_time', 'createdAt']) != null
-          ? DateTime.tryParse(getField('projectCreatedDateTime', ['project_created_date_time', 'createdAt']).toString())
+      createdAt:
+          getField('projectCreatedDateTime', [
+                'project_created_date_time',
+                'createdAt',
+              ]) !=
+              null
+          ? DateTime.tryParse(
+              getField('projectCreatedDateTime', [
+                'project_created_date_time',
+                'createdAt',
+              ]).toString(),
+            )
           : null,
-      postSalesId: json['id'] ??
-          json['postSales']?['id'] ??
-          json['post_sales']?['id'],
+      postSalesId:
+          json['id'] ?? json['postSales']?['id'] ?? json['post_sales']?['id'],
       structures: structList != null
           ? structList.map((s) => SiteStructure.fromJson(s)).toList()
           : [],
@@ -282,8 +338,8 @@ class ReraProject {
   final String status; // ACTIVE, INACTIVE
   final DateTime createdAt;
   final DateTime lastUpdated;
-  final List<String> certificates;
-  final List<String> quarterUpdates;
+  final List<ReraCertificate> certificates;
+  final List<ReraQuarterUpdate> quarterUpdates;
 
   ReraProject({
     required this.id,
@@ -301,13 +357,103 @@ class ReraProject {
     return ReraProject(
       id: json['id'] ?? 0,
       reraNumber: json['reraNumber'] ?? json['rera_number'] ?? '',
-      registrationDate: DateTime.tryParse(json['registrationDate'] ?? json['registration_date'] ?? '') ?? DateTime.now(),
-      expectedCompletionDate: DateTime.tryParse(json['expectedCompletionDate'] ?? json['expected_completion_date'] ?? '') ?? DateTime.now(),
-      status: json['status'] ?? 'INACTIVE',
-      createdAt: DateTime.tryParse(json['createdAt'] ?? json['created_at'] ?? '') ?? DateTime.now(),
-      lastUpdated: DateTime.tryParse(json['lastUpdated'] ?? json['last_updated'] ?? '') ?? DateTime.now(),
-      certificates: (json['certificates'] as List?)?.map((e) => e.toString()).toList() ?? [],
-      quarterUpdates: (json['quarterUpdates'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      registrationDate:
+          DateTime.tryParse(
+            json['registrationDate'] ?? json['registration_date'] ?? '',
+          ) ??
+          DateTime.now(),
+      expectedCompletionDate:
+          DateTime.tryParse(
+            json['expectedCompletionDate'] ??
+                json['expected_completion_date'] ??
+                '',
+          ) ??
+          DateTime.now(),
+      status: (json['active'] == true || json['status'] == 'ACTIVE')
+          ? 'ACTIVE'
+          : 'INACTIVE',
+      createdAt:
+          DateTime.tryParse(json['createdAt'] ?? json['created_at'] ?? '') ??
+          DateTime.now(),
+      lastUpdated:
+          DateTime.tryParse(
+            json['lastUpdated'] ?? json['last_updated'] ?? '',
+          ) ??
+          DateTime.now(),
+      certificates:
+          (json['certificates'] as List?)
+              ?.map((e) => ReraCertificate.fromJson(e))
+              .toList() ??
+          [],
+      quarterUpdates:
+          (json['quarterUpdates'] as List?)
+              ?.map((e) => ReraQuarterUpdate.fromJson(e))
+              .toList() ??
+          [],
+    );
+  }
+}
+
+class ReraCertificate {
+  final int id;
+  final DateTime certificateDate;
+  final String? certifiedBy;
+  final String? remarks;
+  final String? certificateFileUrl;
+  final DateTime createdAt;
+
+  ReraCertificate({
+    required this.id,
+    required this.certificateDate,
+    this.certifiedBy,
+    this.remarks,
+    this.certificateFileUrl,
+    required this.createdAt,
+  });
+
+  factory ReraCertificate.fromJson(Map<String, dynamic> json) {
+    return ReraCertificate(
+      id: json['id'] ?? 0,
+      certificateDate:
+          DateTime.tryParse(
+            json['certificateDate'] ?? json['certificate_date'] ?? '',
+          ) ??
+          DateTime.now(),
+      certifiedBy: json['certifiedBy'] ?? json['certified_by'],
+      remarks: json['remarks'],
+      certificateFileUrl:
+          json['certificateFileUrl'] ?? json['certificate_file_url'],
+      createdAt:
+          DateTime.tryParse(json['createdAt'] ?? json['created_at'] ?? '') ??
+          DateTime.now(),
+    );
+  }
+}
+
+class ReraQuarterUpdate {
+  final int id;
+  final DateTime quarterDate;
+  final String? constructionStatus;
+  final String? salesStatus;
+
+  ReraQuarterUpdate({
+    required this.id,
+    required this.quarterDate,
+    this.constructionStatus,
+    this.salesStatus,
+  });
+
+  factory ReraQuarterUpdate.fromJson(Map<String, dynamic> json) {
+    return ReraQuarterUpdate(
+      id: json['id'] ?? 0,
+      quarterDate:
+          DateTime.tryParse(
+            json['quarterDate'] ?? json['quarter_date'] ?? '',
+          ) ??
+          DateTime.now(),
+      constructionStatus:
+          json['constructionStatus'] ?? json['construction_status'],
+      salesStatus: json['salesStatus'] ?? json['sales_status'],
     );
   }
 }
@@ -344,9 +490,17 @@ class Meeting {
       agenda: json['agenda'] ?? '',
       type: json['type'] ?? 'FACE_TO_FACE',
       status: json['status'] ?? 'SCHEDULED',
-      scheduledAt: DateTime.tryParse(json['scheduledAt'] ?? json['scheduled_at'] ?? '') ?? DateTime.now(),
-      startedAt: json['startedAt'] != null ? DateTime.tryParse(json['startedAt']) : null,
-      endedAt: json['endedAt'] != null ? DateTime.tryParse(json['endedAt']) : null,
+      scheduledAt:
+          DateTime.tryParse(
+            json['scheduledAt'] ?? json['scheduled_at'] ?? '',
+          ) ??
+          DateTime.now(),
+      startedAt: json['startedAt'] != null
+          ? DateTime.tryParse(json['startedAt'])
+          : null,
+      endedAt: json['endedAt'] != null
+          ? DateTime.tryParse(json['endedAt'])
+          : null,
       meetingLink: json['meetingLink'] ?? json['meeting_link'],
       mom: json['mom'],
     );
@@ -359,8 +513,8 @@ class SiteVisit {
   final String description;
   final String? locationNote;
   final DateTime visitDate;
-  final int photoCount;
-  final int docCount;
+  final List<SiteVisitPhoto> photos;
+  final List<SiteVisitDocument> documents;
 
   SiteVisit({
     required this.id,
@@ -368,8 +522,8 @@ class SiteVisit {
     required this.description,
     this.locationNote,
     required this.visitDate,
-    this.photoCount = 0,
-    this.docCount = 0,
+    this.photos = const [],
+    this.documents = const [],
   });
 
   factory SiteVisit.fromJson(Map<String, dynamic> json) {
@@ -378,9 +532,69 @@ class SiteVisit {
       title: json['title'] ?? 'Site Visit',
       description: json['description'] ?? '',
       locationNote: json['locationNote'] ?? json['location_note'],
-      visitDate: DateTime.tryParse(json['visitDate'] ?? json['visit_date'] ?? '') ?? DateTime.now(),
-      photoCount: json['photoCount'] ?? 0,
-      docCount: json['docCount'] ?? 0,
+      visitDate:
+          DateTime.tryParse(json['visitDate'] ?? json['visit_date'] ?? '') ??
+          DateTime.now(),
+      photos:
+          (json['photos'] as List?)
+              ?.map((p) => SiteVisitPhoto.fromJson(p))
+              .toList() ??
+          [],
+      documents:
+          (json['documents'] as List?)
+              ?.map((d) => SiteVisitDocument.fromJson(d))
+              .toList() ??
+          [],
+    );
+  }
+}
+
+class SiteVisitPhoto {
+  final int id;
+  final String imageUrl;
+  final String? caption;
+  final DateTime? uploadedAt;
+
+  SiteVisitPhoto({
+    required this.id,
+    required this.imageUrl,
+    this.caption,
+    this.uploadedAt,
+  });
+
+  factory SiteVisitPhoto.fromJson(Map<String, dynamic> json) {
+    return SiteVisitPhoto(
+      id: json['id'] ?? 0,
+      imageUrl: json['imageUrl'] ?? json['image_url'] ?? '',
+      caption: json['caption'],
+      uploadedAt: DateTime.tryParse(
+        json['uploadedAt'] ?? json['uploaded_at'] ?? '',
+      ),
+    );
+  }
+}
+
+class SiteVisitDocument {
+  final int id;
+  final String documentUrl;
+  final String documentName;
+  final DateTime? uploadedAt;
+
+  SiteVisitDocument({
+    required this.id,
+    required this.documentUrl,
+    required this.documentName,
+    this.uploadedAt,
+  });
+
+  factory SiteVisitDocument.fromJson(Map<String, dynamic> json) {
+    return SiteVisitDocument(
+      id: json['id'] ?? 0,
+      documentUrl: json['documentUrl'] ?? json['document_url'] ?? '',
+      documentName: json['documentName'] ?? json['document_name'] ?? 'document',
+      uploadedAt: DateTime.tryParse(
+        json['uploadedAt'] ?? json['uploaded_at'] ?? '',
+      ),
     );
   }
 }
@@ -414,6 +628,37 @@ class SiteStructure {
   }
 }
 
+class StageDocument {
+  final int id;
+  final String? fileName;
+  final String? filePath;
+  final String? documentType;
+  final String? description;
+  final DateTime? uploadedAt;
+
+  StageDocument({
+    required this.id,
+    this.fileName,
+    this.filePath,
+    this.documentType,
+    this.description,
+    this.uploadedAt,
+  });
+
+  factory StageDocument.fromJson(Map<String, dynamic> json) {
+    return StageDocument(
+      id: json['id'] ?? 0,
+      fileName: json['fileName'] ?? json['documentName'],
+      filePath: json['filePath'] ?? json['documentUrl'],
+      documentType: json['documentType'],
+      description: json['description'],
+      uploadedAt: json['uploadedAt'] != null
+          ? DateTime.tryParse(json['uploadedAt'])
+          : null,
+    );
+  }
+}
+
 class SiteStage {
   final int id;
   final String stageName;
@@ -424,6 +669,7 @@ class SiteStage {
   final DateTime? targetCompletionDate;
   final DateTime? actualCompletionDate;
   final List<SiteStage> childStages;
+  final List<StageDocument> documents;
 
   SiteStage({
     required this.id,
@@ -435,20 +681,33 @@ class SiteStage {
     this.targetCompletionDate,
     this.actualCompletionDate,
     this.childStages = const [],
+    this.documents = const [],
   });
 
   factory SiteStage.fromJson(Map<String, dynamic> json) {
     var children = json['childStages'] as List?;
+    var docs = json['documents'] as List?;
     return SiteStage(
       id: json['id'] ?? 0,
       stageName: json['stageName'] ?? '',
       customStageName: json['customStageName'],
       status: json['status'] ?? 'NOT_STARTED',
       progressPercentage: (json['progressPercentage'] ?? 0.0).toDouble(),
-      startedAt: json['startedAt'] != null ? DateTime.tryParse(json['startedAt']) : null,
-      targetCompletionDate: json['targetCompletionDate'] != null ? DateTime.tryParse(json['targetCompletionDate']) : null,
-      actualCompletionDate: json['actualCompletionDate'] != null ? DateTime.tryParse(json['actualCompletionDate']) : null,
-      childStages: children != null ? children.map((c) => SiteStage.fromJson(c)).toList() : [],
+      startedAt: json['startedAt'] != null
+          ? DateTime.tryParse(json['startedAt'])
+          : null,
+      targetCompletionDate: json['targetCompletionDate'] != null
+          ? DateTime.tryParse(json['targetCompletionDate'])
+          : null,
+      actualCompletionDate: json['actualCompletionDate'] != null
+          ? DateTime.tryParse(json['actualCompletionDate'])
+          : null,
+      childStages: children != null
+          ? children.map((c) => SiteStage.fromJson(c)).toList()
+          : [],
+      documents: docs != null
+          ? docs.map((d) => StageDocument.fromJson(d)).toList()
+          : [],
     );
   }
 }

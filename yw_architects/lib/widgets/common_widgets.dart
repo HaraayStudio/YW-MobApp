@@ -6,6 +6,7 @@ class GoldGradientButton extends StatelessWidget {
   final VoidCallback? onTap;
   final IconData? icon;
   final double? width;
+  final double? height;
   final double verticalPadding;
 
   const GoldGradientButton({
@@ -14,6 +15,7 @@ class GoldGradientButton extends StatelessWidget {
     this.onTap,
     this.icon,
     this.width,
+    this.height,
     this.verticalPadding = 16,
   });
 
@@ -23,7 +25,8 @@ class GoldGradientButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: width ?? double.infinity,
-        padding: EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 20),
+        height: height,
+        padding: height != null ? EdgeInsets.zero : EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 20),
         decoration: BoxDecoration(
           gradient: goldGradient,
           borderRadius: BorderRadius.circular(16),
@@ -127,12 +130,14 @@ class AvatarWidget extends StatelessWidget {
   final String initials;
   final double size;
   final double fontSize;
+  final Color? color;
 
   const AvatarWidget({
     super.key,
     required this.initials,
     this.size = 40,
     this.fontSize = 14,
+    this.color,
   });
 
   @override
@@ -141,7 +146,8 @@ class AvatarWidget extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        gradient: goldGradient,
+        color: color,
+        gradient: color == null ? goldGradient : null,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Center(
@@ -161,48 +167,56 @@ class AvatarWidget extends StatelessWidget {
 class SectionHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
+  final Widget? action;
 
-  const SectionHeader({super.key, required this.title, this.subtitle});
+  const SectionHeader({super.key, required this.title, this.subtitle, this.action});
 
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Container(
-          width: 4,
-          height: subtitle != null ? 48 : 32,
-          decoration: BoxDecoration(
-            gradient: goldGradient,
-            borderRadius: BorderRadius.circular(99),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Row(
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: AppColors.onSurface,
+            Container(
+              width: 4,
+              height: subtitle != null ? 48 : 32,
+              decoration: BoxDecoration(
+                gradient: goldGradient,
+                borderRadius: BorderRadius.circular(99),
               ),
             ),
-            if (subtitle != null)
-              Text(
-                subtitle!,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.onSurface,
+                  ),
                 ),
-              ),
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
+            ),
           ],
         ),
+        if (action != null) action!,
       ],
     );
   }
 }
+
 
 class ProgressBar extends StatelessWidget {
   final double percent;
@@ -298,3 +312,22 @@ void showAppToast(BuildContext context, String message) {
   overlay.insert(entry);
   Future.delayed(const Duration(seconds: 3), () => entry.remove());
 }
+
+class SearchField extends StatelessWidget {
+  final String hint;
+  final Function(String) onChanged;
+
+  const SearchField({super.key, required this.hint, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      onChanged: onChanged,
+      decoration: AppTheme.inputDecoration(
+        hint,
+        prefixIcon: const Icon(Icons.search_rounded, color: AppColors.outline),
+      ),
+    );
+  }
+}
+
