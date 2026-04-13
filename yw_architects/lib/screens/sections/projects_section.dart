@@ -11,8 +11,14 @@ import 'package:intl/intl.dart';
 class ProjectsSection extends StatefulWidget {
   final AppUser user;
   final Function(String) onToast;
+  final int? editProjectId;
 
-  const ProjectsSection({super.key, required this.user, required this.onToast});
+  const ProjectsSection({
+    super.key,
+    required this.user,
+    required this.onToast,
+    this.editProjectId,
+  });
 
   @override
   State<ProjectsSection> createState() => _ProjectsSectionState();
@@ -50,6 +56,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   final Map<String, TextEditingController> _editCtrls = {};
 
   void _initEditForm(Map<String, dynamic> p) {
+    _selectedProject = p;
     _editTabIndex = 0;
     _editCtrls.clear();
 
@@ -88,14 +95,24 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     );
 
     // Location
-    _editCtrls['address'] = TextEditingController(text: getV('address', 'address'));
+    _editCtrls['address'] = TextEditingController(
+      text: getV('address', 'address'),
+    );
     _editCtrls['city'] = TextEditingController(text: getV('city', 'city'));
-    _editCtrls['latitude'] = TextEditingController(text: getV('latitude', 'latitude'));
-    _editCtrls['longitude'] = TextEditingController(text: getV('longitude', 'longitude'));
-    _editCtrls['googlePlace'] = TextEditingController(text: getV('googlePlace', 'google_place'));
+    _editCtrls['latitude'] = TextEditingController(
+      text: getV('latitude', 'latitude'),
+    );
+    _editCtrls['longitude'] = TextEditingController(
+      text: getV('longitude', 'longitude'),
+    );
+    _editCtrls['googlePlace'] = TextEditingController(
+      text: getV('googlePlace', 'google_place'),
+    );
 
     // Area
-    _editCtrls['plotArea'] = TextEditingController(text: getV('plotArea', 'plot_area'));
+    _editCtrls['plotArea'] = TextEditingController(
+      text: getV('plotArea', 'plot_area'),
+    );
     _editCtrls['totalBuiltUpArea'] = TextEditingController(
       text: getV('totalBuiltUpArea', 'total_built_up_area'),
     );
@@ -104,11 +121,15 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     );
 
     // Timeline - helpers for dates
-    String getD(String c, String s) => raw[c]?.toString() ?? raw[s]?.toString() ?? '';
-    
+    String getD(String c, String s) =>
+        raw[c]?.toString() ?? raw[s]?.toString() ?? '';
+
     _editCtrls['projectCreatedDateTime'] = TextEditingController(
-      text: getD('projectCreatedDateTime', 'project_created_date_time').isNotEmpty
-          ? _formatDate(getD('projectCreatedDateTime', 'project_created_date_time'))
+      text:
+          getD('projectCreatedDateTime', 'project_created_date_time').isNotEmpty
+          ? _formatDate(
+              getD('projectCreatedDateTime', 'project_created_date_time'),
+            )
           : '',
     );
     _editCtrls['projectStartDateTime'] = TextEditingController(
@@ -117,8 +138,11 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           : '',
     );
     _editCtrls['projectExpectedEndDate'] = TextEditingController(
-      text: getD('projectExpectedEndDate', 'project_expected_end_date').isNotEmpty
-          ? _formatDate(getD('projectExpectedEndDate', 'project_expected_end_date'))
+      text:
+          getD('projectExpectedEndDate', 'project_expected_end_date').isNotEmpty
+          ? _formatDate(
+              getD('projectExpectedEndDate', 'project_expected_end_date'),
+            )
           : '',
     );
     _editCtrls['projectEndDateTime'] = TextEditingController(
@@ -134,7 +158,10 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   bool _editError = false;
 
   /// [silent] = true skips the loading spinner (for background syncs)
-  Future<void> _fetchFullProjectDetails(int projectId, {bool silent = false}) async {
+  Future<void> _fetchFullProjectDetails(
+    int projectId, {
+    bool silent = false,
+  }) async {
     if (!silent) {
       setState(() {
         _isLoading = true;
@@ -145,13 +172,24 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       final res = await ProjectService.getProjectById(projectId);
       if (res != null && mounted) {
         // Extract city, address, area from the FULL project response
-        final city = (res['city'] ?? res['projectCity'] ?? '').toString().trim();
-        final address = (res['address'] ?? res['projectAddress'] ?? '').toString().trim();
-        final plotArea = (res['plotArea'] ?? res['plot_area'] ?? '').toString().trim();
-        final builtArea = (res['totalBuiltUpArea'] ?? res['total_built_up_area'] ?? '').toString().trim();
+        final city = (res['city'] ?? res['projectCity'] ?? '')
+            .toString()
+            .trim();
+        final address = (res['address'] ?? res['projectAddress'] ?? '')
+            .toString()
+            .trim();
+        final plotArea = (res['plotArea'] ?? res['plot_area'] ?? '')
+            .toString()
+            .trim();
+        final builtArea =
+            (res['totalBuiltUpArea'] ?? res['total_built_up_area'] ?? '')
+                .toString()
+                .trim();
         final area = (() {
-          if (plotArea.isNotEmpty && plotArea != '0' && plotArea != 'null') return '$plotArea sq.ft';
-          if (builtArea.isNotEmpty && builtArea != '0' && builtArea != 'null') return '$builtArea sq.ft';
+          if (plotArea.isNotEmpty && plotArea != '0' && plotArea != 'null')
+            return '$plotArea sq.ft';
+          if (builtArea.isNotEmpty && builtArea != '0' && builtArea != 'null')
+            return '$builtArea sq.ft';
           return 'N/A';
         })();
 
@@ -161,25 +199,33 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           if (idx != -1) {
             final updated = Map<String, dynamic>.from(_projects[idx]);
             if (city.isNotEmpty && city != 'null') updated['location'] = city;
-            if (address.isNotEmpty && address != 'null') updated['address'] = address;
+            if (address.isNotEmpty && address != 'null')
+              updated['address'] = address;
             if (area != 'N/A') updated['area'] = area;
             updated['_raw'] = res;
             _projects[idx] = updated;
           }
 
           // Also update the selected project / edit form if this is the current one
-          if (_selectedProject != null && (_selectedProject!['projectId'] == projectId || _selectedProject!['id'] == projectId)) {
-            _selectedProject = res;
-            _initEditFormFields(res);
+          if (_selectedProject != null) {
+            final pid = _selectedProject?['projectId'] ?? _selectedProject?['id'] ?? _selectedProject?['project_id'];
+            if (pid == projectId) {
+              _selectedProject = res;
+              _initEditFormFields(res);
+            }
           }
-          
+
           _isLoading = false;
         });
 
-        debugPrint("FULL DETAIL SYNCED: project $projectId → city=$city, address=$address");
+        debugPrint(
+          "FULL DETAIL SYNCED: project $projectId → city=$city, address=$address",
+        );
       } else {
         if (mounted) setState(() => _isLoading = false);
-        debugPrint("Warning: Full project fetch returned null for project $projectId");
+        debugPrint(
+          "Warning: Full project fetch returned null for project $projectId",
+        );
       }
     } catch (e) {
       debugPrint("Error fetching full project: $e");
@@ -194,29 +240,39 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
     _editCtrls['projectName']?.text = getV('projectName', 'project_name');
     _editCtrls['projectCode']?.text = getV('projectCode', 'project_code');
-    _editCtrls['permanentProjectId']?.text =
-        getV('permanentProjectId', 'permanent_project_id');
-    _editCtrls['projectDetails']?.text = getV('projectDetails', 'project_details');
+    _editCtrls['permanentProjectId']?.text = getV(
+      'permanentProjectId',
+      'permanent_project_id',
+    );
+    _editCtrls['projectDetails']?.text = getV(
+      'projectDetails',
+      'project_details',
+    );
     _editCtrls['address']?.text = getV('address', 'address');
     _editCtrls['city']?.text = getV('city', 'city');
     _editCtrls['latitude']?.text = getV('latitude', 'latitude');
     _editCtrls['longitude']?.text = getV('longitude', 'longitude');
     _editCtrls['googlePlace']?.text = getV('googlePlace', 'google_place');
     _editCtrls['plotArea']?.text = getV('plotArea', 'plot_area');
-    _editCtrls['totalBuiltUpArea']?.text =
-        getV('totalBuiltUpArea', 'total_built_up_area');
-    _editCtrls['totalCarpetArea']?.text =
-        getV('totalCarpetArea', 'total_carpet_area');
+    _editCtrls['totalBuiltUpArea']?.text = getV(
+      'totalBuiltUpArea',
+      'total_built_up_area',
+    );
+    _editCtrls['totalCarpetArea']?.text = getV(
+      'totalCarpetArea',
+      'total_carpet_area',
+    );
     _editCtrls['projectStatus']?.text =
         getV('projectStatus', 'project_status').isNotEmpty
-            ? getV('projectStatus', 'project_status')
-            : 'PLANNING';
+        ? getV('projectStatus', 'project_status')
+        : 'PLANNING';
     _editCtrls['priority']?.text = getV('priority', 'priority').isNotEmpty
         ? getV('priority', 'priority')
         : 'MEDIUM';
 
     // Dates helpers
-    String getD(String c, String s) => res[c]?.toString() ?? res[s]?.toString() ?? '';
+    String getD(String c, String s) =>
+        res[c]?.toString() ?? res[s]?.toString() ?? '';
 
     if (getD('projectCreatedDateTime', 'project_created_date_time').isNotEmpty)
       _editCtrls['projectCreatedDateTime']?.text = _formatDate(
@@ -240,6 +296,15 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   void initState() {
     super.initState();
     _initData();
+    if (widget.editProjectId != null) {
+      // Initialize form with skeleton data to prepare controllers
+      _initEditForm({
+        'id': widget.editProjectId,
+        'name': 'Loading...',
+        'status': 'PLANNING',
+      });
+      _isEditing = true;
+    }
   }
 
   Future<void> _initData() async {
@@ -292,7 +357,10 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       'projectEndDateTime': _toIso(_editCtrls['projectEndDateTime']?.text),
     };
 
-    final projectId = _selectedProject!['projectId'] ?? _selectedProject!['id'] ?? _selectedProject!['project_id'];
+    final projectId =
+        _selectedProject!['projectId'] ??
+        _selectedProject!['id'] ??
+        _selectedProject!['project_id'];
 
     try {
       final success = await ProjectService.updateProject(
@@ -313,7 +381,8 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
             // Identity
             p['name'] = projectData['projectName'] ?? p['name'];
-            p['code'] = projectData['projectCode']?.toString().isNotEmpty == true
+            p['code'] =
+                projectData['projectCode']?.toString().isNotEmpty == true
                 ? projectData['projectCode']
                 : '—';
             p['status'] = _normalizeStatus(
@@ -360,7 +429,10 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         });
 
         // Background fetch to ensure sync
-        Future.delayed(const Duration(milliseconds: 500), () => _fetchProjects());
+        Future.delayed(
+          const Duration(milliseconds: 500),
+          () => _fetchProjects(),
+        );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Failed to update project.")),
@@ -401,41 +473,69 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         }
 
         // 1. IDENTITY
-        String pName = (project['projectName'] ?? project['project_name'])?.toString() ?? '';
+        String pName =
+            (project['projectName'] ?? project['project_name'])?.toString() ??
+            '';
         if (pName.isEmpty) pName = (client['name'] ?? 'Unknown Project');
 
         // 2. LOCATION - EXHAUSTIVE CHECK
         // We look for every possible variation of 'city' and 'address'
-        final city = (project['city'] ?? 
-                      project['projectCity'] ?? 
-                      project['project_city'] ?? 
-                      project['location'] ?? 
-                      d['city'] ?? 
-                      d['project_city'] ?? 
-                      '')
-                     .toString().trim();
+        final city =
+            (project['city'] ??
+                    project['projectCity'] ??
+                    project['project_city'] ??
+                    project['location'] ??
+                    d['city'] ??
+                    d['project_city'] ??
+                    '')
+                .toString()
+                .trim();
 
-        final fullAddress = (project['address'] ?? 
-                             project['projectAddress'] ?? 
-                             project['project_address'] ?? 
-                             project['location_address'] ?? 
-                             d['address'] ?? 
-                             d['project_address'] ?? 
-                             '')
-                            .toString().trim();
+        final fullAddress =
+            (project['address'] ??
+                    project['projectAddress'] ??
+                    project['project_address'] ??
+                    project['location_address'] ??
+                    d['address'] ??
+                    d['project_address'] ??
+                    '')
+                .toString()
+                .trim();
 
         // 3. AREA - EXHAUSTIVE CHECK
         final area = (() {
-          final plot = (project['plotArea'] ?? project['plot_area'] ?? project['area'] ?? '').toString().trim();
-          final built = (project['totalBuiltUpArea'] ?? project['total_built_up_area'] ?? '').toString().trim();
-          
-          if (plot.isNotEmpty && plot != '0' && plot != 'null' && plot != 'N/A') return '$plot sq.ft';
-          if (built.isNotEmpty && built != '0' && built != 'null' && built != 'N/A') return '$built sq.ft';
+          final plot =
+              (project['plotArea'] ??
+                      project['plot_area'] ??
+                      project['area'] ??
+                      '')
+                  .toString()
+                  .trim();
+          final built =
+              (project['totalBuiltUpArea'] ??
+                      project['total_built_up_area'] ??
+                      '')
+                  .toString()
+                  .trim();
+
+          if (plot.isNotEmpty && plot != '0' && plot != 'null' && plot != 'N/A')
+            return '$plot sq.ft';
+          if (built.isNotEmpty &&
+              built != '0' &&
+              built != 'null' &&
+              built != 'N/A')
+            return '$built sq.ft';
           return 'N/A';
         })();
 
         // 4. CODE
-        final code = (project['projectCode'] ?? project['project_code'] ?? project['code'] ?? '').toString().trim();
+        final code =
+            (project['projectCode'] ??
+                    project['project_code'] ??
+                    project['code'] ??
+                    '')
+                .toString()
+                .trim();
 
         return {
           'id': project['projectId'] ?? project['project_id'] ?? 0,
@@ -443,23 +543,45 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           'name': pName,
           'client': client['name'] ?? 'No Client',
           'location': (city.isNotEmpty && city != 'null') ? city : 'N/A',
-          'address': (fullAddress.isNotEmpty && fullAddress != 'null') ? fullAddress : 'N/A',
+          'address': (fullAddress.isNotEmpty && fullAddress != 'null')
+              ? fullAddress
+              : 'N/A',
           'area': area,
           'code': code.isNotEmpty ? code : '—',
           'type': 'Architectural',
           'pct': 0.0,
-          'status': _normalizeStatus((project['projectStatus'] ?? project['project_status'] ?? 'PLANNING').toString()),
+          'status': _normalizeStatus(
+            (project['projectStatus'] ??
+                    project['project_status'] ??
+                    'PLANNING')
+                .toString(),
+          ),
           'team': ['YW'],
-          'start': _formatDate((project['projectStartDateTime'] ?? project['project_start_date_time'] ?? d['postSalesdateTime'])?.toString()),
-          'deadline': _formatDate((project['projectExpectedEndDate'] ?? project['project_expected_end_date'])?.toString()),
+          'start': _formatDate(
+            (project['projectStartDateTime'] ??
+                    project['project_start_date_time'] ??
+                    d['postSalesdateTime'])
+                ?.toString(),
+          ),
+          'deadline': _formatDate(
+            (project['projectExpectedEndDate'] ??
+                    project['project_expected_end_date'])
+                ?.toString(),
+          ),
           'updates': 0,
           '_raw': project,
         };
       }).toList();
 
-      mappedProjects.sort(
-        (a, b) => (b['psId'] as int).compareTo(a['psId'] as int),
-      );
+      try {
+        mappedProjects.sort((a, b) {
+          final idA = a['psId'] ?? a['id'] ?? 0;
+          final idB = b['psId'] ?? b['id'] ?? 0;
+          return (idB as int).compareTo(idA as int);
+        });
+      } catch (e) {
+        debugPrint("SORT ERROR: $e");
+      }
 
       debugPrint("MAPPED PROJECTS COUNT: ${mappedProjects.length}");
 
@@ -577,13 +699,18 @@ class _ProjectsSectionState extends State<ProjectsSection> {
             // Mapping the dynamic POST-SALE graph back to what the edit form expects
             final projectNode = data['project'] ?? {};
             final p = Map<String, dynamic>.from(projectNode);
-            
+
             // Robustly extract the project ID to avoid int/null subtype crashes
-            final rawId = projectNode['projectId'] ?? projectNode['id'] ?? projectNode['project_id'];
-            p['id'] = rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '0') ?? 0;
+            final rawId =
+                projectNode['projectId'] ??
+                projectNode['id'] ??
+                projectNode['project_id'];
+            p['id'] = rawId is int
+                ? rawId
+                : int.tryParse(rawId?.toString() ?? '0') ?? 0;
             p['client'] = data['client']?['name'] ?? 'Unknown';
             p['psId'] = data['id']; // PostSale record ID
-            
+
             _selectedProject = p;
             _initEditForm(p);
             _isEditing = true;
@@ -642,7 +769,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
     final statusKey = (_editCtrls['projectStatus']?.text ?? 'PLANNING')
         .toUpperCase();
-    final statusCfg = _STATUS_CONFIG[statusKey] ?? _STATUS_CONFIG['PLANNING']!;
+    final statusCfg = _STATUS_CONFIG[statusKey] ?? _STATUS_CONFIG['PLANNING'] ?? _STATUS_CONFIG.values.first;
 
     // Use absolute screen dimensions to bypass "infinite width" errors from parent scrollviews
     final size = MediaQuery.of(context).size;
@@ -766,7 +893,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
               ),
               const SizedBox(width: 8),
               _chipSmall(
-                'ID: ${_selectedProject!['psId']}',
+                'ID: ${_selectedProject?['psId'] ?? _selectedProject?['id'] ?? '—'}',
                 AppColors.surfaceContainerLow,
               ),
             ],

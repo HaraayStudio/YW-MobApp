@@ -22,9 +22,9 @@ import 'sections/projects_section.dart';
 import 'sections/tasks_section.dart';
 import 'sections/attendance_section.dart';
 import 'sections/leaves_section.dart';
-import 'sections/site_section.dart';
 import 'sections/materials_section.dart';
 import 'sections/renders_section.dart';
+import 'sites/sites_screen.dart';
 import 'sections/employees_section.dart';
 import 'sections/clients_section.dart';
 import 'sections/reports_section.dart';
@@ -44,6 +44,7 @@ class MainAppScreen extends StatefulWidget {
 class _MainAppScreenState extends State<MainAppScreen> {
   String _currentSection = 'dashboard';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  int? _projectToEdit;
 
   // Bottom nav shows max 4 items (dashboard + 3 most relevant)
   List<String> get _bottomNavItems {
@@ -59,7 +60,13 @@ class _MainAppScreenState extends State<MainAppScreen> {
     return core.take(4).toList();
   }
 
-  void _navigate(String section) => setState(() => _currentSection = section);
+  void _navigate(String section) {
+    if (section != 'projects') {
+      _projectToEdit = null;
+    }
+    setState(() => _currentSection = section);
+  }
+
   void _toast(String msg) => showAppToast(context, msg);
 
   // ── Role-specific dashboard ─────────────────────────────────────────────
@@ -92,11 +99,20 @@ class _MainAppScreenState extends State<MainAppScreen> {
   Widget _buildSection() {
     switch (_currentSection) {
       case 'dashboard':     return _buildDashboard();
-      case 'projects':      return ProjectsSection(user: widget.user, onToast: _toast);
+      case 'projects':      return ProjectsSection(user: widget.user, onToast: _toast, editProjectId: _projectToEdit);
       case 'tasks':         return TasksSection(user: widget.user, onToast: _toast);
       case 'attendance':    return AttendanceSection(user: widget.user, onToast: _toast);
       case 'leaves':        return LeavesSection(user: widget.user, onToast: _toast);
-      case 'site':          return SiteSection(onToast: _toast);
+      case 'site':          return SitesScreen(
+                              user: widget.user, 
+                              onToast: _toast,
+                              onEditProject: (id) {
+                                setState(() {
+                                  _projectToEdit = id;
+                                  _currentSection = 'projects';
+                                });
+                              },
+                            );
       case 'materials':     return MaterialsSection(user: widget.user, onToast: _toast);
       case 'renders':       return RendersSection(user: widget.user, onToast: _toast);
       case 'employees':     return EmployeesSection(onToast: _toast);

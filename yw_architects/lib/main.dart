@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'theme/app_theme.dart';
 import 'models/app_models.dart';
 import 'screens/splash_screen.dart';   // ← fixed splash (no white flash)
@@ -12,21 +13,37 @@ final themeNotifier = ValueNotifier<ThemeMode>(ThemeMode.light);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await TokenService.init();
+  
+  // Setup global error handling
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    debugPrint("[GlobalError] ${details.exception}");
+  };
 
-  // Lock to portrait to eliminate layout pixel issues on tablets
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  try {
+    print("[Main] Starting initialization...");
+    // Initialize critical services
+    await TokenService.init();
+    
+    // Status bar: transparent + dark icons
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ));
 
-  // Status bar: transparent + dark icons (matches surface #F9FBEC)
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    systemNavigationBarColor: Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  ));
+    // Lock to portrait
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
+    print("[Main] Initialization complete.");
+  } catch (e, stack) {
+    print("[Main] CRITICAL ERROR during startup: $e");
+    print(stack);
+  }
 
   runApp(const YWArchitectsApp());
 }
@@ -46,6 +63,38 @@ class YWArchitectsApp extends StatelessWidget {
           theme: AppTheme.theme,
           darkTheme: AppTheme.darkTheme,
           themeMode: mode,
+          builder: (context, child) {
+            if (child == null) return const SizedBox.shrink();
+            
+            // Global error boundary — shows a red screen or error message if build fails
+            ErrorWidget.builder = (FlutterErrorDetails details) {
+              return Material(
+                child: Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Application Error',
+                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 18),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        details.exception.toString(),
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.grey[700]),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            };
+            
+            return child;
+          },
           home: const AppRoot(),
         );
       },

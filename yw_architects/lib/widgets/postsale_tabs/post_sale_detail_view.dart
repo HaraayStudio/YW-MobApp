@@ -56,8 +56,8 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
       final fullProjectFuture = ProjectService.getProjectById(widget.projectId);
 
       final results = await Future.wait([postSaleFuture, fullProjectFuture]);
-      final postSaleRes = results[0] as Map<String, dynamic>?;
-      final fullProjectRes = results[1] as Map<String, dynamic>?;
+      final postSaleRes = results[0];
+      final fullProjectRes = results[1];
 
       if (postSaleRes != null && fullProjectRes != null) {
         // Overwrite the lightweight ProjectLiteDTO with the heavy Project payload

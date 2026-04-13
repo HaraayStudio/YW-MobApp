@@ -28,6 +28,31 @@ class ProjectService {
     return response.statusCode == 200 || response.statusCode == 201;
   }
 
+  // PUT /api/projects/addusers/{projectId}
+  static Future<bool> addUsersToProject(int projectId, List<int> userIds) async {
+    final token = TokenService.accessToken;
+
+    try {
+      final response = await http.put(
+        Uri.parse("$baseUrl/addusers/$projectId"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode(userIds),
+      );
+
+      debugPrint("ADD USERS TO PROJECT STATUS: ${response.statusCode}");
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        debugPrint("ADD USERS TO PROJECT BODY: ${response.body}");
+      }
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      debugPrint("ADD USERS TO PROJECT ERROR: $e");
+      return false;
+    }
+  }
+
   // GET /api/projects/getallprojects
   static Future<List<dynamic>> getAllProjects({
     int page = 0,

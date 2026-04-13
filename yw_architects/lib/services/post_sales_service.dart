@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'token_service.dart';
 import '../api/constants.dart';
@@ -63,25 +64,40 @@ class PostSalesService {
     final token = TokenService.accessToken;
 
     try {
+      final uri = Uri.parse("$baseUrl/project/$projectId");
+      debugPrint("API REQUEST: GET $uri");
+
       final response = await http.get(
-        Uri.parse("$baseUrl/project/$projectId"),
+        uri,
         headers: {"Authorization": "Bearer $token"},
       );
 
-      print("GET POST-SALE BY PROJECT ID STATUS: ${response.statusCode}");
+      debugPrint("GET POST-SALE STATUS: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
-        final data = decoded['data'];
         
-        // The endpoint returns a paginated list or array. We take the first element if available.
-        if (data != null) {
-           if (data is List && data.isNotEmpty) {
-             return data.first;
-           } else if (data is Map && data['content'] != null && (data['content'] as List).isNotEmpty) {
-             // Handle PageImpl structure if paginated
-             return data['content'].first;
-           }
+        // FLEX-PARSE: Check for data wrapper, otherwise use top-level
+        final dynamic rawPayload = (decoded is Map && decoded.containsKey('data')) 
+            ? decoded['data'] 
+            : decoded;
+
+        if (rawPayload != null) {
+          if (rawPayload is Map && (rawPayload.containsKey('projectId') || rawPayload.containsKey('postSalesStatus'))) {
+            // CASE 1: Data is the record itself
+            return rawPayload as Map<String, dynamic>;
+          } else if (rawPayload is List && rawPayload.isNotEmpty) {
+            // CASE 2: Data is a list
+            return rawPayload.first as Map<String, dynamic>;
+          } else if (rawPayload is Map &&
+              rawPayload['content'] != null &&
+              (rawPayload['content'] as List).isNotEmpty) {
+            // CASE 3: PageImpl
+            return rawPayload['content'].first as Map<String, dynamic>;
+          } else if (rawPayload is Map && rawPayload.isNotEmpty) {
+            // CASE 4: Direct Map fallback
+            return rawPayload as Map<String, dynamic>;
+          }
         }
       }
       return null;

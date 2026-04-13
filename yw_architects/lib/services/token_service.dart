@@ -53,7 +53,17 @@ class TokenService {
     // Initialize SharedPreferences once
  
   static Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
+    try {
+      print("[TokenService] Initializing SharedPreferences...");
+      _prefs = await SharedPreferences.getInstance()
+          .timeout(const Duration(seconds: 5));
+      await loadTokens();
+      print("[TokenService] Initialization successful. Tokens loaded.");
+    } catch (e) {
+      print("[TokenService] ERROR during initialization: $e");
+      // Fallback: we still set _prefs to avoid late initialization errors if possible
+      // though getInstance failing is usually fatal.
+    }
   }
   static Future<void> saveTokens(
       String access, String? refresh) async {
