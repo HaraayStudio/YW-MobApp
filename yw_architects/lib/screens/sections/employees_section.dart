@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
-import 'employee/tabs/employees_tab.dart';
-import 'employee/tabs/daily_attendance_tab.dart';
-import 'employee/tabs/attendance_calendar_tab.dart';
+import 'package:yw_architects/theme/app_theme.dart';
+import 'package:yw_architects/screens/sections/employee/tabs/employees_tab.dart';
+import 'package:yw_architects/screens/sections/employee/tabs/daily_attendance_tab.dart';
+import 'package:yw_architects/screens/sections/employee/tabs/attendance_calendar_tab.dart';
 
 class EmployeesSection extends StatefulWidget {
   final Function(String) onToast;

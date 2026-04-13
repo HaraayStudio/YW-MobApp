@@ -154,9 +154,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
               switchOutCurve: Curves.easeIn,
               child: KeyedSubtree(
                 key: ValueKey(_currentSection),
-                child: SingleChildScrollView(
-                  child: _buildSection(),
-                ),
+                child: _buildSection(),
               ),
             ),
           ),

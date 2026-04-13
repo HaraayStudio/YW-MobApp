@@ -250,8 +250,9 @@ class CardContainer extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;
   final VoidCallback? onTap;
+  final String? title;
 
-  const CardContainer({super.key, required this.child, this.padding, this.onTap});
+  const CardContainer({super.key, required this.child, this.padding, this.onTap, this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -271,7 +272,24 @@ class CardContainer extends StatelessWidget {
             )
           ],
         ),
-        child: child,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (title != null) ...[
+              Text(
+                title!,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            child,
+          ],
+        ),
       ),
     );
   }

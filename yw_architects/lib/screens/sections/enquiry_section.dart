@@ -94,36 +94,38 @@ class _EnquirySectionState extends State<EnquirySection> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(
-            title: 'Inquiry Management',
-            subtitle: 'Track and convert potential leads',
-            action: GoldGradientButton(
-              text: 'Add Inquiry',
-              onTap: () => _showAddDialog(),
-              width: 130,
-              height: 40,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionHeader(
+              title: 'Inquiry Management',
+              subtitle: 'Track and convert potential leads',
+              action: GoldGradientButton(
+                text: 'Add Inquiry',
+                onTap: () => _showAddDialog(),
+                width: 130,
+                height: 40,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          
-          _buildSearchAndFilters(),
-          const SizedBox(height: 20),
+            const SizedBox(height: 24),
+            
+            _buildSearchAndFilters(),
+            const SizedBox(height: 20),
 
-          if (_isLoading)
-            const Center(child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: CircularProgressIndicator(),
-            ))
-          else if (_filteredInquiries.isEmpty)
-            _buildEmptyState()
-          else
-            _buildListView(),
-        ],
+            if (_isLoading)
+              const Center(child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: CircularProgressIndicator(),
+              ))
+            else if (_filteredInquiries.isEmpty)
+              _buildEmptyState()
+            else
+              _buildListView(),
+          ],
+        ),
       ),
     );
   }

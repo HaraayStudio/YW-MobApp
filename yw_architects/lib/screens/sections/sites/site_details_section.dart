@@ -521,18 +521,20 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         ),
 
         // Tab Content
-        IndexedStack(
-          index: _tabController.index,
-          children: [
-            _buildOverviewTab(),
-            _buildStagesTab(),
-            _buildDocumentsTab(),
-            _buildTeamTab(),
-            _buildSiteVisitsTab(),
-            _buildPlaceholderTab("Structures"),
-            _buildMeetingsTab(),
-            _buildReraTab(),
-          ],
+        Expanded(
+          child: IndexedStack(
+            index: _tabController.index,
+            children: [
+              _buildOverviewTab(),
+              _buildStagesTab(),
+              _buildDocumentsTab(),
+              _buildTeamTab(),
+              _buildSiteVisitsTab(),
+              _buildPlaceholderTab("Structures"),
+              _buildMeetingsTab(),
+              _buildReraTab(),
+            ],
+          ),
         ),
       ],
     );
@@ -697,8 +699,6 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               ),
             )
           : ListView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
               children: [
                 _buildIdentityCard(),
@@ -717,8 +717,6 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     final stages = _detailedSite.stages;
 
     return ListView(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: [
         _buildStagesSummaryCard(),
@@ -1205,8 +1203,6 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     return Container(
       color: const Color(0xFFF8F9FB),
       child: ListView(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
         children: [_buildDocumentTableHeader(), _buildEmptyDocumentsState()],
       ),
@@ -1334,8 +1330,6 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     return Container(
       color: const Color(0xFFF8F9FB),
       child: ListView(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
         children: [
           Row(
@@ -1716,8 +1710,6 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     return Container(
       color: const Color(0xFFF8F9FB),
       child: ListView(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
         children: [
           Row(
@@ -3303,8 +3295,6 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     return Container(
       color: const Color(0xFFF8F9FB),
       child: ListView(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
         children: [
           Row(
@@ -5003,8 +4993,6 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
     return Container(
       color: const Color(0xFFF8F9FB),
       child: ListView(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
         children: [
           Row(

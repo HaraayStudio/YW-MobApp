@@ -771,16 +771,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         .toUpperCase();
     final statusCfg = _STATUS_CONFIG[statusKey] ?? _STATUS_CONFIG['PLANNING'] ?? _STATUS_CONFIG.values.first;
 
-    // Use absolute screen dimensions to bypass "infinite width" errors from parent scrollviews
-    final size = MediaQuery.of(context).size;
-    final screenWidth = size.width;
-    final screenHeight = size.height;
-
     return Container(
-      width: screenWidth,
-      height:
-          screenHeight *
-          0.85, // Fixed height to satisfy the dashboard's constraints
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -1486,11 +1477,12 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
   Widget _buildList() {
     final tabs = ['All', 'In Progress', 'Planning', 'Review', 'Completed'];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           SectionHeader(
             title: 'Projects',
             subtitle: '${_projects.length} active engagements',
@@ -1730,8 +1722,9 @@ class _ProjectsSectionState extends State<ProjectsSection> {
             ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _infoBox(String label, String val) {
     return Expanded(

@@ -35,7 +35,7 @@ class AttendanceSection extends StatelessWidget {
       {'date': '20', 'day': 'Thu', 'in': '—', 'out': '—', 'hrs': '—', 'status': 'Leave'},
     ];
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

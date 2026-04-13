@@ -51,97 +51,99 @@ class DashboardSharedLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Greeting ────────────────────────────────────────────────────
-          SectionHeader(
-            title: 'Good Morning, $greetingRole 👋',
-            subtitle: _todayDate(),
-          ),
-          const SizedBox(height: 24),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Greeting ────────────────────────────────────────────────────
+            SectionHeader(
+              title: 'Good Morning, $greetingRole 👋',
+              subtitle: _todayDate(),
+            ),
+            const SizedBox(height: 24),
 
-          // ── Stats (horizontal scroll) ────────────────────────────────────
-          SizedBox(
-            height: 118,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: stats.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
+            // ── Stats (horizontal scroll) ────────────────────────────────────
+            SizedBox(
+              height: 118,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: stats.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (_, i) {
+                  final s = stats[i];
+                  return _StatCard(
+                    icon: s['icon'] as IconData,
+                    label: s['label'] as String,
+                    value: s['val'] as String,
+                    isError: s['error'] == true,
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // ── Active Projects ──────────────────────────────────────────────
+            if (showProjects) ...[
+              _SectionRow(
+                title: 'Active Projects',
+                onViewAll: () => onNavigate('projects'),
+              ),
+              const SizedBox(height: 12),
+              ..._projects.map((p) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _ProjectCard(project: p),
+              )),
+              const SizedBox(height: 16),
+            ],
+
+            // ── Today's Tasks ────────────────────────────────────────────────
+            if (showTasks) ...[
+              _SectionRow(
+                title: "Today's Tasks",
+                onViewAll: () => onNavigate('tasks'),
+              ),
+              const SizedBox(height: 12),
+              ..._tasks.map((t) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _TaskRow(task: t),
+              )),
+              const SizedBox(height: 16),
+            ],
+
+            // ── Quick Actions ────────────────────────────────────────────────
+            const Text(
+              'Quick Actions',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Use GridView.builder fixed cross-axis so no overflow
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 1.0,
+              ),
+              itemCount: quickActions.length,
               itemBuilder: (_, i) {
-                final s = stats[i];
-                return _StatCard(
-                  icon: s['icon'] as IconData,
-                  label: s['label'] as String,
-                  value: s['val'] as String,
-                  isError: s['error'] == true,
+                final a = quickActions[i];
+                return _QuickActionTile(
+                  icon: a['icon'] as IconData,
+                  label: a['label'] as String,
+                  onTap: () => onNavigate(a['section'] as String),
                 );
               },
             ),
-          ),
-          const SizedBox(height: 28),
-
-          // ── Active Projects ──────────────────────────────────────────────
-          if (showProjects) ...[
-            _SectionRow(
-              title: 'Active Projects',
-              onViewAll: () => onNavigate('projects'),
-            ),
-            const SizedBox(height: 12),
-            ..._projects.map((p) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _ProjectCard(project: p),
-            )),
-            const SizedBox(height: 16),
           ],
-
-          // ── Today's Tasks ────────────────────────────────────────────────
-          if (showTasks) ...[
-            _SectionRow(
-              title: "Today's Tasks",
-              onViewAll: () => onNavigate('tasks'),
-            ),
-            const SizedBox(height: 12),
-            ..._tasks.map((t) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _TaskRow(task: t),
-            )),
-            const SizedBox(height: 16),
-          ],
-
-          // ── Quick Actions ────────────────────────────────────────────────
-          const Text(
-            'Quick Actions',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Use GridView.builder fixed cross-axis so no overflow
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 1.0,
-            ),
-            itemCount: quickActions.length,
-            itemBuilder: (_, i) {
-              final a = quickActions[i];
-              return _QuickActionTile(
-                icon: a['icon'] as IconData,
-                label: a['label'] as String,
-                onTap: () => onNavigate(a['section'] as String),
-              );
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -187,7 +189,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
               color: AppColors.onSurfaceVariant,

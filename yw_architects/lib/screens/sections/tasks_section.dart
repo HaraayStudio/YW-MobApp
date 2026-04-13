@@ -35,161 +35,163 @@ class _TasksSectionState extends State<TasksSection> {
   @override
   Widget build(BuildContext context) {
     final tabs = ['All', 'In Progress', 'Pending', 'Review', 'Done'];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: SectionHeader(title: 'Tasks', subtitle: '${_tasks.length} tasks assigned')),
-              if (canCreate)
-                GestureDetector(
-                  onTap: () => _showTaskModal(context),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(gradient: goldGradient, borderRadius: BorderRadius.circular(12),
-                        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))]),
-                    child: const Row(children: [Icon(Icons.add_rounded, color: Colors.white, size: 16), SizedBox(width: 4), Text('New', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13))]),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(12)),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search tasks...',
-                border: InputBorder.none,
-                prefixIcon: Icon(Icons.search_rounded, color: AppColors.onSurfaceVariant, size: 20),
-                contentPadding: EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 36,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: tabs.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (_, i) {
-                final t = tabs[i];
-                final active = _filter == t;
-                return GestureDetector(
-                  onTap: () => setState(() => _filter = t),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: active ? AppColors.primary : Colors.transparent,
-                      borderRadius: BorderRadius.circular(999),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: SectionHeader(title: 'Tasks', subtitle: '${_tasks.length} tasks assigned')),
+                if (canCreate)
+                  GestureDetector(
+                    onTap: () => _showTaskModal(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(gradient: goldGradient, borderRadius: BorderRadius.circular(12),
+                          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))]),
+                      child: const Row(children: [Icon(Icons.add_rounded, color: Colors.white, size: 16), SizedBox(width: 4), Text('New', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13))]),
                     ),
-                    child: Text(t, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: active ? Colors.white : AppColors.outline)),
                   ),
-                );
-              },
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          ..._filtered.map((t) {
-            final priority = t['priority'] as String;
-            final status = t['status'] as String;
-            final overdue = t['overdue'] as bool;
-            final done = status == 'Done';
-            Color leftColor = priority == 'high' ? AppColors.error : priority == 'medium' ? AppColors.chipProgressFg : AppColors.chipDoneFg;
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(16),
-                border: Border(left: BorderSide(color: leftColor, width: 3)),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+              child: TextField(
+                decoration: const InputDecoration(
+                  hintText: 'Search tasks...',
+                  border: InputBorder.none,
+                  prefixIcon: Icon(Icons.search_rounded, color: AppColors.onSurfaceVariant, size: 20),
+                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+                ),
               ),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      GestureDetector(
-                        onTap: () => widget.onToast('Task status updated!'),
-                        child: Container(
-                          width: 20, height: 20,
-                          margin: const EdgeInsets.only(top: 2),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: done ? AppColors.primary : Colors.transparent,
-                            border: Border.all(color: done ? AppColors.primary : AppColors.outlineVariant, width: 2),
-                          ),
-                          child: done ? const Icon(Icons.check_rounded, color: Colors.white, size: 12) : null,
-                        ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 36,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: tabs.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (_, i) {
+                  final t = tabs[i];
+                  final active = _filter == t;
+                  return GestureDetector(
+                    onTap: () => setState(() => _filter = t),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: active ? AppColors.primary : Colors.transparent,
+                        borderRadius: BorderRadius.circular(999),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              t['title'] as String,
-                              style: TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.onSurface,
-                                decoration: done ? TextDecoration.lineThrough : null,
-                                decorationColor: AppColors.onSurface,
-                              ),
+                      child: Text(t, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: active ? Colors.white : AppColors.outline)),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            ..._filtered.map((t) {
+              final priority = t['priority'] as String;
+              final status = t['status'] as String;
+              final overdue = t['overdue'] as bool;
+              final done = status == 'Done';
+              Color leftColor = priority == 'high' ? AppColors.error : priority == 'medium' ? AppColors.chipProgressFg : AppColors.chipDoneFg;
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border(left: BorderSide(color: leftColor, width: 3)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: () => widget.onToast('Task status updated!'),
+                          child: Container(
+                            width: 20, height: 20,
+                            margin: const EdgeInsets.only(top: 2),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: done ? AppColors.primary : Colors.transparent,
+                              border: Border.all(color: done ? AppColors.primary : AppColors.outlineVariant, width: 2),
                             ),
-                            const SizedBox(height: 6),
-                            Wrap(
-                              spacing: 6,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(8)),
-                                  child: Text(t['project'] as String, style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500)),
+                            child: done ? const Icon(Icons.check_rounded, color: Colors.white, size: 12) : null,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                t['title'] as String,
+                                style: TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.onSurface,
+                                  decoration: done ? TextDecoration.lineThrough : null,
+                                  decorationColor: AppColors.onSurface,
                                 ),
-                                Text('→ ${t['assignee']}', style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant)),
-                              ],
+                              ),
+                              const SizedBox(height: 6),
+                              Wrap(
+                                spacing: 6,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(8)),
+                                    child: Text(t['project'] as String, style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500)),
+                                  ),
+                                  Text('→ ${t['assignee']}', style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Divider(height: 1, color: Color(0x1A4D4636)),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Wrap(spacing: 6, children: [
+                          GoldChip(
+                            text: priority.toUpperCase(),
+                            bg: priority == 'high' ? AppColors.chipProgressBg : priority == 'medium' ? AppColors.chipPlanningBg : AppColors.chipDoneBg,
+                            fg: priority == 'high' ? AppColors.chipProgressFg : priority == 'medium' ? AppColors.chipPlanningFg : AppColors.chipDoneFg,
+                          ),
+                          StatusChip(status: status),
+                        ]),
+                        Row(
+                          children: [
+                            Icon(overdue ? Icons.warning_rounded : Icons.schedule_rounded,
+                                color: overdue ? AppColors.error : AppColors.onSurfaceVariant, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${overdue ? 'OVERDUE · ' : ''}Due ${t['due']}',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: overdue ? AppColors.error : AppColors.onSurfaceVariant),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1, color: Color(0x1A4D4636)),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Wrap(spacing: 6, children: [
-                        GoldChip(
-                          text: priority.toUpperCase(),
-                          bg: priority == 'high' ? AppColors.chipProgressBg : priority == 'medium' ? AppColors.chipPlanningBg : AppColors.chipDoneBg,
-                          fg: priority == 'high' ? AppColors.chipProgressFg : priority == 'medium' ? AppColors.chipPlanningFg : AppColors.chipDoneFg,
-                        ),
-                        StatusChip(status: status),
-                      ]),
-                      Row(
-                        children: [
-                          Icon(overdue ? Icons.warning_rounded : Icons.schedule_rounded,
-                              color: overdue ? AppColors.error : AppColors.onSurfaceVariant, size: 14),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${overdue ? 'OVERDUE · ' : ''}Due ${t['due']}',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: overdue ? AppColors.error : AppColors.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
