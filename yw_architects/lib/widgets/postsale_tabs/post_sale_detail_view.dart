@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
 import '../../services/project_service.dart';
 import '../../services/post_sales_service.dart';
@@ -16,8 +17,11 @@ class PostSaleDetailView extends StatefulWidget {
   final VoidCallback onBack;
   final Function(Map<String, dynamic>) onEdit;
 
+  final AppUser user;
+
   const PostSaleDetailView({
     Key? key,
+    required this.user,
     required this.projectId,
     required this.onBack,
     required this.onEdit,
@@ -32,10 +36,12 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
   Map<String, dynamic>? _project;
   bool _isLoading = true;
 
+  bool get _isManagement => [UserRole.admin, UserRole.coFounder, UserRole.hr].contains(widget.user.role);
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: _isManagement ? 6 : 3, vsync: this);
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
@@ -254,39 +260,45 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
               unselectedLabelColor: AppColors.onSurfaceVariant,
               labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-              tabs: const [
-                Tab(text: 'Overview'),
-                Tab(text: 'Client'),
-                Tab(text: 'Sites'),
-                Tab(text: 'Proforma Invoices'),
-                Tab(text: 'Tax Invoices'),
-                Tab(text: 'Payments'),
+              tabs: [
+                const Tab(text: 'Overview'),
+                const Tab(text: 'Client'),
+                const Tab(text: 'Sites'),
+                if (_isManagement) ...[
+                  const Tab(text: 'Proforma Invoices'),
+                  const Tab(text: 'Tax Invoices'),
+                  const Tab(text: 'Payments'),
+                ],
               ],
             ),
           ),
           const SizedBox(height: 20),
 
           // Tab Views
-          IndexedStack(
-            index: _tabController.index,
-            children: [
-              OverviewTabView(project: _project!),
-              ClientTabView(project: _project!),
-              SitesTabView(project: _project!),
-              ProformaTabView(
-                project: _project!,
-                onRefresh: _fetchData,
-                onTabRequest: (idx) => _tabController.animateTo(idx),
-              ),
-              TaxTabView(
-                project: _project!,
-                onRefresh: _fetchData,
-              ),
-              PaymentsTabView(
-                project: _project!,
-                onRefresh: _fetchData,
-              ),
-            ],
+          Expanded(
+            child: IndexedStack(
+              index: _tabController.index,
+              children: [
+                OverviewTabView(project: _project!),
+                ClientTabView(project: _project!),
+                SitesTabView(project: _project!),
+                if (_isManagement) ...[
+                  ProformaTabView(
+                    project: _project!,
+                    onRefresh: _fetchData,
+                    onTabRequest: (idx) => _tabController.animateTo(idx),
+                  ),
+                  TaxTabView(
+                    project: _project!,
+                    onRefresh: _fetchData,
+                  ),
+                  PaymentsTabView(
+                    project: _project!,
+                    onRefresh: _fetchData,
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),

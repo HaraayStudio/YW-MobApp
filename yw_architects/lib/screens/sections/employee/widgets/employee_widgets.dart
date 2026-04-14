@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:yw_architects/theme/app_theme.dart';
 import 'package:yw_architects/widgets/common_widgets.dart';
 import 'package:yw_architects/models/app_models.dart';
@@ -167,6 +165,142 @@ class _AddEmployeeModalState extends State<AddEmployeeModal> {
   }
 }
 
+class EditEmployeeModal extends StatefulWidget {
+  final EmployeeModel employee;
+  final Function(String) onToast;
+  final VoidCallback onSuccess;
+
+  const EditEmployeeModal({
+    super.key,
+    required this.employee,
+    required this.onToast,
+    required this.onSuccess,
+  });
+
+  @override
+  State<EditEmployeeModal> createState() => _EditEmployeeModalState();
+}
+
+class _EditEmployeeModalState extends State<EditEmployeeModal> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _fNameCtrl;
+  late TextEditingController _lNameCtrl;
+  late TextEditingController _emailCtrl;
+  late TextEditingController _phoneCtrl;
+  
+  late UserRole _selectedRole;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fNameCtrl = TextEditingController(text: widget.employee.firstName);
+    _lNameCtrl = TextEditingController(text: widget.employee.lastName);
+    _emailCtrl = TextEditingController(text: widget.employee.email);
+    _phoneCtrl = TextEditingController(text: widget.employee.phone);
+    _selectedRole = widget.employee.role;
+  }
+
+  @override
+  void dispose() {
+    _fNameCtrl.dispose();
+    _lNameCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    
+    setState(() => _isLoading = true);
+    try {
+      final payload = {
+        'firstName': _fNameCtrl.text.trim(),
+        'lastName': _lNameCtrl.text.trim(),
+        'email': _emailCtrl.text.trim(),
+        'phone': _phoneCtrl.text.trim(),
+        'role': roleToBackend(_selectedRole),
+        'status': widget.employee.status, // Keep status same during profile edit
+      };
+
+      final success = await EmployeeService.updateEmployee(widget.employee.id, payload);
+      if (success) {
+        widget.onToast("Employee updated successfully!");
+        widget.onSuccess();
+        if (mounted) Navigator.pop(context);
+      } else {
+        widget.onToast("Failed to update employee.");
+      }
+    } catch (e) {
+      widget.onToast("Error: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        left: 24, 
+        right: 24, 
+        top: 12, 
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.surface, 
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28))
+      ),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4, 
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant, 
+                    borderRadius: BorderRadius.circular(10)
+                  )
+                )
+              ),
+              const SizedBox(height: 20),
+              const _ModalHeader(title: 'Edit Employee Profile'),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(child: _EmpFormField(label: 'FIRST NAME', controller: _fNameCtrl)),
+                  const SizedBox(width: 16),
+                  Expanded(child: _EmpFormField(label: 'LAST NAME', controller: _lNameCtrl)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _EmpFormField(label: 'EMAIL ADDRESS', controller: _emailCtrl, keyboardType: TextInputType.emailAddress),
+              const SizedBox(height: 16),
+              _EmpFormField(label: 'PHONE NUMBER', controller: _phoneCtrl, keyboardType: TextInputType.phone),
+              const SizedBox(height: 16),
+              _EmpDropdown<UserRole>(
+                label: 'OFFICIAL ROLE',
+                value: _selectedRole,
+                items: roleMap.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value.name))).toList(),
+                onChanged: (v) => setState(() => _selectedRole = v!),
+              ),
+              const SizedBox(height: 32),
+              _isLoading 
+                ? const Center(child: CircularProgressIndicator()) 
+                : GoldGradientButton(text: 'Save Changes', onTap: _submit),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SmallIconBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -244,7 +378,7 @@ class _EmpDropdown<T> extends StatelessWidget {
       Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant)),
       const SizedBox(height: 4),
       DropdownButtonFormField<T>(
-        value: value, items: items, onChanged: onChanged,
+        initialValue: value, items: items, onChanged: onChanged,
         decoration: AppTheme.inputDecoration('Select $label'),
       ),
     ]);

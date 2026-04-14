@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/app_models.dart';
@@ -5,6 +6,7 @@ import '../../widgets/common_widgets.dart';
 import '../../services/employee_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../utils/base64_utils.dart';
 import '../../main.dart'; // To access themeNotifier
 
 class ProfileSection extends StatefulWidget {
@@ -58,12 +60,32 @@ class _ProfileSectionState extends State<ProfileSection> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50, // Reduce size for Base64 storage
+      maxWidth: 512,
+    );
+    
     if (image != null) {
       widget.onToast("Uploading profile picture...");
-      final success = await EmployeeService.updateMyProfileImage(image.path);
+      
+      final base64String = await Base64Utils.toDataUrl(image);
+      if (base64String == null) {
+        widget.onToast("Failed to process image.");
+        return;
+      }
+
+      // We send it via updateMyProfile because it's a JSON-based update
+      final success = await EmployeeService.updateMyProfile({
+        "id": widget.user.id,
+        "email": widget.user.info.email,
+        "profileImage": base64String,
+      });
+
       if (success) {
         widget.onToast("Profile picture updated!");
+        // Note: In a real app, you'd trigger a state refresh higher up
+        // to update the global user object.
       } else {
         widget.onToast("Failed to upload image.");
       }
@@ -127,11 +149,12 @@ class _ProfileSectionState extends State<ProfileSection> {
       },
     ];
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Profile Hero
           Container(
             decoration: BoxDecoration(
@@ -173,18 +196,10 @@ class _ProfileSectionState extends State<ProfileSection> {
                                         width: 4,
                                       ),
                                       borderRadius: BorderRadius.circular(18),
-                                      gradient: goldGradient,
+                                      color: AppColors.surfaceContainerLow,
                                     ),
-                                    child: Center(
-                                      child: Text(
-                                        widget.user.info.initials,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 20,
-                                        ),
-                                      ),
-                                    ),
+                                    clipBehavior: Clip.hardEdge,
+                                    child: _buildProfileImage(),
                                   ),
                                   Positioned(
                                     bottom: 0,
@@ -494,8 +509,6 @@ class _ProfileSectionState extends State<ProfileSection> {
             ),
           ),
           const SizedBox(height: 20),
-
-          // Sign Out
           GestureDetector(
             onTap: _confirmLogout,
             child: Container(
@@ -523,6 +536,51 @@ class _ProfileSectionState extends State<ProfileSection> {
             ),
           ),
         ],
+      ),
+    ),
+  );
+}
+
+  Widget _buildProfileImage() {
+    final imageUrl = widget.user.info.profileImage;
+    
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      if (Base64Utils.isBase64(imageUrl)) {
+        try {
+          final base64String = imageUrl.split(',').last;
+          return Image.memory(
+            base64Decode(base64String),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => _buildInitials(),
+          );
+        } catch (e) {
+          return _buildInitials();
+        }
+      } else {
+        // Handle as URL
+        return Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _buildInitials(),
+        );
+      }
+    }
+    
+    return _buildInitials();
+  }
+
+  Widget _buildInitials() {
+    return Container(
+      decoration: BoxDecoration(gradient: goldGradient),
+      child: Center(
+        child: Text(
+          widget.user.info.initials,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: 20,
+          ),
+        ),
       ),
     );
   }

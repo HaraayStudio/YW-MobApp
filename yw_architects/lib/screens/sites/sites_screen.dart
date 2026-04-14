@@ -78,17 +78,13 @@ class _SitesScreenState extends State<SitesScreen> {
       );
     }
 
-    return Column(
-      children: [
-        SiteListSection(
-          sites: _filteredSites,
-          isLoading: _isLoading,
-          activeFilter: _activeFilter,
-          onFilterChange: (filter) => setState(() => _activeFilter = filter),
-          onSiteTap: (site) => setState(() => _selectedSite = site),
-          onAddSite: () => setState(() => _showForm = true),
-        ),
-      ],
+    return SiteListSection(
+      sites: _filteredSites,
+      isLoading: _isLoading,
+      activeFilter: _activeFilter,
+      onFilterChange: (filter) => setState(() => _activeFilter = filter),
+      onSiteTap: (site) => setState(() => _selectedSite = site),
+      onAddSite: () => setState(() => _showForm = true),
     );
   }
 }

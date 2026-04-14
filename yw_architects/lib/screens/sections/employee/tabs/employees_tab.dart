@@ -31,11 +31,13 @@ class _EmployeesListTabState extends State<EmployeesListTab> {
     setState(() => _isLoading = true);
     try {
       final rawData = await EmployeeService.getAllEmployees();
+      if (!mounted) return;
       setState(() {
         _employees = rawData.map((e) => EmployeeModel.fromJson(e)).toList();
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       widget.onToast("Error loading employees: $e");
       setState(() => _isLoading = false);
     }
@@ -44,7 +46,8 @@ class _EmployeesListTabState extends State<EmployeesListTab> {
   List<EmployeeModel> get filteredEmployees {
     return _employees.where((e) {
       final matchesDept = _selectedDept == 'All' || e.dept == _selectedDept;
-      final matchesSearch = e.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+      final matchesSearch =
+          e.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           e.empId.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesDept && matchesSearch;
     }).toList();
@@ -68,8 +71,8 @@ class _EmployeesListTabState extends State<EmployeesListTab> {
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : filteredEmployees.isEmpty
-                  ? _buildEmptyState()
-                  : _buildGrid(),
+              ? _buildEmptyState()
+              : _buildGrid(),
         ),
       ],
     );
@@ -140,7 +143,7 @@ class _EmployeesListTabState extends State<EmployeesListTab> {
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 500,
-        mainAxisExtent: 100,
+        mainAxisExtent: 120,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
@@ -158,9 +161,19 @@ class _EmployeesListTabState extends State<EmployeesListTab> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.group_off_rounded, size: 64, color: AppColors.outlineVariant.withOpacity(0.5)),
+          Icon(
+            Icons.group_off_rounded,
+            size: 64,
+            color: AppColors.outlineVariant.withOpacity(0.5),
+          ),
           const SizedBox(height: 16),
-          Text("No employees found", style: TextStyle(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.bold)),
+          Text(
+            "No employees found",
+            style: TextStyle(
+              color: AppColors.onSurfaceVariant,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -171,7 +184,11 @@ class _DeptChip extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
-  const _DeptChip({required this.label, required this.isSelected, required this.onTap});
+  const _DeptChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -185,7 +202,14 @@ class _DeptChip extends StatelessWidget {
           color: isSelected ? AppColors.primary : AppColors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isSelected ? Colors.white : AppColors.outline)),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : AppColors.outline,
+          ),
+        ),
       ),
     );
   }
@@ -195,7 +219,11 @@ class _EmployeeProfileView extends StatelessWidget {
   final EmployeeModel employee;
   final VoidCallback onBack;
   final Function(String) onToast;
-  const _EmployeeProfileView({required this.employee, required this.onBack, required this.onToast});
+  const _EmployeeProfileView({
+    required this.employee,
+    required this.onBack,
+    required this.onToast,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -206,7 +234,14 @@ class _EmployeeProfileView extends StatelessWidget {
         children: [
           _buildBackButton(),
           const SizedBox(height: 20),
-          _ProfileHero(e: employee, onToast: onToast),
+          _ProfileHero(
+            e: employee,
+            onToast: onToast,
+            onRefresh: () {
+              // We need to refresh both the current profile view and the list behind it
+              onBack();
+            },
+          ),
           const SizedBox(height: 24),
           _buildStats(),
           const SizedBox(height: 24),
@@ -222,9 +257,20 @@ class _EmployeeProfileView extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.arrow_back_rounded, color: AppColors.primary, size: 20),
+          const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.primary,
+            size: 20,
+          ),
           const SizedBox(width: 8),
-          Text('Back to Directory', style: GoogleFonts.plusJakartaSans(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 14)),
+          Text(
+            'Back to Directory',
+            style: GoogleFonts.plusJakartaSans(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
         ],
       ),
     );
@@ -233,22 +279,123 @@ class _EmployeeProfileView extends StatelessWidget {
   Widget _buildStats() {
     return Row(
       children: [
-        Expanded(child: _StatBox(label: 'Projects', value: '${employee.projects}', icon: Icons.folder_rounded)),
+        Expanded(
+          child: _StatBox(
+            label: 'Projects',
+            value: '${employee.projects}',
+            icon: Icons.folder_rounded,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _StatBox(label: 'Tasks', value: '${employee.tasksDone}', icon: Icons.task_alt_rounded)),
+        Expanded(
+          child: _StatBox(
+            label: 'Tasks',
+            value: '${employee.tasksDone}',
+            icon: Icons.task_alt_rounded,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _StatBox(label: 'Attendance', value: employee.attendance, icon: Icons.fingerprint_rounded)),
+        Expanded(
+          child: _StatBox(
+            label: 'Attendance',
+            value: employee.attendance,
+            icon: Icons.fingerprint_rounded,
+          ),
+        ),
       ],
     );
   }
 }
 
-class _ProfileHero extends StatelessWidget {
+class _ProfileHero extends StatefulWidget {
   final EmployeeModel e;
   final Function(String) onToast;
-  const _ProfileHero({required this.e, required this.onToast});
+  final VoidCallback onRefresh;
+
+  const _ProfileHero({
+    required this.e,
+    required this.onToast,
+    required this.onRefresh,
+  });
+
+  @override
+  State<_ProfileHero> createState() => _ProfileHeroState();
+}
+
+class _ProfileHeroState extends State<_ProfileHero> {
+  bool _isToggling = false;
+
+  Future<void> _toggleStatus() async {
+    final isActive = widget.e.status.toLowerCase() == 'active';
+    final action = isActive ? "Deactivate" : "Activate";
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('$action Employee?'),
+        content: Text('Are you sure you want to $action ${widget.e.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              action,
+              style: TextStyle(
+                color: isActive ? Colors.red : Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isToggling = true);
+    try {
+      bool success;
+      if (isActive) {
+        success = await EmployeeService.deleteEmployee(widget.e.id);
+      } else {
+        success = await EmployeeService.activateEmployee(widget.e.id);
+      }
+
+      if (success) {
+        widget.onToast(
+          isActive ? "Employee deactivated" : "Employee activated",
+        );
+        widget.onRefresh();
+      } else {
+        widget.onToast("Failed to update status");
+      }
+    } catch (e) {
+      widget.onToast("Error: $e");
+    } finally {
+      if (mounted) setState(() => _isToggling = false);
+    }
+  }
+
+  void _openEdit() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => EditEmployeeModal(
+        employee: widget.e,
+        onToast: widget.onToast,
+        onSuccess: widget.onRefresh,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isActive = widget.e.status.toLowerCase() == 'active';
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -258,22 +405,117 @@ class _ProfileHero extends StatelessWidget {
       ),
       child: Column(
         children: [
-          AvatarWidget(initials: e.initials, size: 72, fontSize: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _SmallIconButton(
+                icon: Icons.edit_rounded,
+                onTap: _openEdit,
+                label: "Edit",
+              ),
+              if (_isToggling)
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                _SmallIconButton(
+                  icon: isActive
+                      ? Icons.block_flipped
+                      : Icons.check_circle_outline_rounded,
+                  color: isActive ? Colors.red : Colors.green,
+                  onTap: _toggleStatus,
+                  label: isActive ? "Deactivate" : "Activate",
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          AvatarWidget(initials: widget.e.initials, size: 72, fontSize: 24),
           const SizedBox(height: 16),
-          Text(e.name, style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.onSurface)),
+          Text(
+            widget.e.name,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppColors.onSurface,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(e.roleLabel, style: const TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant)),
+          Text(
+            widget.e.roleLabel,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              GoldChip(text: e.status, bg: e.status.toLowerCase() == 'active' ? AppColors.chipDoneBg : AppColors.chipHoldBg, fg: e.status.toLowerCase() == 'active' ? AppColors.chipDoneFg : AppColors.chipHoldFg),
+              GoldChip(
+                text: widget.e.status,
+                bg: isActive ? AppColors.chipDoneBg : AppColors.chipHoldBg,
+                fg: isActive ? AppColors.chipDoneFg : AppColors.chipHoldFg,
+              ),
               const SizedBox(width: 8),
-              GoldChip(text: 'Joined ${e.since}', bg: AppColors.primary.withOpacity(0.1), fg: AppColors.primary),
+              GoldChip(
+                text: 'Joined ${widget.e.since}',
+                bg: AppColors.primary.withOpacity(0.1),
+                fg: AppColors.primary,
+              ),
             ],
           ),
           const SizedBox(height: 20),
-          GoldGradientButton(text: 'Call', icon: Icons.call_rounded, height: 40, onTap: () => onToast('Calling...')),
+          GoldGradientButton(
+            text: 'Call',
+            icon: Icons.call_rounded,
+            height: 40,
+            onTap: () => widget.onToast('Calling...'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SmallIconButton extends StatelessWidget {
+  final IconData icon;
+  final Color? color;
+  final VoidCallback onTap;
+  final String label;
+
+  const _SmallIconButton({
+    required this.icon,
+    this.color,
+    required this.onTap,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (color ?? AppColors.primary).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 20, color: color ?? AppColors.primary),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: color ?? AppColors.primary,
+            ),
+          ),
         ],
       ),
     );
@@ -284,7 +526,11 @@ class _StatBox extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
-  const _StatBox({required this.label, required this.value, required this.icon});
+  const _StatBox({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -298,14 +544,28 @@ class _StatBox extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _CircleAction(icon: icon),
-              const Spacer(),
-              Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.onSurfaceVariant)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          Text(value, style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.onSurface)),
+          Text(
+            value,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: AppColors.onSurface,
+            ),
+          ),
         ],
       ),
     );
@@ -319,7 +579,10 @@ class _CircleAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(color: AppColors.surfaceContainerHigh, borderRadius: BorderRadius.circular(999)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(999),
+      ),
       child: Icon(icon, size: 18, color: AppColors.onSurface),
     );
   }
@@ -335,13 +598,35 @@ class _DetailsCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          _DetailRow(icon: Icons.badge_rounded, label: 'Employee ID', value: e.empId),
+          _DetailRow(
+            icon: Icons.badge_rounded,
+            label: 'Employee ID',
+            value: e.empId,
+          ),
           const Divider(height: 32),
-          _DetailRow(icon: Icons.email_rounded, label: 'Email Address', value: e.email),
+          _DetailRow(
+            icon: Icons.email_rounded,
+            label: 'Email Address',
+            value: e.email,
+          ),
           const Divider(height: 32),
-          _DetailRow(icon: Icons.phone_android_rounded, label: 'Phone Number', value: e.phone),
+          _DetailRow(
+            icon: Icons.phone_android_rounded,
+            label: 'Phone Number',
+            value: e.phone,
+          ),
           const Divider(height: 32),
-          _DetailRow(icon: Icons.apartment_rounded, label: 'Department', value: e.dept),
+          _DetailRow(
+            icon: Icons.apartment_rounded,
+            label: 'Department',
+            value: e.dept,
+          ),
+          const Divider(height: 32),
+          _DetailRow(
+            icon: Icons.info_outline_rounded,
+            label: 'Current Status',
+            value: e.status,
+          ),
         ],
       ),
     );
@@ -352,23 +637,45 @@ class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _DetailRow({required this.icon, required this.label, required this.value});
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Container(
-          width: 36, height: 36,
-          decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
           child: Icon(icon, size: 18, color: AppColors.primary),
         ),
         const SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.onSurface,
+              ),
+            ),
           ],
         ),
       ],

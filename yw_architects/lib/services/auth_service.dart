@@ -95,7 +95,10 @@ class AuthService {
     final roleEnum = _parseRole(roleStr);
     final baseInfo = roleMap[roleEnum] ?? roleMap[UserRole.admin]!;
 
+    final id = payload['id'] as int? ?? 0;
+    
     return AppUser(
+      id: id,
       role: roleEnum,
       token: accessToken,
       info: UserRoleInfo(
@@ -104,6 +107,7 @@ class AuthService {
         email: email,
         label: baseInfo.label,
         nav: baseInfo.nav,
+        profileImage: payload['profileImage'] as String?,
       ),
     );
   }
@@ -227,7 +231,10 @@ class AuthService {
         final payload = _decodeJwt(accessToken);
         final tokenEmail = (payload['sub'] as String?) ?? email;
 
+        final id = payload['id'] as int? ?? 0;
+
         return AppUser(
+          id: id,
           role: UserRole.admin, // Clients: restricted nav; no separate enum yet
           token: accessToken,
           info: const UserRoleInfo(
@@ -236,7 +243,10 @@ class AuthService {
             email: '',
             label: 'CLIENT',
             nav: ['dashboard', 'projects', 'profile'],
-          ).copyWith(email: tokenEmail),
+          ).copyWith(
+            email: tokenEmail,
+            profileImage: payload['profileImage'] as String?,
+          ),
         );
       } else {
         String msg = 'Login failed (${response.statusCode})';
@@ -282,8 +292,11 @@ class AuthService {
       // Basic validation of payload
       if (roleStr == null) return null;
 
+      final id = payload['id'] as int? ?? 0;
+
       if (roleStr.trim().toUpperCase() == 'CLIENT') {
         return AppUser(
+          id: id,
           role: UserRole.admin,
           token: token,
           info: const UserRoleInfo(
@@ -292,7 +305,10 @@ class AuthService {
             email: '',
             label: 'CLIENT',
             nav: ['dashboard', 'projects', 'profile'],
-          ).copyWith(email: emailStr),
+          ).copyWith(
+            email: emailStr,
+            profileImage: payload['profileImage'] as String?,
+          ),
         );
       } else {
         return _buildEmployeeUser(token, emailStr);

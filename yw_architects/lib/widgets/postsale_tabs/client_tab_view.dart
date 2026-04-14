@@ -19,49 +19,53 @@ class ClientTabView extends StatelessWidget {
 
     final init = name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        CardContainer(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  AvatarWidget(initials: init, size: 48, fontSize: 18),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                        ),
-                        Text(
-                          'Client Profile',
-                          style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                        ),
-                      ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          CardContainer(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    AvatarWidget(initials: init, size: 48, fontSize: 18),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                          ),
+                          Text(
+                            'Client Profile',
+                            style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Divider(color: AppColors.outlineVariant),
-              ),
-              _buildInfoRow(Icons.email_outlined, 'Email', email),
-              const SizedBox(height: 12),
-              _buildInfoRow(Icons.phone_outlined, 'Phone', phone),
-              const SizedBox(height: 12),
-              _buildInfoRow(Icons.receipt_long_outlined, 'GSTIN', gstin),
-              const SizedBox(height: 12),
-              _buildInfoRow(Icons.business_outlined, 'Billing Address', address),
-            ],
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Divider(color: AppColors.outlineVariant),
+                ),
+                _buildInfoRow(Icons.email_outlined, 'Email', email),
+                const SizedBox(height: 12),
+                _buildInfoRow(Icons.phone_outlined, 'Phone', phone),
+                const SizedBox(height: 12),
+                _buildInfoRow(Icons.receipt_long_outlined, 'GSTIN', gstin),
+                const SizedBox(height: 12),
+                _buildInfoRow(Icons.business_outlined, 'Billing Address', address),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

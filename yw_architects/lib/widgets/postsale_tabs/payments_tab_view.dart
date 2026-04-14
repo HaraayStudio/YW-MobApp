@@ -84,84 +84,91 @@ class _PaymentsTabViewState extends State<PaymentsTabView> {
     final totalGross = _taxInvoices.fold<double>(0, (sum, ti) => sum + (ti['grossAmount'] ?? 0.0).toDouble());
     final outstanding = totalGross - totalReceived;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Financial Stats cards Row
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _buildStatCard('₹${totalReceived.toStringAsFixed(0)}', 'TOTAL RECEIVED', isGreen: true),
-              _buildStatCard('₹${totalGross.toStringAsFixed(0)}', 'TOTAL BILLED', isBlue: true),
-              _buildStatCard('₹${outstanding.toStringAsFixed(0)}', 'OUTSTANDING', isRed: outstanding > 0),
-              _buildStatCard('${_allPayments.length}', 'PAYMENTS'),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Payment History',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-            ),
-            ElevatedButton.icon(
-              onPressed: _taxInvoices.isEmpty 
-                ? () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please generate a Tax Invoice first to record payments.'))
-                    );
-                  }
-                : () => _handleRecordPayment(),
-              icon: const Icon(Icons.add_rounded, size: 16),
-              label: const Text('Record Payment', style: TextStyle(fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        
-        if (_allPayments.isEmpty)
-          CardContainer(
-            padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Financial Stats cards Row
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
               children: [
-                const Icon(Icons.credit_card_rounded, size: 48, color: AppColors.outlineVariant),
-                const SizedBox(height: 16),
-                const Text(
-                  'No payments recorded yet',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _taxInvoices.isEmpty 
-                    ? 'Generate a tax invoice first to record payments.' 
-                    : 'Record activity by clicking the button above or in the Tax Invoices tab.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                ),
+                _buildStatCard('₹${totalReceived.toStringAsFixed(0)}', 'TOTAL RECEIVED', isGreen: true),
+                _buildStatCard('₹${totalGross.toStringAsFixed(0)}', 'TOTAL BILLED', isBlue: true),
+                _buildStatCard('₹${outstanding.toStringAsFixed(0)}', 'OUTSTANDING', isRed: outstanding > 0),
+                _buildStatCard('${_allPayments.length}', 'PAYMENTS'),
               ],
             ),
-          )
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _allPayments.length,
-            itemBuilder: (context, index) {
-              final p = _allPayments[index];
-              return _buildPaymentCard(p);
-            },
           ),
-      ],
+          const SizedBox(height: 24),
+  
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Expanded(
+                child: Text(
+                  'Payment History',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: _taxInvoices.isEmpty 
+                  ? () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please generate a Tax Invoice first to record payments.'))
+                      );
+                    }
+                  : () => _handleRecordPayment(),
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: const Text('Record Payment', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          if (_allPayments.isEmpty)
+            CardContainer(
+              padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Icon(Icons.credit_card_rounded, size: 48, color: AppColors.outlineVariant),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No payments recorded yet',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _taxInvoices.isEmpty 
+                      ? 'Generate a tax invoice first to record payments.' 
+                      : 'Record activity by clicking the button above or in the Tax Invoices tab.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _allPayments.length,
+              itemBuilder: (context, index) {
+                final p = _allPayments[index];
+                return _buildPaymentCard(p);
+              },
+            ),
+        ],
+      ),
     );
   }
 
@@ -188,6 +195,34 @@ class _PaymentsTabViewState extends State<PaymentsTabView> {
           Text(value, 
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: accent),
             overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, dynamic value, {bool isGreen = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 60,
+            child: Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500)),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              value?.toString() ?? '--',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: isGreen ? Colors.green : const Color(0xFF1E293B),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),

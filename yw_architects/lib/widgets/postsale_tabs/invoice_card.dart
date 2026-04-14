@@ -60,48 +60,68 @@ class _InvoiceCardState extends State<InvoiceCard> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  // Row 1: ID, Number and Amount
                   Row(
                     children: [
                       Text('#${inv['id']}',
                           style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
                               fontWeight: FontWeight.bold)),
                       const SizedBox(width: 8),
-                      Text(inv['invoiceNumber'] ?? 'NO-NUMBER',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      const SizedBox(width: 12),
-                      _buildStatusBadge(status),
+                      Expanded(
+                        child: Text(inv['invoiceNumber'] ?? 'NO-NUMBER',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            overflow: TextOverflow.ellipsis),
+                      ),
                       const SizedBox(width: 8),
-                      if (isPaid) _buildPaidBadge(),
-                      const SizedBox(width: 8),
-                      if (inv['convertedFromProformaId'] != null)
-                        _buildConvertedBadge(inv['convertedFromProformaId']),
-                      const Spacer(),
-                      Text('₹${gross.toStringAsFixed(2)}',
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                      Text('₹${gross.toStringAsFixed(0)}',
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.primary)),
+                      const SizedBox(width: 4),
                       Icon(
                         _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                         color: AppColors.onSurfaceVariant,
+                        size: 20,
                       ),
                     ],
                   ),
+                  const SizedBox(height: 10),
+                  // Row 2: Badges (Wrap)
+                  SizedBox(
+                    width: double.infinity,
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _buildStatusBadge(status),
+                        if (isPaid) _buildPaidBadge(),
+                        if (inv['convertedFromProformaId'] != null)
+                          _buildConvertedBadge(inv['convertedFromProformaId']),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 12),
-                  Row(
+                  const SizedBox(height: 12),
+                  // Row 3: Dates and Client
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
                     children: [
                       _buildMiniInfo(Icons.calendar_today_outlined, inv['issueDate'] ?? '--'),
-                      const SizedBox(width: 16),
                       if (!widget.isTax)
-                        _buildMiniInfo(Icons.hourglass_bottom, 'Valid till ${inv['validTill'] ?? '--'}'),
-                      const SizedBox(width: 16),
+                        _buildMiniInfo(Icons.hourglass_bottom, 'Till ${inv['validTill'] ?? '--'}'),
                       _buildMiniInfo(Icons.person_outline, inv['clientName'] ?? 'N/A'),
-                      const Spacer(),
-                      Text('Net: ₹${net.toStringAsFixed(2)}',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.onSurfaceVariant,
-                              fontWeight: FontWeight.w500)),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text('Net: ₹${net.toStringAsFixed(0)}',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -324,14 +344,22 @@ class _InvoiceCardState extends State<InvoiceCard> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500)),
-          Text(value?.toString() ?? '--',
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value?.toString() ?? '--',
+              textAlign: TextAlign.right,
               style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: isGreen ? Colors.green : const Color(0xFF1E293B))),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: isGreen ? Colors.green : const Color(0xFF1E293B),
+              ),
+              overflow: TextOverflow.visible,
+            ),
+          ),
         ],
       ),
     );

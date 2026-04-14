@@ -126,6 +126,8 @@ class ProjectService {
   }
 
   // PUT /api/projects/{projectId} (Multipart)
+  // This endpoint accepts a JSON part "project" and an optional file part "logo".
+  // If "logo" part is null, the backend will treat "logoUrl" inside "project" as the source.
   static Future<bool> updateProject(int projectId, Map<String, dynamic> projectData, {List<int>? logoBytes, String? logoName}) async {
     final token = TokenService.accessToken;
     final uri = Uri.parse("$baseUrl/$projectId");
@@ -133,15 +135,15 @@ class ProjectService {
     final request = http.MultipartRequest('PUT', uri);
     request.headers['Authorization'] = "Bearer $token";
 
-    // "project" part as JSON Blob
-    final projectPart = http.MultipartFile.fromString(
+    // Ensure the projectData contains the logoUrl if provided via Base64
+    final jsonPart = http.MultipartFile.fromString(
       'project',
       jsonEncode(projectData),
       contentType: MediaType('application', 'json'),
     );
-    request.files.add(projectPart);
+    request.files.add(jsonPart);
 
-    // "logo" part as file
+    // If logoBytes is null, the backend is expected to use the logoUrl from the JSON part
     if (logoBytes != null) {
       request.files.add(http.MultipartFile.fromBytes(
         'logo',
@@ -154,10 +156,10 @@ class ProjectService {
     try {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-      print("UPDATE MULTIPART PROJECT ${response.statusCode}: ${response.body}");
+      print("UPDATE PROJECT ${response.statusCode}: ${response.body}");
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      print("MULTIPART UPDATE ERROR: $e");
+      print("PROJECT UPDATE ERROR: $e");
       return false;
     }
   }

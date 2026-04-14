@@ -40,19 +40,21 @@ class _DailyAttendanceTabState extends State<DailyAttendanceTab> {
       for (var e in emps) {
         final existing = todayData.firstWhere((r) => r['user']?['id'] == e.id, orElse: () => null);
         map[e.id] = {
-          'status': existing?['status'] ?? 'UNMARKED',
-          'checkIn': existing?['checkIn'] ?? '',
+          'status': (existing?['status']?.toString() ?? 'UNMARKED').toUpperCase(),
+          'checkIn': existing?['checkIn']?.toString() ?? '',
           'checkOut': existing?['checkOut'] ?? '',
           'remarks': existing?['remarks'] ?? '',
         };
       }
 
+      if (!mounted) return;
       setState(() {
         _employees = emps;
         _attendanceMap = map;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       widget.onToast("Error: $e");
       setState(() => _isLoading = false);
     }
@@ -91,11 +93,11 @@ class _DailyAttendanceTabState extends State<DailyAttendanceTab> {
 
   void _markAll(String status) {
     setState(() {
+      final currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
       for (var id in _attendanceMap.keys) {
         _attendanceMap[id]!['status'] = status;
-        if (status == 'PRESENT' && _attendanceMap[id]!['checkIn'] == '') {
-          _attendanceMap[id]!['checkIn'] = '09:00 AM';
-        }
+        // The user wants time captured for both Present, Absent, and potentially Late. 
+        _attendanceMap[id]!['checkIn'] = currentTime;
       }
     });
   }
@@ -268,8 +270,20 @@ class _AttendanceRow extends StatelessWidget {
             child: DropdownButton<String>(
               value: record['status'],
               underline: const SizedBox(),
-              items: ['UNMARKED', 'PRESENT', 'ABSENT', 'HALF_DAY', 'LATE', 'ON_LEAVE'].map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 11)))).toList(),
-              onChanged: (v) => onChanged({...record, 'status': v}),
+              items: ['UNMARKED', 'PRESENT', 'ABSENT', 'HALF_DAY', 'LATE', 'ON_LEAVE']
+                  .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 11))))
+                  .toList(),
+              onChanged: (v) {
+                if (v == null) return;
+                
+                // Automatic time Consideration: If status becomes PRESENT, LATE, or ABSENT, consider current time.
+                final newRecord = {...record, 'status': v};
+                if (v == 'PRESENT' || v == 'LATE' || v == 'ABSENT') {
+                  newRecord['checkIn'] = DateFormat('HH:mm:ss').format(DateTime.now());
+                }
+                
+                onChanged(newRecord);
+              },
             ),
           ),
           Expanded(
@@ -277,7 +291,7 @@ class _AttendanceRow extends StatelessWidget {
             child: _TimePicker(
               time: record['checkIn'],
               onSelected: (t) => onChanged({...record, 'checkIn': t}),
-              isEnabled: record['status'] == 'PRESENT',
+              isEnabled: record['status'] == 'PRESENT' || record['status'] == 'LATE' || record['status'] == 'ABSENT',
             ),
           ),
         ],
@@ -297,8 +311,21 @@ class _TimePicker extends StatelessWidget {
     final noTime = !isEnabled;
     return GestureDetector(
       onTap: isEnabled ? () async {
-        final picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-        if (picked != null) onSelected(picked.format(context));
+        final picked = await showTimePicker(
+          context: context, 
+          initialTime: TimeOfDay.now(),
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+              child: child!,
+            );
+          },
+        );
+        if (picked != null) {
+          final hour = picked.hour.toString().padLeft(2, '0');
+          final minute = picked.minute.toString().padLeft(2, '0');
+          onSelected('$hour:$minute:00');
+        }
       } : null,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),

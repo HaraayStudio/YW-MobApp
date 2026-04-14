@@ -29,15 +29,37 @@ class _AttendanceCalendarTabState extends State<AttendanceCalendarTab> {
       final data = await AttendanceService.getAllEmployeesMonthlyAttendance(_viewDate.month, _viewDate.year);
       final Map<int, List<dynamic>> grouped = {};
       for (var record in data) {
-        final dateStr = record['date'] as String; // YYYY-MM-DD
-        final day = int.parse(dateStr.split('-')[2]);
-        grouped.putIfAbsent(day, () => []).add(record);
+        // Support common date keys: 'date', 'attendanceDate', 'checkInDate'
+        final dateObj = record['date'] ?? record['attendanceDate'] ?? record['checkInDate'];
+        if (dateObj == null) continue;
+        
+        final dateStr = dateObj.toString().split(' ')[0]; // Handle 'YYYY-MM-DD 10:00:00'
+        if (dateStr.length < 8) continue; 
+        
+        try {
+          // Flexible separator parsing: yyyy-MM-dd or dd-MM-yyyy or yyyy/MM/dd
+          final parts = dateStr.contains('-') ? dateStr.split('-') : dateStr.split('/');
+          // Try to find the day (usually the last or first part depending on format)
+          int? day;
+          if (parts.length >= 3) {
+            if (parts[0].length == 4) day = int.parse(parts[2]); // yyyy-MM-dd
+            else day = int.parse(parts[0]); // dd-MM-yyyy
+          }
+          
+          if (day != null) {
+            grouped.putIfAbsent(day, () => []).add(record);
+          }
+        } catch (_) {
+          continue;
+        }
       }
+      if (!mounted) return;
       setState(() {
         _monthlyAttendance = grouped;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       widget.onToast("Error: $e");
       setState(() => _isLoading = false);
     }
@@ -105,7 +127,7 @@ class _AttendanceCalendarTabState extends State<AttendanceCalendarTab> {
       padding: const EdgeInsets.all(10),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        childAspectRatio: 0.8,
+        childAspectRatio: 0.7, // Taller cells to prevent overflow
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
       ),
@@ -180,24 +202,58 @@ class _CalendarDayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final isToday = DateFormat('yyyy-MM-dd').format(date) == DateFormat('yyyy-MM-dd').format(DateTime.now());
     final isSunday = date.weekday == DateTime.sunday;
+    
+    // Background Color Logic:
+    // Sunday -> Off (Grey)
+    // Has Late -> Warning (Yellow)
+    // Has Present (but no late) -> Success (Green)
+    // Else -> None (White)
+    Color bgColor = Colors.white;
+    if (isSunday) {
+      bgColor = AppColors.surfaceContainerLow.withOpacity(0.7);
+    } else if (records.isNotEmpty) {
+      final hasLate = records.any((r) => r['status']?.toString().toUpperCase() == 'LATE');
+      final hasPresent = records.any((r) => r['status']?.toString().toUpperCase() == 'PRESENT');
+      
+      if (hasLate) {
+        bgColor = const Color(0xfffff7ed); // Light Orange/Yellow
+      } else if (hasPresent) {
+        bgColor = const Color(0xfff0fdf4); // Light Green
+      }
+    }
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: isSunday ? AppColors.surfaceContainerLow.withOpacity(0.5) : Colors.white,
+          color: bgColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isToday ? AppColors.primary : AppColors.outlineVariant.withOpacity(0.3), width: isToday ? 2 : 1),
+          border: Border.all(
+            color: isToday ? AppColors.primary : AppColors.outlineVariant.withOpacity(0.2), 
+            width: isToday ? 1.5 : 0.5
+          ),
+          boxShadow: isToday ? [BoxShadow(color: AppColors.primary.withOpacity(0.1), blurRadius: 4)] : null,
         ),
         child: Column(
           children: [
-            const SizedBox(height: 8),
-            Text('$dayNum', style: TextStyle(fontSize: 14, fontWeight: isToday ? FontWeight.bold : FontWeight.w500, color: isSunday ? AppColors.outline : AppColors.onSurface)),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: isToday ? const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle) : null,
+              child: Text(
+                '$dayNum', 
+                style: TextStyle(
+                  fontSize: 12, 
+                  fontWeight: isToday ? FontWeight.bold : FontWeight.w600, 
+                  color: isToday ? Colors.white : (isSunday ? AppColors.outline : AppColors.onSurface)
+                )
+              ),
+            ),
             const Spacer(),
             DayIndicator(records: records),
-            const SizedBox(height: 8),
-            if (isSunday) const Text('Off', style: TextStyle(fontSize: 8, color: AppColors.outline)),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
+            if (isSunday) const Text('OFF', style: TextStyle(fontSize: 8, color: AppColors.outline, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2),
           ],
         ),
       ),

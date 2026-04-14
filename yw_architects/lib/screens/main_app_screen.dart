@@ -47,18 +47,26 @@ class _MainAppScreenState extends State<MainAppScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int? _projectToEdit;
 
-  // Bottom nav shows max 4 items (dashboard + 3 most relevant)
+  // Bottom nav customization based on user group
   List<String> get _bottomNavItems {
-    final nav = widget.user.info.nav;
     final role = widget.user.role;
 
     // Management roles (Admin, Co-Founder, HR) get specific bottom nav
     if (role == UserRole.admin || role == UserRole.coFounder || role == UserRole.hr) {
-      return ['dashboard', 'projects', 'tasks', 'employees'];
+      return managementBottomNav;
     }
 
-    final core = ['dashboard', ...nav.where((n) => n != 'dashboard' && n != 'notifications' && n != 'profile' && n != 'clients')];
-    return core.take(4).toList();
+    // All other employees
+    return employeeBottomNav;
+  }
+
+  // Sidebar items customization
+  List<String> get _sidebarNavItems {
+    final role = widget.user.role;
+    if (role == UserRole.admin || role == UserRole.coFounder || role == UserRole.hr) {
+      return managementSidebarNav;
+    }
+    return employeeSidebarNav;
   }
 
   void _navigate(String section) {
@@ -342,7 +350,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
   // ── Drawer ───────────────────────────────────────────────────────────────
   Widget _buildDrawer() {
-    final allItems = widget.user.info.nav;
+    final allItems = _sidebarNavItems;
     return Drawer(
       backgroundColor: AppColors.surface,
       child: Column(

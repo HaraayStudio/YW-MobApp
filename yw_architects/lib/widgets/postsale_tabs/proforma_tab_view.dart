@@ -59,63 +59,72 @@ class _ProformaTabViewState extends State<ProformaTabView> {
       ));
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Summary Bar
-        _buildSummaryBar(),
-        const SizedBox(height: 20),
-        
-        // Header with "New Proforma" button
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                const Text('Proforma Invoices', 
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: const Color(0xFFFACC15), borderRadius: BorderRadius.circular(12)),
-                  child: Text('${_invoices.length}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Summary Bar
+          _buildSummaryBar(),
+          const SizedBox(height: 20),
+          
+          // Header with "New Proforma" button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    const Flexible(
+                      child: Text('Proforma Invoices', 
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                        overflow: TextOverflow.ellipsis),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: const Color(0xFFFACC15), borderRadius: BorderRadius.circular(12)),
+                      child: Text('${_invoices.length}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            ElevatedButton.icon(
-              onPressed: () => _openCreateDialog(),
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text('New Proforma', style: TextStyle(fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF78511E),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        if (_invoices.isEmpty)
-          _buildEmptyState()
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _invoices.length,
-            itemBuilder: (context, index) {
-              final inv = _invoices[index];
-              return InvoiceCard(
-                invoice: inv,
-                isTax: false,
-                onDelete: () => _handleDelete(inv['id']),
-                onView: () => _openPreview(inv),
-                onConvert: () => _handleConvert(inv['id']),
-                onPaid: () => _handleMarkPaid(inv),
-              );
-            },
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: () => _openCreateDialog(),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('New Proforma', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF78511E),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
           ),
-      ],
+          const SizedBox(height: 16),
+  
+          if (_invoices.isEmpty)
+            _buildEmptyState()
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _invoices.length,
+              itemBuilder: (context, index) {
+                final inv = _invoices[index];
+                return InvoiceCard(
+                  invoice: inv,
+                  isTax: false,
+                  onDelete: () => _handleDelete(inv['id']),
+                  onView: () => _openPreview(inv),
+                  onConvert: () => _handleConvert(inv['id']),
+                  onPaid: () => _handleMarkPaid(inv),
+                );
+              },
+            ),
+        ],
+      ),
     );
   }
 

@@ -3,6 +3,8 @@ import 'package:yw_architects/models/app_models.dart';
 class EmployeeModel {
   final int id;
   final String name;
+  final String firstName;
+  final String lastName;
   final String roleLabel;
   final UserRole role;
   final String dept;
@@ -19,6 +21,8 @@ class EmployeeModel {
   const EmployeeModel({
     this.id = 0,
     required this.name,
+    required this.firstName,
+    required this.lastName,
     required this.roleLabel,
     required this.role,
     required this.dept,
@@ -44,6 +48,8 @@ class EmployeeModel {
     return EmployeeModel(
       id: json['id'] as int? ?? 0,
       name: '$fName $lName'.trim(),
+      firstName: fName,
+      lastName: lName,
       roleLabel: basicRoleInfo.name, 
       role: parsedRole,
       dept: roleToDept(parsedRole),

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'token_service.dart';
+import 'package:http_parser/http_parser.dart';
 import '../api/constants.dart';
 
 class PostSalesService {
@@ -10,33 +11,63 @@ class PostSalesService {
   /// Creates a new Post-Sale record (which creates a Project).
   /// [isOldClient] should be true if linking to an existing client ID.
   /// [payload] should contain project/post-sale details and client info.
+  /// [logoBytes] optional logo file bytes.
   static Future<Map<String, dynamic>> createPostSale({
     required Map<String, dynamic> payload,
     required bool isOldClient,
+    List<int>? logoBytes,
+    String? logoName,
   }) async {
     final token = TokenService.accessToken;
+    final uri = Uri.parse("$baseUrl/createpostSales?isOldClient=$isOldClient");
 
-    final response = await http.post(
-      Uri.parse("$baseUrl/createpostSales?isOldClient=$isOldClient"),
-      headers: {
-        "Authorization": "Bearer $token",
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode(payload),
-    );
+    final request = http.MultipartRequest('POST', uri);
+    request.headers['Authorization'] = "Bearer $token";
 
-    print("CREATE POST-SALE STATUS: ${response.statusCode}");
-    
-    final decoded = jsonDecode(response.body);
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return {
-        "success": true,
-        "data": decoded['data'],
-      };
-    } else {
+    // Add JSON payload as a part named 'postSale' (or whatever the backend expects)
+    // Looking at the updateProject, it uses 'project'. 
+    // Usually for createPostSales it might be 'postSale' or just parameters.
+    // However, if the service previously used jsonEncode(payload), 
+    // we send it as a 'payload' part or similar.
+    request.files.add(http.MultipartFile.fromString(
+      'postSale', // Adjust if backend expects a different part name
+      jsonEncode(payload),
+      contentType: MediaType('application', 'json'),
+    ));
+
+    if (logoBytes != null) {
+      request.files.add(http.MultipartFile.fromBytes(
+        'logo',
+        logoBytes,
+        filename: logoName ?? 'logo.png',
+        contentType: MediaType('image', logoName?.split('.').last ?? 'png'),
+      ));
+    }
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      print("CREATE POST-SALE STATUS: ${response.statusCode}");
+      print("CREATE POST-SALE BODY: ${response.body}");
+
+      final decoded = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          "success": true,
+          "data": decoded['data'],
+        };
+      } else {
+        return {
+          "success": false,
+          "message": decoded['message'] ?? "Failed to create project record",
+        };
+      }
+    } catch (e) {
+      print("CREATE POST-SALE ERROR: $e");
       return {
         "success": false,
-        "message": decoded['message'] ?? "Failed to create project record",
+        "message": "Connection error: $e",
       };
     }
   }

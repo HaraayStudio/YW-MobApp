@@ -41,72 +41,75 @@ class OverviewTabView extends StatelessWidget {
 
     final remark = project['remark']?.toString() ?? 'No notes available for this project.';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 2.5,
-          children: [
-            ['Code', code],
-            ['Area', area],
-            ['Start', start],
-            ['Deadline', deadline],
-            ['Address', address],
-            ['Updates', '0'],
-          ].map((item) => Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  item[0],
-                  style: const TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
-                ),
-                Text(
-                  item[1],
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.onSurface),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          )).toList(),
-        ),
-        const SizedBox(height: 16),
-        CardContainer(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 2.5,
             children: [
-              Row(
+              ['Code', code],
+              ['Area', area],
+              ['Start', start],
+              ['Deadline', deadline],
+              ['Address', address],
+              ['Updates', '0'],
+            ].map((item) => Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.sticky_note_2_outlined, size: 16, color: AppColors.primary),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'INTERNAL REMARK',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.onSurfaceVariant, letterSpacing: 0.5),
+                  Text(
+                    item[0],
+                    style: const TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
+                  ),
+                  Text(
+                    item[1],
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.onSurface),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Text(
-                remark,
-                style: const TextStyle(fontSize: 13, color: AppColors.onSurface, height: 1.5),
-              ),
-            ],
+            )).toList(),
           ),
-        ),
-      ],
+          const SizedBox(height: 16),
+          CardContainer(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.sticky_note_2_outlined, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'INTERNAL REMARK',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.onSurfaceVariant, letterSpacing: 0.5),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  remark,
+                  style: const TextStyle(fontSize: 13, color: AppColors.onSurface, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

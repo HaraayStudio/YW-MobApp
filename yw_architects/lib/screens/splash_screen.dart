@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -35,6 +36,7 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _fadeTag;
   late final Animation<double> _scaleY;
   late final Animation<double> _progressBar;
+  Timer? _exitTimer;
 
   static const _totalDuration = Duration(milliseconds: 2200);
   static const _exitAfter     = Duration(milliseconds: 2000);
@@ -83,7 +85,7 @@ class _SplashScreenState extends State<SplashScreen>
     _ctrl.forward();
 
     // Navigate after exit delay
-    Future.delayed(_exitAfter, () {
+    _exitTimer = Timer(_exitAfter, () {
       if (mounted) widget.onComplete();
     });
   }
@@ -91,6 +93,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _ctrl.dispose();
+    _exitTimer?.cancel();
     super.dispose();
   }
 

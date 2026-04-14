@@ -534,7 +534,7 @@ class _AddEnquirySheetState extends State<_AddEnquirySheet> {
             if (_isExistingClient) ...[
               const _FieldLabel('Select Client'),
               DropdownButtonFormField<Client>(
-                value: _selectedClient,
+                initialValue: _selectedClient,
                 decoration: AppTheme.inputDecoration('Choose client'),
                 items: widget.clients.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
                 onChanged: (v) => setState(() => _selectedClient = v),
@@ -566,7 +566,7 @@ class _AddEnquirySheetState extends State<_AddEnquirySheet> {
             const SizedBox(height: 12),
             const _FieldLabel('Approached Via'),
             DropdownButtonFormField<String>(
-              value: _approachedVia,
+              initialValue: _approachedVia,
               decoration: AppTheme.inputDecoration('Select channel'),
               items: ['Call', 'Meeting', 'Reference', 'Website'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
               onChanged: (v) => setState(() => _approachedVia = v!),

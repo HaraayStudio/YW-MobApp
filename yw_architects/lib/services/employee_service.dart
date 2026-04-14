@@ -146,6 +146,8 @@ class EmployeeService {
   static Future<bool> updateMyProfile(Map<String, dynamic> payload) async {
     final token = TokenService.accessToken;
 
+    // The backend User model has a 'profileImage' field.
+    // If the payload contains a Base64 string here, the database will store it directly.
     final response = await http.put(
       Uri.parse("$baseUrl/updatemyprofile"),
       headers: {
@@ -156,6 +158,9 @@ class EmployeeService {
     );
 
     print("UPDATE MY PROFILE STATUS: ${response.statusCode}");
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      print("UPDATE MY PROFILE ERROR: ${response.body}");
+    }
     return response.statusCode == 200 || response.statusCode == 201;
   }
 

@@ -19,6 +19,7 @@ class UserRoleInfo {
   final String email;
   final String label;
   final List<String> nav;
+  final String? profileImage;
 
   const UserRoleInfo({
     required this.name,
@@ -26,6 +27,7 @@ class UserRoleInfo {
     required this.email,
     required this.label,
     required this.nav,
+    this.profileImage,
   });
 
   UserRoleInfo copyWith({
@@ -34,6 +36,7 @@ class UserRoleInfo {
     String? email,
     String? label,
     List<String>? nav,
+    String? profileImage,
   }) {
     return UserRoleInfo(
       name:     name     ?? this.name,
@@ -41,30 +44,32 @@ class UserRoleInfo {
       email:    email    ?? this.email,
       label:    label    ?? this.label,
       nav:      nav      ?? this.nav,
+      profileImage: profileImage ?? this.profileImage,
     );
   }
 }
 
 
 class AppUser {
+  final int id;
   final UserRole role;
   final UserRoleInfo info;
-  final String? token;      // ← ADD THIS
+  final String? token;
 
   const AppUser({
+    required this.id,
     required this.role,
     required this.info,
-    this.token,             // ← nullable, so existing code doesn't break
+    this.token, 
   });
 }
 
-// Full access: 'dashboard', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile'
-const List<String> fullNav = ['dashboard', 'clients', 'enquiry', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile'];
-const List<String> hrNav = fullNav; // HR now has same access as Admin/Co-Founder
-const List<String> srNav = ['dashboard', 'clients', 'projects', 'tasks', 'leaves', 'notifications', 'profile'];
-const List<String> jrNav = ['dashboard', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
-const List<String> liaisonManagerNav = ['dashboard', 'projects', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
-const List<String> liaisonFieldNav = ['dashboard', 'site', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
+// Finalized Navigation Logic
+const List<String> managementSidebarNav = ['dashboard', 'clients', 'enquiry', 'projects', 'site', 'employees', 'profile'];
+const List<String> managementBottomNav    = ['dashboard', 'projects', 'clients', 'employees'];
+
+const List<String> employeeSidebarNav   = ['dashboard', 'projects', 'site'];
+const List<String> employeeBottomNav      = ['dashboard', 'projects', 'site', 'attendance'];
 
 const Map<UserRole, UserRoleInfo> roleMap = {
   UserRole.admin: UserRoleInfo(
@@ -72,70 +77,70 @@ const Map<UserRole, UserRoleInfo> roleMap = {
     initials: 'AD',
     email: 'admin@yw.com',
     label: 'ADMIN',
-    nav: fullNav,
+    nav: managementSidebarNav,
   ),
   UserRole.coFounder: UserRoleInfo(
     name: 'Co-Founder',
     initials: 'CF',
     email: 'cofounder@yw.com',
     label: 'CO_FOUNDER',
-    nav: fullNav,
+    nav: managementSidebarNav,
   ),
   UserRole.hr: UserRoleInfo(
     name: 'HR Manager',
     initials: 'HR',
     email: 'hr@yw.com',
     label: 'HR',
-    nav: hrNav,
+    nav: managementSidebarNav,
   ),
   UserRole.srArchitect: UserRoleInfo(
     name: 'Senior Architect',
     initials: 'SA',
     email: 'srarch@yw.com',
     label: 'SR_ARCHITECT',
-    nav: srNav,
+    nav: employeeSidebarNav,
   ),
   UserRole.jrArchitect: UserRoleInfo(
     name: 'Junior Architect',
     initials: 'JA',
     email: 'jrarch@yw.com',
     label: 'JR_ARCHITECT',
-    nav: jrNav,
+    nav: employeeSidebarNav,
   ),
   UserRole.srEngineer: UserRoleInfo(
     name: 'Senior Engineer',
     initials: 'SE',
     email: 'sreng@yw.com',
     label: 'SR_ENGINEER',
-    nav: srNav,
+    nav: employeeSidebarNav,
   ),
   UserRole.draftsman: UserRoleInfo(
     name: 'Draftsman',
     initials: 'DM',
     email: 'drafts@yw.com',
     label: 'DRAFTSMAN',
-    nav: jrNav,
+    nav: employeeSidebarNav,
   ),
   UserRole.liaisonManager: UserRoleInfo(
     name: 'Liaison Manager',
     initials: 'LM',
     email: 'liaisonmgr@yw.com',
     label: 'LIAISON_MANAGER',
-    nav: liaisonManagerNav,
+    nav: employeeSidebarNav,
   ),
   UserRole.liaisonOfficer: UserRoleInfo(
     name: 'Liaison Officer',
     initials: 'LO',
     email: 'liaisonoff@yw.com',
     label: 'LIAISON_OFFICER',
-    nav: liaisonFieldNav,
+    nav: employeeSidebarNav,
   ),
   UserRole.liaisonAssistant: UserRoleInfo(
     name: 'Liaison Assistant',
     initials: 'LA',
     email: 'liaisonasst@yw.com',
     label: 'LIAISON_ASSISTANT',
-    nav: liaisonFieldNav,
+    nav: employeeSidebarNav,
   ),
 };
 
@@ -155,7 +160,7 @@ const Map<String, NavItem> navConfig = {
   'employees': NavItem(key: 'employees', iconData: Icons.group_rounded, label: 'Employees'),
   'attendance': NavItem(key: 'attendance', iconData: Icons.fingerprint_rounded, label: 'Attendance'),
   'leaves': NavItem(key: 'leaves', iconData: Icons.event_available_rounded, label: 'Leaves'),
-  'site': NavItem(key: 'site', iconData: Icons.construction_rounded, label: 'Site'),
+  'site': NavItem(key: 'site', iconData: Icons.construction_rounded, label: 'Sites'),
   'materials': NavItem(key: 'materials', iconData: Icons.inventory_2_rounded, label: 'Materials'),
   'renders': NavItem(key: 'renders', iconData: Icons.view_in_ar_rounded, label: 'Renders'),
   'reports': NavItem(key: 'reports', iconData: Icons.analytics_rounded, label: 'Reports'),

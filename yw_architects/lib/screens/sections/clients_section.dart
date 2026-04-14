@@ -173,167 +173,158 @@ class _ClientsSectionState extends State<ClientsSection> {
       );
     }
     final list = _filtered;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: SectionHeader(
-                  title: 'Clients',
-                  subtitle: '${list.length} active clients',
-                ),
-              ),
-              GestureDetector(
-                onTap: _openAddModal,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    gradient: goldGradient,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.28),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.person_add_rounded, color: Colors.white, size: 16),
-                      SizedBox(width: 4),
-                      Text('Add', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
-                    ],
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: SectionHeader(
+                    title: 'Clients',
+                    subtitle: '${list.length} active clients',
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Search
-          Container(
-            decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(12)),
-            child: TextField(
-              controller: _searchCtrl,
-              onChanged: (_) => setState(() {}),
-              style: const TextStyle(fontSize: 14, color: AppColors.onSurface),
-              decoration: const InputDecoration(
-                hintText: 'Search clients...',
-                hintStyle: TextStyle(color: AppColors.outline, fontSize: 14),
-                border: InputBorder.none,
-                prefixIcon: Icon(Icons.search_rounded, color: AppColors.onSurfaceVariant, size: 20),
-                contentPadding: EdgeInsets.symmetric(vertical: 12),
-                isDense: true,
+                GestureDetector(
+                  onTap: _openAddModal,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      gradient: goldGradient,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.28),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.person_add_rounded, color: Colors.white, size: 16),
+                        SizedBox(width: 4),
+                        Text('Add', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+    
+            // Search
+            Container(
+              decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(12)),
+              child: TextField(
+                controller: _searchCtrl,
+                onChanged: (_) => setState(() {}),
+                style: const TextStyle(fontSize: 14, color: AppColors.onSurface),
+                decoration: const InputDecoration(
+                  hintText: 'Search clients...',
+                  hintStyle: TextStyle(color: AppColors.outline, fontSize: 14),
+                  border: InputBorder.none,
+                  prefixIcon: Icon(Icons.search_rounded, color: AppColors.onSurfaceVariant, size: 20),
+                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  isDense: true,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-
-          if (list.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 40),
-                child: Text('No clients found', style: TextStyle(color: AppColors.onSurfaceVariant)),
+            const SizedBox(height: 16),
+    
+            if (list.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 40),
+                  child: Text('No clients found', style: TextStyle(color: AppColors.onSurfaceVariant)),
+                ),
               ),
-            ),
-
-          // Client cards
-          ...list.map((c) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _ClientCard(
-              client: c,
-              onTap: () => setState(() => _selectedClient = c),
-              onToast: widget.onToast,
-            ),
-          )),
-        ],
+    
+            // Client cards
+            ...list.map((c) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _ClientCard(
+                client: c,
+                onTap: () => setState(() => _selectedClient = c),
+                onToast: widget.onToast,
+              ),
+            )),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildProfile(_Client c) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () => setState(() => _selectedClient = null),
-            child: Row(
-               mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.arrow_back_rounded, color: AppColors.primary, size: 20),
-                const SizedBox(width: 6),
-                Text('Back to Clients', style: GoogleFonts.plusJakartaSans(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 14)),
-              ],
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Hero card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                 color: AppColors.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.outlineVariant.withOpacity(0.15)),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 4))],
+              ),
+              child: Column(
+                children: [
+                  AvatarWidget(initials: c.initials, size: 68, fontSize: 22),
+                  const SizedBox(height: 10),
+                  Text(c.name, style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.onSurface)),
+                  const SizedBox(height: 2),
+                  Text('Client ID: CL-${c.id}', style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant), textAlign: TextAlign.center),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _ActionBtn(label: 'Call',  icon: Icons.call_rounded,  onTap: () => widget.onToast('Calling ${c.name}...'),  gradient: true),
+                      const SizedBox(width: 10),
+                      _ActionBtn(label: 'Email', icon: Icons.mail_rounded,  onTap: () => widget.onToast('Opening email...'),       gradient: false),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-
-          // Hero card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-               color: AppColors.surfaceContainerLowest,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.outlineVariant.withOpacity(0.15)),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 4))],
+            const SizedBox(height: 14),
+    
+            CardContainer(
+              child: Column(
+                children: [
+                  _InfoRow(Icons.mail_rounded,          'Email',       c.email),
+                  _InfoRow(Icons.phone_rounded,          'Phone',       c.phone),
+                  _InfoRow(Icons.location_on_rounded,   'Address',     c.address.isEmpty ? 'N/A' : c.address),
+                  _InfoRow(Icons.receipt_rounded,       'PAN',         c.pan.isEmpty ? 'N/A' : c.pan),
+                  _InfoRow(Icons.receipt_long_rounded,  'GST',         c.gst.isEmpty ? 'N/A' : c.gst),
+                ].map((w) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: w)).toList(),
+              ),
             ),
-            child: Column(
-              children: [
-                AvatarWidget(initials: c.initials, size: 68, fontSize: 22),
-                const SizedBox(height: 10),
-                Text(c.name, style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.onSurface)),
-                const SizedBox(height: 2),
-                Text('Client ID: CL-${c.id}', style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant), textAlign: TextAlign.center),
-                const SizedBox(height: 14),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _ActionBtn(label: 'Call',  icon: Icons.call_rounded,  onTap: () => widget.onToast('Calling ${c.name}...'),  gradient: true),
-                    const SizedBox(width: 10),
-                    _ActionBtn(label: 'Email', icon: Icons.mail_rounded,  onTap: () => widget.onToast('Opening email...'),       gradient: false),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          CardContainer(
-            child: Column(
-              children: [
-                _InfoRow(Icons.mail_rounded,          'Email',       c.email),
-                _InfoRow(Icons.phone_rounded,          'Phone',       c.phone),
-                _InfoRow(Icons.location_on_rounded,   'Address',     c.address.isEmpty ? 'N/A' : c.address),
-                _InfoRow(Icons.receipt_rounded,       'PAN',         c.pan.isEmpty ? 'N/A' : c.pan),
-                _InfoRow(Icons.receipt_long_rounded,  'GST',         c.gst.isEmpty ? 'N/A' : c.gst),
-              ].map((w) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: w)).toList(),
-            ),
-          ),
-          const SizedBox(height: 14),
-          
-          CardContainer(
-            child: GestureDetector(
-               onTap: () => _deleteClient(c),
-               child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                     Icon(Icons.delete_rounded, color: AppColors.error, size: 20),
-                     SizedBox(width: 8),
-                     Text('Delete Client', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
-                  ]
-               )
+            const SizedBox(height: 14),
+            
+            CardContainer(
+              child: GestureDetector(
+                 onTap: () => _deleteClient(c),
+                 child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                       Icon(Icons.delete_rounded, color: AppColors.error, size: 20),
+                       SizedBox(width: 8),
+                       Text('Delete Client', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
+                    ]
+                 )
+              )
             )
-          )
-        ],
+          ],
+        ),
       ),
     );
   }

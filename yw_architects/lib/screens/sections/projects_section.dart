@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/app_models.dart';
@@ -7,6 +8,9 @@ import '../../services/post_sales_service.dart';
 import '../../services/project_service.dart';
 import '../../widgets/postsale_tabs/post_sale_detail_view.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../utils/base64_utils.dart';
+import '../../widgets/common_widgets.dart' show ProgressBar, SectionHeader, CardContainer, GoldGradientButton, StatusChip, AvatarWidget;
 
 class ProjectsSection extends StatefulWidget {
   final AppUser user;
@@ -54,6 +58,9 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   bool _isEditing = false;
   int _editTabIndex = 0;
   final Map<String, TextEditingController> _editCtrls = {};
+  String? _pickedLogoBase64;
+  String? _createLogoBase64;
+  bool _isPickingLogo = false;
 
   void _initEditForm(Map<String, dynamic> p) {
     _selectedProject = p;
@@ -150,6 +157,8 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           ? _formatDate(getD('projectEndDateTime', 'project_end_date_time'))
           : '',
     );
+    
+    _pickedLogoBase64 = null; // Reset for new edit session
 
     // Background refresh — if API works, it will update with latest data
     _fetchFullProjectDetails(p['id']);
@@ -355,6 +364,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         _editCtrls['projectExpectedEndDate']?.text,
       ),
       'projectEndDateTime': _toIso(_editCtrls['projectEndDateTime']?.text),
+      'logoUrl': _pickedLogoBase64 ?? _selectedProject?['logoUrl'] ?? _selectedProject?['logo_url'],
     };
 
     final projectId =
@@ -362,10 +372,20 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         _selectedProject!['id'] ??
         _selectedProject!['project_id'];
 
+    List<int>? logoBytes;
+    if (_pickedLogoBase64 != null) {
+      try {
+        logoBytes = base64Decode(_pickedLogoBase64!.split(',').last);
+      } catch (e) {
+        debugPrint("Error decoding logo bytes: $e");
+      }
+    }
+
     try {
       final success = await ProjectService.updateProject(
         projectId as int,
         projectData,
+        logoBytes: logoBytes,
       );
 
       if (success && mounted) {
@@ -692,6 +712,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     if (_showCreateForm) return _buildCreateForm();
     if (_detailId != null) {
       return PostSaleDetailView(
+        user: widget.user,
         projectId: _detailId!,
         onBack: () => setState(() => _detailId = null),
         onEdit: (data) {
@@ -1165,35 +1186,154 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     );
   }
 
+  Future<void> _pickLogo() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50,
+      maxWidth: 512,
+    );
+    
+    if (image != null) {
+      setState(() => _isPickingLogo = true);
+      final base64String = await Base64Utils.toDataUrl(image);
+      setState(() {
+        _pickedLogoBase64 = base64String;
+        _isPickingLogo = false;
+      });
+      if (base64String != null) {
+        widget.onToast("Logo prepared. Save to upload.");
+      }
+    }
+  }
+
   Widget _buildEditLogoTab() {
-    return Center(
-      child: Column(
+    final currentLogo = _pickedLogoBase64 ?? _selectedProject?['logoUrl'] ?? _selectedProject?['logo_url'];
+    
+    return SingleChildScrollView(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 40),
+            GestureDetector(
+              onTap: _pickLogo,
+              child: Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: AppColors.primary.withOpacity(_pickedLogoBase64 != null ? 0.5 : 0.1),
+                    width: 2,
+                  ),
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: _isPickingLogo 
+                  ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                  : _buildLogoPreview(
+                      currentLogo, 
+                      name: _editCtrls['projectName']?.text ?? _selectedProject?['name']
+                    ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              "Company Logo",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                _pickedLogoBase64 != null 
+                  ? "New logo selected. Click 'Save Changes' to update the database."
+                  : "This logo is identifying the project across all reports and the client portal.",
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+              ),
+            ),
+            const SizedBox(height: 32),
+            OutlinedButton.icon(
+              onPressed: _pickLogo,
+              icon: const Icon(Icons.add_photo_alternate_rounded),
+              label: Text(_pickedLogoBase64 != null ? "Change Selection" : "Select Logo"),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickCreateLogo() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50,
+      maxWidth: 512,
+    );
+    
+    if (image != null) {
+      setState(() => _isPickingLogo = true);
+      final base64String = await Base64Utils.toDataUrl(image);
+      setState(() {
+        _createLogoBase64 = base64String;
+        _isPickingLogo = false;
+      });
+      if (base64String != null) {
+        widget.onToast("Logo added to project.");
+      }
+    }
+  }
+
+  Widget _buildLogoPreview(dynamic logo, {String? name}) {
+    if (logo == null || logo.toString().isEmpty) {
+      if (name != null && name.isNotEmpty) {
+        return AvatarWidget(
+          initials: name.split(' ').map((s) => s.isNotEmpty ? s[0] : '').take(2).join().toUpperCase(),
+          size: 160, // This will be constrained by parent
+          fontSize: 18,
+        );
+      }
+      return const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(
-              Icons.add_photo_alternate_rounded,
-              size: 40,
-              color: AppColors.outline,
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            "Project Logo Management",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const Text(
-            "Coming soon: Logo upload and preview",
-            style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-          ),
+          Icon(Icons.add_photo_alternate_rounded, size: 48, color: AppColors.outline),
+          SizedBox(height: 8),
+          Text("Tap to Select", style: TextStyle(fontSize: 12, color: AppColors.outline)),
         ],
-      ),
+      );
+    }
+
+    if (Base64Utils.isBase64(logo.toString())) {
+      try {
+        final base64String = logo.toString().split(',').last;
+        return Image.memory(
+          base64Decode(base64String), 
+          fit: BoxFit.cover,
+          errorBuilder: (ctx, err, stack) => _initialsFallback(name),
+        );
+      } catch (e) {
+        return _initialsFallback(name);
+      }
+    }
+
+    return Image.network(
+      logo.toString(),
+      fit: BoxFit.cover,
+      errorBuilder: (ctx, err, stack) => _initialsFallback(name),
+    );
+  }
+
+  Widget _initialsFallback(String? name) {
+    return AvatarWidget(
+      initials: name != null && name.isNotEmpty 
+          ? name.split(' ').map((s) => s.isNotEmpty ? s[0] : '').take(2).join().toUpperCase()
+          : '?', 
+      size: 160, 
+      fontSize: 18
     );
   }
 
@@ -1576,6 +1716,20 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surfaceContainerLow,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    margin: const EdgeInsets.only(right: 16),
+                                    clipBehavior: Clip.hardEdge,
+                                    child: _buildLogoPreview(
+                                      p['_raw']?['logoUrl'] ?? p['_raw']?['logo_url'],
+                                      name: p['name'] as String?
+                                    ),
+                                  ),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -1797,22 +1951,31 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              gradient: goldGradient,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Center(
-              child: Text(
-                'PS',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
+          GestureDetector(
+            onTap: _pickCreateLogo,
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.primary.withOpacity(_createLogoBase64 != null ? 0.5 : 0.1),
+                  width: 1.5,
                 ),
               ),
+              clipBehavior: Clip.hardEdge,
+              child: _isPickingLogo 
+                ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                : _createLogoBase64 != null
+                  ? Image.memory(base64Decode(_createLogoBase64!.split(',').last), fit: BoxFit.cover)
+                  : const Center(
+                      child: Icon(
+                        Icons.add_photo_alternate_rounded,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                    ),
             ),
           ),
           const SizedBox(width: 16),
@@ -1820,13 +1983,24 @@ class _ProjectsSectionState extends State<ProjectsSection> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'New Project',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.onSurface,
-                  ),
+                Row(
+                  children: [
+                    const Text(
+                      'New Project',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    if (_createLogoBase64 != null)
+                      IconButton(
+                        onPressed: () => setState(() => _createLogoBase64 = null),
+                        icon: const Icon(Icons.delete_outline_rounded, size: 16, color: AppColors.error),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                  ],
                 ),
                 Text(
                   'Direct Entry · ${DateFormat('dd MMM yyyy').format(DateTime.now())}',
@@ -2599,6 +2773,9 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       'postSalesStatus': _selectedStatus,
       'notified': _isNotified,
       'remark': _remarkController.text,
+      'project': {
+        'logoUrl': _createLogoBase64,
+      }
     };
 
     if (!_isNewClient) {
@@ -2613,10 +2790,20 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       };
     }
 
+    List<int>? logoBytes;
+    if (_createLogoBase64 != null) {
+      try {
+        logoBytes = base64Decode(_createLogoBase64!.split(',').last);
+      } catch (e) {
+        debugPrint("Error decoding create logo bytes: $e");
+      }
+    }
+
     try {
       final res = await PostSalesService.createPostSale(
         payload: payload,
         isOldClient: !_isNewClient,
+        logoBytes: logoBytes,
       );
 
       if (res['success'] == true) {
