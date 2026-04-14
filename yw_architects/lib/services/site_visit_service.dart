@@ -14,6 +14,8 @@ class SiteVisitService {
     required String description,
     required String locationNote,
     required DateTime visitDateTime,
+    List<String>? photoPaths,
+    List<String>? documentPaths,
   }) async {
     try {
       final token = TokenService.accessToken;
@@ -32,6 +34,20 @@ class SiteVisitService {
       }
       
       request.fields['visitDateTime'] = visitDateTime.toIso8601String();
+
+      // Add Photos
+      if (photoPaths != null && photoPaths.isNotEmpty) {
+        for (var path in photoPaths) {
+          request.files.add(await http.MultipartFile.fromPath('photos', path));
+        }
+      }
+
+      // Add Documents
+      if (documentPaths != null && documentPaths.isNotEmpty) {
+        for (var path in documentPaths) {
+          request.files.add(await http.MultipartFile.fromPath('documents', path));
+        }
+      }
 
       var response = await request.send();
       return response.statusCode == 200 || response.statusCode == 201;

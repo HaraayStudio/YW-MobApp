@@ -16,12 +16,14 @@ class ProjectsSection extends StatefulWidget {
   final AppUser user;
   final Function(String) onToast;
   final int? editProjectId;
+  final Function(int projectId)? onNavigateToSite;
 
   const ProjectsSection({
     super.key,
     required this.user,
     required this.onToast,
     this.editProjectId,
+    this.onNavigateToSite,
   });
 
   @override
@@ -715,6 +717,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         user: widget.user,
         projectId: _detailId!,
         onBack: () => setState(() => _detailId = null),
+        onNavigateToSite: widget.onNavigateToSite,
         onEdit: (data) {
           setState(() {
             // Mapping the dynamic POST-SALE graph back to what the edit form expects

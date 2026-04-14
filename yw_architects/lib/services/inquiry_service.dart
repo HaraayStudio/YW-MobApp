@@ -7,13 +7,53 @@ import 'token_service.dart';
 class InquiryService {
   static const String baseUrl = "${ApiConstants.baseUrl}/presales";
 
+  static Map<String, String> get _authHeaders => {"Authorization": "Bearer ${TokenService.accessToken}"};
+  static Map<String, String> get _jsonHeaders => {
+    "Authorization": "Bearer ${TokenService.accessToken}",
+    "Content-Type": "application/json",
+  };
+
+  static Future<http.Response> _resilientGet(Uri url, Map<String, String> h) async {
+    final c = http.Client();
+    try {
+      final req = http.Request('GET', url)..headers.addAll(h)..followRedirects = false;
+      return await http.Response.fromStream(await c.send(req).timeout(const Duration(seconds: 15)));
+    } finally { c.close(); }
+  }
+
+  static Future<http.Response> _resilientPost(Uri url, Map<String, String> h, dynamic body) async {
+    final c = http.Client();
+    try {
+      final req = http.Request('POST', url)..headers.addAll(h)..followRedirects = false;
+      if (body != null) req.body = body is String ? body : jsonEncode(body);
+      return await http.Response.fromStream(await c.send(req).timeout(const Duration(seconds: 15)));
+    } finally { c.close(); }
+  }
+
+  static Future<http.Response> _resilientPut(Uri url, Map<String, String> h, dynamic body) async {
+    final c = http.Client();
+    try {
+      final req = http.Request('PUT', url)..headers.addAll(h)..followRedirects = false;
+      if (body != null) req.body = body is String ? body : jsonEncode(body);
+      return await http.Response.fromStream(await c.send(req).timeout(const Duration(seconds: 15)));
+    } finally { c.close(); }
+  }
+
+  static Future<http.Response> _resilientDelete(Uri url, Map<String, String> h) async {
+    final c = http.Client();
+    try {
+      final req = http.Request('DELETE', url)..headers.addAll(h)..followRedirects = false;
+      return await http.Response.fromStream(await c.send(req).timeout(const Duration(seconds: 15)));
+    } finally { c.close(); }
+  }
+
   // GET /api/presales/getall
   static Future<List<dynamic>> getAllInquiries() async {
     final token = TokenService.accessToken;
     try {
-      final response = await http.get(
+      final response = await _resilientGet(
         Uri.parse("$baseUrl/getall"),
-        headers: {"Authorization": "Bearer $token"},
+        _authHeaders,
       );
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -27,16 +67,13 @@ class InquiryService {
 
   // POST /api/presales/create?existingClient=true|false
   static Future<bool> createInquiry(Map<String, dynamic> payload, bool existingClient) async {
-    final token = TokenService.accessToken;
     try {
-      final response = await http.post(
+      final response = await _resilientPost(
         Uri.parse("$baseUrl/create?existingClient=$existingClient"),
-        headers: {
-          "Authorization": "Bearer $token",
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode(payload),
+        _jsonHeaders,
+        payload,
       );
+      debugPrint("CREATE INQUIRY STATUS: ${response.statusCode}");
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       debugPrint("CREATE INQUIRY ERROR: $e");
@@ -44,15 +81,31 @@ class InquiryService {
     }
   }
 
+  // PUT /api/presales/update/{srNumber}
+  static Future<bool> updateInquiry(int srNumber, Map<String, dynamic> payload) async {
+    try {
+      final response = await _resilientPut(
+        Uri.parse("$baseUrl/update/$srNumber"),
+        _jsonHeaders,
+        payload,
+      );
+      debugPrint("UPDATE INQUIRY STATUS: ${response.statusCode}");
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      debugPrint("UPDATE INQUIRY ERROR: $e");
+      return false;
+    }
+  }
+
   // DELETE /api/presales/delete/{srNumber}
   static Future<bool> deleteInquiry(int srNumber) async {
-    final token = TokenService.accessToken;
     try {
-      final response = await http.delete(
+      final response = await _resilientDelete(
         Uri.parse("$baseUrl/delete/$srNumber"),
-        headers: {"Authorization": "Bearer $token"},
+        _authHeaders,
       );
-      return response.statusCode == 200;
+      debugPrint("DELETE INQUIRY STATUS: ${response.statusCode}");
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       debugPrint("DELETE INQUIRY ERROR: $e");
       return false;

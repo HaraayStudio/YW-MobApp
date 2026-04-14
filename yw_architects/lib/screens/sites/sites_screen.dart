@@ -10,12 +10,14 @@ class SitesScreen extends StatefulWidget {
   final AppUser user;
   final Function(String) onToast;
   final Function(int) onEditProject;
+  final int? initialProjectId; // when set, auto-open the site for this project
 
   const SitesScreen({
     super.key,
     required this.user,
     required this.onToast,
     required this.onEditProject,
+    this.initialProjectId,
   });
 
   @override
@@ -41,9 +43,19 @@ class _SitesScreenState extends State<SitesScreen> {
     if (mounted) {
       setState(() {
         _sites = data;
-        
         _isLoading = false;
       });
+      // If a specific project was requested, auto-open its site
+      if (widget.initialProjectId != null) {
+        final target = _sites.firstWhere(
+          (s) => s.projectId == widget.initialProjectId,
+          orElse: () => _sites.isEmpty ? _sites.first : _sites.first,
+        );
+        // Only auto-navigate if we found a real match
+        if (_sites.any((s) => s.projectId == widget.initialProjectId)) {
+          setState(() => _selectedSite = target);
+        }
+      }
     }
   }
 

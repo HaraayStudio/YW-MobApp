@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../common_widgets.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SitesTabView extends StatelessWidget {
   final Map<String, dynamic> project;
+  final VoidCallback? onOpenSite;
 
-  const SitesTabView({Key? key, required this.project}) : super(key: key);
+  const SitesTabView({Key? key, required this.project, this.onOpenSite}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -15,34 +17,66 @@ class SitesTabView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           CardContainer(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Icon(Icons.architecture_rounded, size: 48, color: AppColors.outlineVariant),
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.architecture_rounded,
+                      size: 36,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Execution Sites',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Access structural designs, site progression, and specific task arrays inside the Site Execution Module.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: AppColors.onSurfaceVariant,
+                    height: 1.5,
+                  ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 ElevatedButton.icon(
-                  onPressed: () {}, // Future navigation to full sites view
+                  onPressed: onOpenSite,
                   icon: const Icon(Icons.dashboard_customize_rounded, size: 18),
-                  label: const Text('Open Sites Execution'),
+                  label: Text(
+                    'Open Sites Execution',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    disabledBackgroundColor: AppColors.outlineVariant,
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -51,4 +85,3 @@ class SitesTabView extends StatelessWidget {
     );
   }
 }
-

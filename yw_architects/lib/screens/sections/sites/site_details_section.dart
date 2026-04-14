@@ -15,6 +15,7 @@ import '../../../services/rera_service.dart';
 import '../../../services/stage_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart' as fp;
+import 'package:url_launcher/url_launcher.dart';
 
 class SiteDetailsSection extends StatefulWidget {
   final Site site;
@@ -52,7 +53,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     {
       'label': 'Documents',
       'icon': Icons.folder_open_outlined,
-      'count': 0, // No documents uploaded yet
+      'count': _allDocuments.length,
     },
     {
       'label': 'Team',
@@ -80,6 +81,29 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       'count': _detailedSite.reraProjects.length,
     },
   ];
+
+  List<Map<String, dynamic>> get _allDocuments {
+    final docs = <Map<String, dynamic>>[];
+    final seenIds = <int>{};
+    _recursiveCollectDocs(_detailedSite.stages, docs, seenIds);
+    return docs;
+  }
+
+  void _recursiveCollectDocs(List<SiteStage> stages, List<Map<String, dynamic>> results, Set<int> seenIds) {
+    for (var stage in stages) {
+      if (stage.documents.isNotEmpty) {
+        for (var doc in stage.documents) {
+          if (!seenIds.contains(doc.id)) {
+            results.add({'doc': doc, 'stageName': stage.stageName});
+            seenIds.add(doc.id);
+          }
+        }
+      }
+      if (stage.childStages.isNotEmpty) {
+        _recursiveCollectDocs(stage.childStages, results, seenIds);
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -188,11 +212,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
 
               // Team members — backend key is 'workingEmployees'
               team: (raw['workingEmployees'] as List?) ?? _detailedSite.team,
-              stages:
-                  (raw['stages'] as List?)
-                      ?.map((s) => SiteStage.fromJson(s))
-                      .toList() ??
-                  _detailedSite.stages,
+              stages: Site.processStages(raw['stages']),
               structures:
                   (raw['structures'] as List?)
                       ?.map((s) => SiteStructure.fromJson(s))
@@ -713,18 +733,40 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
   }
 
   Widget _buildStagesTab() {
-    final stages = _detailedSite.stages;
+    final allStages = _detailedSite.stages;
+
+    // Filter and de-duplicate milestones based on the 11 Standard Phases
+    final Map<String, SiteStage> milestoneMap = {};
+
+    for (var standardName in SiteStage.standardPhases) {
+      // Find the first stage that matches this standard name
+      // We look for stages that are likely roots (null parent) or matches our standard list
+      try {
+        final match = allStages.firstWhere(
+          (s) => s.matchesStandard(standardName),
+        );
+        milestoneMap[standardName] = match;
+      } catch (_) {
+        // No match found for this standard phase in current dataset
+      }
+    }
+
+    // Convert map to sorted list based on standard phases order
+    final rootStages = SiteStage.standardPhases
+        .where((name) => milestoneMap.containsKey(name))
+        .map((name) => milestoneMap[name]!)
+        .toList();
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildStagesSummaryCard(),
+        _buildStagesSummaryCard(rootStages),
         const SizedBox(height: 24),
         // Stages List Header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
-            "PROJECT MILESTONES",
+            "PROJECT MILESTONES (${rootStages.length})",
             style: GoogleFonts.plusJakartaSans(
               fontSize: 11,
               fontWeight: FontWeight.w800,
@@ -735,23 +777,28 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         ),
         const SizedBox(height: 12),
         // Stage Tiles
-        ...stages
-            .map(
-              (stage) => _StageTile(stage: stage, onRefresh: _fetchFullDetails),
-            )
-            .toList(),
+        ...rootStages.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final stage = entry.value;
+          return _StageTile(
+            stage: stage,
+            index: idx + 1,
+            onRefresh: _fetchFullDetails,
+          );
+        }).toList(),
         const SizedBox(height: 40),
       ],
     );
   }
 
-  Widget _buildStagesSummaryCard() {
-    final stages = _detailedSite.stages;
-    final total = stages.length > 0 ? stages.length : 11;
-    final completed = stages.where((s) => s.status == 'COMPLETED').length;
-    final inProgress = stages.where((s) => s.status == 'IN_PROGRESS').length;
-    final notStarted = total - completed - inProgress;
-    final progress = total > 0 ? (completed / total) : 0.0;
+  Widget _buildStagesSummaryCard(List<SiteStage> roots) {
+    if (roots.isEmpty) return const SizedBox.shrink();
+
+    final total = roots.length;
+    final completed = roots.where((s) => s.status == 'COMPLETED').length;
+    final inProgress = roots.where((s) => s.status == 'IN_PROGRESS').length;
+    final notStarted = roots.where((s) => s.status == 'NOT_STARTED').length;
+    final progress = (completed / total);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1198,14 +1245,204 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
   }
 
   Widget _buildDocumentsTab() {
-    // For now, always show empty state as per user request
+    final docs = _allDocuments;
+    if (docs.isEmpty) {
+      return Container(
+        color: const Color(0xFFF8F9FB),
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [_buildDocumentTableHeader(), _buildEmptyDocumentsState()],
+        ),
+      );
+    }
+
     return Container(
       color: const Color(0xFFF8F9FB),
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [_buildDocumentTableHeader(), _buildEmptyDocumentsState()],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width < 500 ? 550 : MediaQuery.of(context).size.width,
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              _buildDocumentTableHeader(),
+              ...docs.map(
+                (item) => _buildDocumentRow(
+                  item['doc'] as StageDocument,
+                  item['stageName'] as String,
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  Widget _buildDocumentRow(StageDocument doc, String stageName) {
+    final fileName = doc.fileName ?? "Unnamed File";
+    final type = doc.documentType ?? "FILE";
+    final dateStr =
+        doc.uploadedAt != null
+            ? DateFormat('dd MMM yyyy').format(doc.uploadedAt!)
+            : "--";
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: AppColors.outlineVariant.withOpacity(0.3)),
+          left: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
+          right: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
+        ),
+      ),
+      child: Row(
+        children: [
+          // DOCUMENT
+          Expanded(
+            flex: 33,
+            child: Row(
+              children: [
+                Icon(
+                  _getFileIcon(type),
+                  size: 16,
+                  color: AppColors.primary.withOpacity(0.7),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        fileName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                      Text(
+                        dateStr,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 9,
+                          color: AppColors.outline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // STAGE
+          Expanded(
+            flex: 22,
+            child: Text(
+              stageName,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+          // TYPE
+          Expanded(
+            flex: 15,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  type.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // STATUS
+          Expanded(
+            flex: 15,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  "ACTIVE",
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.green,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // ACTION
+          Expanded(
+            flex: 12,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  onPressed: () => _viewDocument(doc),
+                  icon: const Icon(
+                    Icons.visibility_outlined,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getFileIcon(String? type) {
+    if (type == null) return Icons.insert_drive_file_outlined;
+    final t = type.toLowerCase();
+    if (t.contains('pdf')) return Icons.picture_as_pdf_outlined;
+    if (t.contains('image') || t.contains('jpg') || t.contains('png'))
+      return Icons.image_outlined;
+    if (t.contains('doc')) return Icons.description_outlined;
+    if (t.contains('xls')) return Icons.table_chart_outlined;
+    return Icons.insert_drive_file_outlined;
+  }
+
+  Future<void> _viewDocument(StageDocument doc) async {
+    if (doc.filePath == null || doc.filePath!.isEmpty) return;
+    final url = Uri.parse(doc.filePath!);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Could not open document")),
+        );
+      }
+    }
   }
 
   Widget _buildDocumentTableHeader() {
@@ -1218,12 +1455,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       ),
       child: Row(
         children: [
-          _headerText("DOCUMENT", flex: 2.5, align: TextAlign.left),
-          _headerText("STAGE", flex: 2.0, align: TextAlign.center),
-          _headerText("TYPE", flex: 2.0, align: TextAlign.center),
-          _headerText("SIZE", flex: 2.0, align: TextAlign.center),
-          _headerText("STATUS", flex: 2.0, align: TextAlign.center),
-          _headerText("ACTION", flex: 2.0, align: TextAlign.right),
+          _headerText("DOCUMENT", flex: 3.3, align: TextAlign.left),
+          _headerText("STAGE", flex: 2.2, align: TextAlign.center),
+          _headerText("TYPE", flex: 1.5, align: TextAlign.center),
+          _headerText("STATUS", flex: 1.8, align: TextAlign.center),
+          _headerText("ACTION", flex: 1.2, align: TextAlign.right),
         ],
       ),
     );
@@ -2965,6 +3201,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     final noteController = TextEditingController();
     DateTime selectedDate = DateTime.now();
 
+    List<fp.PlatformFile> pickedPhotos = [];
+    List<fp.PlatformFile> pickedDocs = [];
+
     showDialog(
       context: context,
       builder: (context) {
@@ -3022,8 +3261,10 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                       ),
                       const SizedBox(height: 16),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
+                            flex: 5,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -3038,8 +3279,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                               ],
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 12),
                           Expanded(
+                            flex: 6,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -3074,9 +3316,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                     }
                                   },
                                   child: Container(
+                                    height: 50,
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 12,
+                                      horizontal: 10,
                                     ),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(8),
@@ -3085,20 +3327,20 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                       ),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(
-                                          DateFormat(
-                                            'dd-MM-yyyy HH:mm',
-                                          ).format(selectedDate),
-                                          style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 13,
+                                        Expanded(
+                                          child: Text(
+                                            DateFormat('dd-MM-yyyy HH:mm').format(selectedDate),
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                         const Icon(
                                           Icons.calendar_today_rounded,
-                                          size: 16,
+                                          size: 14,
                                           color: AppColors.outline,
                                         ),
                                       ],
@@ -3113,11 +3355,40 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                       const SizedBox(height: 16),
                       Text("Photos", style: _modalLabelStyle),
                       const SizedBox(height: 8),
-                      _buildFilePickerButton("Choose Files"),
+                      _buildFilePickerButton(
+                        label: "Choose Photos",
+                        count: pickedPhotos.length,
+                        onTap: () async {
+                          final result = await fp.FilePicker.pickFiles(
+                            type: fp.FileType.image,
+                            allowMultiple: true,
+                          );
+                          if (result != null) {
+                            setDialogState(() {
+                              pickedPhotos = result.files;
+                            });
+                          }
+                        },
+                      ),
                       const SizedBox(height: 16),
                       Text("Documents", style: _modalLabelStyle),
                       const SizedBox(height: 8),
-                      _buildFilePickerButton("Choose Files"),
+                      _buildFilePickerButton(
+                        label: "Choose Documents",
+                        count: pickedDocs.length,
+                        onTap: () async {
+                          final result = await fp.FilePicker.pickFiles(
+                            type: fp.FileType.custom,
+                            allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx'],
+                            allowMultiple: true,
+                          );
+                          if (result != null) {
+                            setDialogState(() {
+                              pickedDocs = result.files;
+                            });
+                          }
+                        },
+                      ),
                       const SizedBox(height: 24),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -3169,6 +3440,8 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                     description: descController.text.trim(),
                                     locationNote: noteController.text.trim(),
                                     visitDateTime: selectedDate,
+                                    photoPaths: pickedPhotos.map((f) => f.path!).where((p) => p != null).toList(),
+                                    documentPaths: pickedDocs.map((f) => f.path!).where((p) => p != null).toList(),
                                   );
 
                               if (mounted)
@@ -3253,39 +3526,57 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     ),
   );
 
-  Widget _buildFilePickerButton(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AppColors.outline.withOpacity(0.2)),
-            ),
-            child: Text(
-              label,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+  Widget _buildFilePickerButton({
+    required String label,
+    required int count,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.outline.withOpacity(0.2)),
+              ),
+              child: Text(
+                label,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurface,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            "No file chosen",
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12,
-              color: AppColors.outline,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                count == 0 ? "No file chosen" : "$count files selected",
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: count == 0 ? AppColors.onSurfaceVariant : AppColors.primary,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ],
+            if (count > 0)
+              const Padding(
+                padding: EdgeInsets.only(right: 8.0),
+                child: Icon(Icons.check_circle, size: 16, color: Colors.green),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -6247,13 +6538,17 @@ class _SummaryItem extends StatelessWidget {
 
 class _StageTile extends StatelessWidget {
   final SiteStage stage;
+  final int index; // sequential index (1 to 11)
   final VoidCallback onRefresh;
 
-  const _StageTile({required this.stage, required this.onRefresh});
+  const _StageTile({
+    required this.stage,
+    required this.index,
+    required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
-    bool isGrouped = stage.childStages.isNotEmpty;
     List<SiteStage> subStages = stage.childStages;
 
     return Container(
@@ -6276,7 +6571,7 @@ class _StageTile extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                stage.id.toString(),
+                index.toString(),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -6286,7 +6581,7 @@ class _StageTile extends StatelessWidget {
             ),
           ),
           title: Text(
-            stage.customStageName ?? stage.stageName,
+            _formatStageName(stage.customStageName ?? stage.stageName),
             style: GoogleFonts.plusJakartaSans(
               fontWeight: FontWeight.w700,
               fontSize: 13,
@@ -6315,7 +6610,11 @@ class _StageTile extends StatelessWidget {
           children: [
             const Divider(height: 1, indent: 16, endIndent: 16),
             ...subStages.map(
-              (sub) => _SubStageTile(stage: sub, onRefresh: onRefresh),
+              (sub) => _SubStageTile(
+                stage: sub,
+                onRefresh: onRefresh,
+                depth: 1,
+              ),
             ),
             const SizedBox(height: 8),
           ],
@@ -6330,58 +6629,91 @@ class _StageTile extends StatelessWidget {
 class _SubStageTile extends StatelessWidget {
   final SiteStage stage;
   final VoidCallback onRefresh;
+  final int depth;
 
-  const _SubStageTile({required this.stage, required this.onRefresh});
+  const _SubStageTile({
+    required this.stage,
+    required this.onRefresh,
+    this.depth = 1,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(60, 10, 16, 10),
-      child: Row(
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: AppColors.outline.withOpacity(0.4),
-              shape: BoxShape.circle,
+    final hasChildren = stage.childStages.isNotEmpty;
+
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(40.0 + (depth * 20.0), 10, 16, 10),
+          child: Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: AppColors.outline.withOpacity(0.4),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _formatStageName(stage.customStageName ?? stage.stageName),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: depth == 1 ? 12 : 11,
+                        fontWeight:
+                            depth == 1 ? FontWeight.w600 : FontWeight.w500,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    if (depth == 1)
+                      Text(
+                        hasChildren ? "SUB-CATEGORY" : "TASK ITEM",
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.outline,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              _StatusBadge(
+                status: stage.status,
+                onlyDot: true,
+                hasDocuments: stage.documents.isNotEmpty,
+              ),
+              const SizedBox(width: 4),
+              _AddDocButton(stage: stage, onSuccess: onRefresh),
+            ],
+          ),
+        ),
+        if (hasChildren)
+          ...stage.childStages.map(
+            (child) => _SubStageTile(
+              stage: child,
+              onRefresh: onRefresh,
+              depth: depth + 1,
             ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  stage.customStageName ?? stage.stageName,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
-                  ),
-                ),
-                Text(
-                  "TASK ITEM",
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.outline,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _StatusBadge(
-            status: stage.status,
-            onlyDot: true,
-            hasDocuments: stage.documents.isNotEmpty,
-          ),
-          const SizedBox(width: 4),
-          _AddDocButton(stage: stage, onSuccess: onRefresh),
-        ],
-      ),
+      ],
     );
   }
+}
+
+String _formatStageName(String name) {
+  if (name.isEmpty) return "";
+  // CONCEPT_DESIGN -> Concept Design
+  final words = name.toLowerCase().split('_');
+  return words
+      .map((word) {
+        if (word.isEmpty) return "";
+        return word[0].toUpperCase() + word.substring(1);
+      })
+      .join(' ');
 }
 
 class _StageStatItem extends StatelessWidget {

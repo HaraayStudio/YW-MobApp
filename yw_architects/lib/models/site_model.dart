@@ -237,9 +237,7 @@ class Site {
       structures: structList != null
           ? structList.map((s) => SiteStructure.fromJson(s)).toList()
           : [],
-      stages: stageList != null
-          ? stageList.map((s) => SiteStage.fromJson(s)).toList()
-          : [],
+      stages: Site.processStages(stageList),
       team: teamList ?? [],
       visits: visitList != null
           ? visitList.map((v) => SiteVisit.fromJson(v)).toList()
@@ -251,6 +249,30 @@ class Site {
           ? reraList.map((r) => ReraProject.fromJson(r)).toList()
           : [],
     );
+  }
+
+  static List<SiteStage> processStages(List? stageList) {
+    // De-duplicate stages by ID/Name to prevent repeating milestones
+    final uniqueStages = <String, SiteStage>{};
+    if (stageList != null) {
+      for (var s in stageList) {
+        if (s == null) continue;
+        final stage = SiteStage.fromJson(s as Map<String, dynamic>);
+
+        // CRITICAL: Only include stages that are top-level milestones
+        // If parentStageId is present and non-zero, it's a sub-stage and should be nested, not at top-level
+        if (stage.parentStageId == null || stage.parentStageId == 0) {
+          final key =
+              stage.id > 0
+                  ? stage.id.toString()
+                  : SiteStage.normalize(stage.stageName);
+          if (!uniqueStages.containsKey(key)) {
+            uniqueStages[key] = stage;
+          }
+        }
+      }
+    }
+    return uniqueStages.values.toList();
   }
 
   Map<String, dynamic> toMap() {
@@ -670,6 +692,8 @@ class SiteStage {
   final DateTime? actualCompletionDate;
   final List<SiteStage> childStages;
   final List<StageDocument> documents;
+  final int? parentStageId;
+  final int? displayOrder;
 
   SiteStage({
     required this.id,
@@ -682,6 +706,8 @@ class SiteStage {
     this.actualCompletionDate,
     this.childStages = const [],
     this.documents = const [],
+    this.parentStageId,
+    this.displayOrder,
   });
 
   factory SiteStage.fromJson(Map<String, dynamic> json) {
@@ -708,6 +734,42 @@ class SiteStage {
       documents: docs != null
           ? docs.map((d) => StageDocument.fromJson(d)).toList()
           : [],
+      parentStageId: json['parentStageId'] is int 
+          ? json['parentStageId'] 
+          : int.tryParse(json['parentStageId']?.toString() ?? ''),
+      displayOrder: json['displayOrder'] is int
+          ? json['displayOrder']
+          : int.tryParse(json['displayOrder']?.toString() ?? ''),
     );
   }
+
+  // Standardized 11 Phases as provided by the user
+  static const List<String> standardPhases = [
+    "Concept Design",
+    "Final Drawings",
+    "Documentation Stage",
+    "Building Permission",
+    "Survey Land Records",
+    "Building Permission Scrutiny",
+    "Setback Approval",
+    "Plinth Checking",
+    "TDR FSI Stage",
+    "Construction Execution",
+    "Completion Process",
+  ];
+
+  static String normalize(String name) {
+    return name.toLowerCase().replaceAll('_', '').replaceAll(' ', '');
+  }
+
+  bool matchesStandard(String standardName) {
+    final normName = normalize(stageName);
+    final normCustom = customStageName != null ? normalize(customStageName!) : "";
+    final normStandard = normalize(standardName);
+    return normName == normStandard || normCustom == normStandard;
+  }
+
+  // Explicit getters to help Dart Internal lookups avoid "Lookup failed" errors
+  int? get getParentStageId => parentStageId;
+  int? get getDisplayOrder => displayOrder;
 }

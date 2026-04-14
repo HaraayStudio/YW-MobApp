@@ -49,6 +49,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
   String _currentSection = 'dashboard';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int? _projectToEdit;
+  int? _siteProjectId; // project ID to auto-open in Sites section
   late AppUser _user;
 
   @override
@@ -169,7 +170,17 @@ class _MainAppScreenState extends State<MainAppScreen> {
   Widget _buildSection() {
     switch (_currentSection) {
       case 'dashboard':     return _buildDashboard();
-      case 'projects':      return ProjectsSection(user: _user, onToast: _toast, editProjectId: _projectToEdit);
+      case 'projects':      return ProjectsSection(
+                              user: _user,
+                              onToast: _toast,
+                              editProjectId: _projectToEdit,
+                              onNavigateToSite: (projectId) {
+                                setState(() {
+                                  _siteProjectId = projectId;
+                                  _currentSection = 'site';
+                                });
+                              },
+                            );
       case 'tasks':         return TasksSection(user: _user, onToast: _toast);
       case 'attendance':    if ([UserRole.admin, UserRole.hr].contains(_user.role)) {
                               return EmployeesSection(onToast: _toast, initialTabIndex: 1);
@@ -179,8 +190,10 @@ class _MainAppScreenState extends State<MainAppScreen> {
       case 'site':          return SitesScreen(
                               user: _user, 
                               onToast: _toast,
+                              initialProjectId: _siteProjectId,
                               onEditProject: (id) {
                                 setState(() {
+                                  _siteProjectId = null; // clear after use
                                   _projectToEdit = id;
                                   _currentSection = 'projects';
                                 });

@@ -16,7 +16,7 @@ class PostSaleDetailView extends StatefulWidget {
   final int projectId;
   final VoidCallback onBack;
   final Function(Map<String, dynamic>) onEdit;
-
+  final Function(int projectId)? onNavigateToSite; // NEW: navigate to site for this project
   final AppUser user;
 
   const PostSaleDetailView({
@@ -25,6 +25,7 @@ class PostSaleDetailView extends StatefulWidget {
     required this.projectId,
     required this.onBack,
     required this.onEdit,
+    this.onNavigateToSite,
   }) : super(key: key);
 
   @override
@@ -251,6 +252,7 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
             child: TabBar(
               controller: _tabController,
               isScrollable: true,
+              tabAlignment: TabAlignment.start,
               indicatorSize: TabBarIndicatorSize.tab,
               indicator: BoxDecoration(
                 color: AppColors.primary,
@@ -281,7 +283,12 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
               children: [
                 OverviewTabView(project: _project!),
                 ClientTabView(project: _project!),
-                SitesTabView(project: _project!),
+                SitesTabView(
+                  project: _project!,
+                  onOpenSite: widget.onNavigateToSite != null
+                      ? () => widget.onNavigateToSite!(widget.projectId)
+                      : null,
+                ),
                 if (_isManagement) ...[
                   ProformaTabView(
                     project: _project!,

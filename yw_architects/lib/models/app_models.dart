@@ -288,6 +288,48 @@ const Map<String, NavItem> navConfig = {
   ),
 };
 
+class Quotation {
+  final int id;
+  final String quotationNumber;
+  final bool accepted;
+  final bool sended;
+  final String? validTill;
+  final String? notes;
+  final double? budget;
+  final String? createdAt;
+
+  const Quotation({
+    required this.id,
+    required this.quotationNumber,
+    required this.accepted,
+    required this.sended,
+    this.validTill,
+    this.notes,
+    this.budget,
+    this.createdAt,
+  });
+
+  /// Derived status matching web app logic: accepted > sent > draft
+  String get status {
+    if (accepted) return 'ACCEPTED';
+    if (sended) return 'SENT';
+    return 'DRAFT';
+  }
+
+  factory Quotation.fromJson(Map<String, dynamic> json) {
+    return Quotation(
+      id: json['id'] ?? 0,
+      quotationNumber: json['quotationNumber']?.toString() ?? '—',
+      accepted: json['accepted'] == true,
+      sended: json['sended'] == true,
+      validTill: json['validTill']?.toString(),
+      notes: json['quotationDetails']?.toString() ?? json['notes']?.toString(),
+      budget: json['budget'] != null ? double.tryParse(json['budget'].toString()) : null,
+      createdAt: json['createdAt']?.toString() ?? json['dateIssued']?.toString(),
+    );
+  }
+}
+
 class Client {
   final int id;
   final String name;
