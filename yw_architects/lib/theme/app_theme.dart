@@ -104,6 +104,13 @@ class AppTheme {
       ),
     );
   }
+
+  static String getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Morning';
+    if (hour < 17) return 'Afternoon';
+    return 'Evening';
+  }
 }
 
 LinearGradient get goldGradient => const LinearGradient(

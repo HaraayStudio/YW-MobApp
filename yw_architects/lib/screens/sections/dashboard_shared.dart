@@ -31,21 +31,75 @@ class DashboardSharedLayout extends StatelessWidget {
 
   // ── Sample data ──────────────────────────────────────────────────────────
   static final _projects = [
-    {'name': 'Sunrise Villa', 'client': 'Mr. Kapoor', 'pct': 0.68, 'status': 'In Progress', 'members': ['RK', 'PS', 'AJ']},
-    {'name': 'Metro Office Complex', 'client': 'City Corp Ltd', 'pct': 0.35, 'status': 'Planning', 'members': ['SA', 'VR']},
-    {'name': 'Green Residency', 'client': 'Patel Family', 'pct': 0.90, 'status': 'Review', 'members': ['MK', 'RD']},
+    {
+      'name': 'Sunrise Villa',
+      'client': 'Mr. Kapoor',
+      'pct': 0.68,
+      'status': 'In Progress',
+      'members': ['RK', 'PS', 'AJ'],
+    },
+    {
+      'name': 'Metro Office Complex',
+      'client': 'City Corp Ltd',
+      'pct': 0.35,
+      'status': 'Planning',
+      'members': ['SA', 'VR'],
+    },
+    {
+      'name': 'Green Residency',
+      'client': 'Patel Family',
+      'pct': 0.90,
+      'status': 'Review',
+      'members': ['MK', 'RD'],
+    },
   ];
 
   static final _tasks = [
-    {'title': 'Review ground floor plan — Sunrise Villa', 'priority': 'high',   'done': false, 'time': '10:00 AM'},
-    {'title': 'Site visit documentation — Green Residency', 'priority': 'medium', 'done': false, 'time': '2:00 PM'},
-    {'title': 'Client call — Metro Office brief',           'priority': 'low',    'done': true,  'time': '9:00 AM'},
+    {
+      'title': 'Review ground floor plan — Sunrise Villa',
+      'priority': 'high',
+      'done': false,
+      'time': '10:00 AM',
+    },
+    {
+      'title': 'Site visit documentation — Green Residency',
+      'priority': 'medium',
+      'done': false,
+      'time': '2:00 PM',
+    },
+    {
+      'title': 'Client call — Metro Office brief',
+      'priority': 'low',
+      'done': true,
+      'time': '9:00 AM',
+    },
   ];
 
   String _todayDate() {
     final now = DateTime.now();
-    const days   = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${days[now.weekday - 1]}, ${now.day} ${months[now.month - 1]} ${now.year}';
   }
 
@@ -91,10 +145,12 @@ class DashboardSharedLayout extends StatelessWidget {
                 onViewAll: () => onNavigate('projects'),
               ),
               const SizedBox(height: 12),
-              ..._projects.map((p) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _ProjectCard(project: p),
-              )),
+              ..._projects.map(
+                (p) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _ProjectCard(project: p),
+                ),
+              ),
               const SizedBox(height: 16),
             ],
 
@@ -105,10 +161,12 @@ class DashboardSharedLayout extends StatelessWidget {
                 onViewAll: () => onNavigate('tasks'),
               ),
               const SizedBox(height: 12),
-              ..._tasks.map((t) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _TaskRow(task: t),
-              )),
+              ..._tasks.map(
+                (t) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _TaskRow(task: t),
+                ),
+              ),
               const SizedBox(height: 16),
             ],
 
@@ -247,8 +305,11 @@ class _SectionRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 2),
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.primary, size: 16),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.primary,
+                size: 16,
+              ),
             ],
           ),
         ),
@@ -278,7 +339,9 @@ class _ProjectCard extends StatelessWidget {
               value: pct,
               minHeight: 3,
               backgroundColor: AppColors.primaryFixed.withOpacity(0.4),
-              valueColor: const AlwaysStoppedAnimation(AppColors.primaryContainer),
+              valueColor: const AlwaysStoppedAnimation(
+                AppColors.primaryContainer,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -308,11 +371,7 @@ class _ProjectCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              GoldChip(
-                text: status,
-                bg: chipBg(status),
-                fg: chipFg(status),
-              ),
+              GoldChip(text: status, bg: chipBg(status), fg: chipFg(status)),
             ],
           ),
           const SizedBox(height: 12),
@@ -364,17 +423,15 @@ class _TaskRow extends StatelessWidget {
     final priorityColor = priority == 'high'
         ? AppColors.chipProgressFg
         : priority == 'medium'
-            ? AppColors.chipPlanningFg
-            : AppColors.chipDoneFg;
+        ? AppColors.chipPlanningFg
+        : AppColors.chipDoneFg;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        border: Border(
-          left: BorderSide(color: priorityColor, width: 3),
-        ),
+        border: Border(left: BorderSide(color: priorityColor, width: 3)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -405,8 +462,7 @@ class _TaskRow extends StatelessWidget {
                     color: done
                         ? AppColors.onSurfaceVariant
                         : AppColors.onSurface,
-                    decoration:
-                        done ? TextDecoration.lineThrough : null,
+                    decoration: done ? TextDecoration.lineThrough : null,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -423,11 +479,7 @@ class _TaskRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          GoldChip(
-            text: priority,
-            bg: chipBg(priority),
-            fg: chipFg(priority),
-          ),
+          GoldChip(text: priority, bg: chipBg(priority), fg: chipFg(priority)),
         ],
       ),
     );
@@ -438,7 +490,11 @@ class _QuickActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _QuickActionTile({required this.icon, required this.label, required this.onTap});
+  const _QuickActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

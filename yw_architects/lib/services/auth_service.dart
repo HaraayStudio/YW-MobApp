@@ -96,14 +96,19 @@ class AuthService {
     final baseInfo = roleMap[roleEnum] ?? roleMap[UserRole.admin]!;
 
     final id = payload['id'] as int? ?? 0;
-    
+
+    final fName = payload['firstName'] as String? ?? baseInfo.firstName;
+    final lName = payload['lastName'] as String? ?? baseInfo.lastName;
+
     return AppUser(
       id: id,
       role: roleEnum,
       token: accessToken,
       info: UserRoleInfo(
-        name: baseInfo.name,
-        initials: baseInfo.initials,
+        name: '$fName $lName'.trim(),
+        firstName: fName,
+        lastName: lName,
+        initials: (fName.isNotEmpty ? fName[0] : '') + (lName.isNotEmpty ? lName[0] : ''),
         email: email,
         label: baseInfo.label,
         nav: baseInfo.nav,
@@ -162,9 +167,12 @@ class AuthService {
         try {
           final errorData = json.decode(response.body);
           final backendMsg = errorData['message']?.toString() ?? '';
-          if (backendMsg.toLowerCase().contains('bad credentials') || backendMsg.toLowerCase().contains('password')) {
+          if (backendMsg.toLowerCase().contains('bad credentials') ||
+              backendMsg.toLowerCase().contains('password')) {
             msg = 'Wrong password';
-          } else if (backendMsg.toLowerCase().contains('null') || backendMsg.toLowerCase().contains('not found') || backendMsg.toLowerCase().contains('went wrong')) {
+          } else if (backendMsg.toLowerCase().contains('null') ||
+              backendMsg.toLowerCase().contains('not found') ||
+              backendMsg.toLowerCase().contains('went wrong')) {
             msg = 'Wrong username';
           } else {
             msg = backendMsg;
@@ -233,18 +241,21 @@ class AuthService {
 
         final id = payload['id'] as int? ?? 0;
 
+        final fName = payload['firstName'] as String? ?? 'Client';
+        final lName = payload['lastName'] as String? ?? '';
+
         return AppUser(
           id: id,
-          role: UserRole.admin, // Clients: restricted nav; no separate enum yet
+          role: UserRole.admin,
           token: accessToken,
-          info: const UserRoleInfo(
-            name: 'Client',
-            initials: 'CL',
-            email: '',
-            label: 'CLIENT',
-            nav: ['dashboard', 'projects', 'profile'],
-          ).copyWith(
+          info: UserRoleInfo(
+            name: '$fName $lName'.trim(),
+            firstName: fName,
+            lastName: lName,
+            initials: (fName.isNotEmpty ? fName[0] : 'C') + (lName.isNotEmpty ? lName[0] : 'L'),
             email: tokenEmail,
+            label: 'CLIENT',
+            nav: const ['dashboard', 'projects', 'profile'],
             profileImage: payload['profileImage'] as String?,
           ),
         );
@@ -253,9 +264,12 @@ class AuthService {
         try {
           final errorData = json.decode(response.body);
           final backendMsg = errorData['message']?.toString() ?? '';
-          if (backendMsg.toLowerCase().contains('bad credentials') || backendMsg.toLowerCase().contains('password')) {
+          if (backendMsg.toLowerCase().contains('bad credentials') ||
+              backendMsg.toLowerCase().contains('password')) {
             msg = 'Wrong password';
-          } else if (backendMsg.toLowerCase().contains('null') || backendMsg.toLowerCase().contains('not found') || backendMsg.toLowerCase().contains('went wrong')) {
+          } else if (backendMsg.toLowerCase().contains('null') ||
+              backendMsg.toLowerCase().contains('not found') ||
+              backendMsg.toLowerCase().contains('went wrong')) {
             msg = 'Wrong username';
           } else {
             msg = backendMsg;
@@ -295,18 +309,20 @@ class AuthService {
       final id = payload['id'] as int? ?? 0;
 
       if (roleStr.trim().toUpperCase() == 'CLIENT') {
+        final fName = payload['firstName'] as String? ?? 'Client';
+        final lName = payload['lastName'] as String? ?? '';
         return AppUser(
           id: id,
           role: UserRole.admin,
           token: token,
-          info: const UserRoleInfo(
-            name: 'Client',
-            initials: 'CL',
-            email: '',
-            label: 'CLIENT',
-            nav: ['dashboard', 'projects', 'profile'],
-          ).copyWith(
+          info: UserRoleInfo(
+            name: '$fName $lName'.trim(),
+            firstName: fName,
+            lastName: lName,
+            initials: (fName.isNotEmpty ? fName[0] : 'C') + (lName.isNotEmpty ? lName[0] : 'L'),
             email: emailStr,
+            label: 'CLIENT',
+            nav: const ['dashboard', 'projects', 'profile'],
             profileImage: payload['profileImage'] as String?,
           ),
         );

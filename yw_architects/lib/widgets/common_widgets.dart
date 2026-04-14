@@ -26,7 +26,9 @@ class GoldGradientButton extends StatelessWidget {
       child: Container(
         width: width ?? double.infinity,
         height: height,
-        padding: height != null ? EdgeInsets.zero : EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 20),
+        padding: height != null
+            ? EdgeInsets.zero
+            : EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 20),
         decoration: BoxDecoration(
           gradient: goldGradient,
           borderRadius: BorderRadius.circular(16),
@@ -35,7 +37,7 @@ class GoldGradientButton extends StatelessWidget {
               color: const Color(0xFF755B00).withOpacity(0.3),
               blurRadius: 24,
               offset: const Offset(0, 8),
-            )
+            ),
           ],
         ),
         child: FittedBox(
@@ -68,14 +70,25 @@ class GoldChip extends StatelessWidget {
   final Color bg;
   final Color fg;
 
-  const GoldChip({super.key, required this.text, required this.bg, required this.fg});
+  const GoldChip({
+    super.key,
+    required this.text,
+    required this.bg,
+    required this.fg,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-      child: Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 11)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 11),
+      ),
     );
   }
 }
@@ -83,36 +96,46 @@ class GoldChip extends StatelessWidget {
 Color chipBg(String status) {
   switch (status.toLowerCase()) {
     case 'in progress':
-    case 'progress': return AppColors.chipProgressBg;
+    case 'progress':
+      return AppColors.chipProgressBg;
     case 'planning':
-    case 'pending': return AppColors.chipPlanningBg;
+    case 'pending':
+      return AppColors.chipPlanningBg;
     case 'review':
-    case 'in review': return AppColors.chipReviewBg;
+    case 'in review':
+      return AppColors.chipReviewBg;
     case 'done':
     case 'delivered':
     case 'approved':
     case 'fixed':
     case 'present':
-    case 'active': return AppColors.chipDoneBg;
-    default: return AppColors.chipHoldBg;
+    case 'active':
+      return AppColors.chipDoneBg;
+    default:
+      return AppColors.chipHoldBg;
   }
 }
 
 Color chipFg(String status) {
   switch (status.toLowerCase()) {
     case 'in progress':
-    case 'progress': return AppColors.chipProgressFg;
+    case 'progress':
+      return AppColors.chipProgressFg;
     case 'planning':
-    case 'pending': return AppColors.chipPlanningFg;
+    case 'pending':
+      return AppColors.chipPlanningFg;
     case 'review':
-    case 'in review': return AppColors.chipReviewFg;
+    case 'in review':
+      return AppColors.chipReviewFg;
     case 'done':
     case 'delivered':
     case 'approved':
     case 'fixed':
     case 'present':
-    case 'active': return AppColors.chipDoneFg;
-    default: return AppColors.chipHoldFg;
+    case 'active':
+      return AppColors.chipDoneFg;
+    default:
+      return AppColors.chipHoldFg;
   }
 }
 
@@ -169,7 +192,12 @@ class SectionHeader extends StatelessWidget {
   final String? subtitle;
   final Widget? action;
 
-  const SectionHeader({super.key, required this.title, this.subtitle, this.action});
+  const SectionHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.action,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +245,6 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-
 class ProgressBar extends StatelessWidget {
   final double percent;
   final double height;
@@ -252,7 +279,13 @@ class CardContainer extends StatelessWidget {
   final VoidCallback? onTap;
   final String? title;
 
-  const CardContainer({super.key, required this.child, this.padding, this.onTap, this.title});
+  const CardContainer({
+    super.key,
+    required this.child,
+    this.padding,
+    this.onTap,
+    this.title,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -269,7 +302,7 @@ class CardContainer extends StatelessWidget {
               color: AppColors.onSurface.withOpacity(0.04),
               blurRadius: 16,
               offset: const Offset(0, 4),
-            )
+            ),
           ],
         ),
         child: Column(
@@ -311,7 +344,7 @@ void showAppToast(BuildContext context, String message) {
               color: AppColors.inverseSurface,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 12)
+                BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 12),
               ],
             ),
             child: Text(
@@ -348,4 +381,3 @@ class SearchField extends StatelessWidget {
     );
   }
 }
-

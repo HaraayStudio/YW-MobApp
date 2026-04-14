@@ -639,9 +639,8 @@ class _EditProfileModalState extends State<_EditProfileModal> {
   @override
   void initState() {
     super.initState();
-    final names = widget.user.info.name.split(' ');
-    _firstNameController = TextEditingController(text: names.first);
-    _lastNameController = TextEditingController(text: names.length > 1 ? names.sublist(1).join(' ') : "");
+    _firstNameController = TextEditingController(text: widget.user.info.firstName);
+    _lastNameController = TextEditingController(text: widget.user.info.lastName);
     _phoneController = TextEditingController(text: "9876543210"); 
     _birthDateController = TextEditingController(text: "1995-01-01");
   }

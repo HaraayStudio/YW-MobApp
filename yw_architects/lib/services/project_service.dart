@@ -8,17 +8,53 @@ import 'package:flutter/foundation.dart';
 class ProjectService {
   static const String baseUrl = "${ApiConstants.baseUrl}/projects";
 
+  /// Resilient HTTP helpers to prevent 3xx-no-Location crashes
+  static Future<http.Response> _resilientGet(Uri url, Map<String, String> headers) async {
+    final client = http.Client();
+    try {
+      final request = http.Request('GET', url)..headers.addAll(headers)..followRedirects = false;
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
+      return await http.Response.fromStream(streamedResponse);
+    } finally { client.close(); }
+  }
+
+  static Future<http.Response> _resilientPost(Uri url, Map<String, String> headers, dynamic body) async {
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', url)..headers.addAll(headers)..followRedirects = false;
+      if (body != null) {
+        if (body is String) { request.body = body; }
+        else { request.body = jsonEncode(body); }
+      }
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
+      return await http.Response.fromStream(streamedResponse);
+    } finally { client.close(); }
+  }
+
+  static Future<http.Response> _resilientPut(Uri url, Map<String, String> headers, dynamic body) async {
+    final client = http.Client();
+    try {
+      final request = http.Request('PUT', url)..headers.addAll(headers)..followRedirects = false;
+      if (body != null) {
+        if (body is String) { request.body = body; }
+        else { request.body = jsonEncode(body); }
+      }
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
+      return await http.Response.fromStream(streamedResponse);
+    } finally { client.close(); }
+  }
+
   // POST /api/projects/createproject
   static Future<bool> createProject(Map<String, dynamic> payload) async {
     final token = TokenService.accessToken;
 
-    final response = await http.post(
+    final response = await _resilientPost(
       Uri.parse("$baseUrl/createproject"),
-      headers: {
+      {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",
       },
-      body: jsonEncode(payload),
+      payload,
     );
 
     print("CREATE PROJECT STATUS: ${response.statusCode}");
@@ -33,13 +69,13 @@ class ProjectService {
     final token = TokenService.accessToken;
 
     try {
-      final response = await http.put(
+      final response = await _resilientPut(
         Uri.parse("$baseUrl/addusers/$projectId"),
-        headers: {
+        {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",
         },
-        body: jsonEncode(userIds),
+        userIds,
       );
 
       debugPrint("ADD USERS TO PROJECT STATUS: ${response.statusCode}");
@@ -60,9 +96,9 @@ class ProjectService {
   }) async {
     final token = TokenService.accessToken;
 
-    final response = await http.get(
+    final response = await _resilientGet(
       Uri.parse("$baseUrl/getallprojects?page=$page&size=$size"),
-      headers: {"Authorization": "Bearer $token"},
+      {"Authorization": "Bearer $token"},
     );
 
     print("GET ALL PROJECTS STATUS: ${response.statusCode}");
@@ -79,15 +115,10 @@ class ProjectService {
     final client = http.Client();
     try {
       final url = Uri.parse("$baseUrl/$projectId");
-      debugPrint("API REQUEST: GET $url");
-      
-      final request = http.Request('GET', url)
-        ..headers['Authorization'] = "Bearer $token"
-        ..headers['Accept'] = "application/json"
-        ..followRedirects = false; // Prevent redirect crash if Location header is missing
-        
-      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
-      final response = await http.Response.fromStream(streamedResponse);
+      final response = await _resilientGet(url, {
+        'Authorization': "Bearer $token",
+        'Accept': "application/json",
+      });
 
       print("GET PROJECT $projectId STATUS: ${response.statusCode}");
       
@@ -112,13 +143,13 @@ class ProjectService {
   static Future<bool> updateProjectStatus(int projectId, String status) async {
     final token = TokenService.accessToken;
 
-    final response = await http.put(
+    final response = await _resilientPut(
       Uri.parse("$baseUrl/$projectId/status"),
-      headers: {
+      {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",
       },
-      body: jsonEncode({"status": status}),
+      {"status": status},
     );
 
     print("UPDATE PROJECT STATUS: ${response.statusCode}");
@@ -154,6 +185,7 @@ class ProjectService {
     }
 
     try {
+      request.followRedirects = false;
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
       print("UPDATE PROJECT ${response.statusCode}: ${response.body}");

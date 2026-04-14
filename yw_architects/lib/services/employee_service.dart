@@ -8,6 +8,42 @@ class EmployeeService {
   //static const String baseUrl = "http://localhost:8080/api/employees";
   //static const String baseUrl = "http://10.0.2.2:8080/api/employees";
   static const String baseUrl = "${ApiConstants.baseUrl}/employees";
+
+  /// Resilient HTTP helpers that don't crash on redirects (3xx without Location)
+  static Future<http.Response> _resilientGet(Uri url, Map<String, String> headers) async {
+    final client = http.Client();
+    try {
+      final request = http.Request('GET', url)..headers.addAll(headers)..followRedirects = false;
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
+      return await http.Response.fromStream(streamedResponse);
+    } finally { client.close(); }
+  }
+
+  static Future<http.Response> _resilientPost(Uri url, Map<String, String> headers, dynamic body) async {
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', url)..headers.addAll(headers)..followRedirects = false;
+      if (body != null) {
+        if (body is String) { request.body = body; }
+        else { request.body = jsonEncode(body); }
+      }
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
+      return await http.Response.fromStream(streamedResponse);
+    } finally { client.close(); }
+  }
+
+  static Future<http.Response> _resilientPut(Uri url, Map<String, String> headers, dynamic body) async {
+    final client = http.Client();
+    try {
+      final request = http.Request('PUT', url)..headers.addAll(headers)..followRedirects = false;
+      if (body != null) {
+        if (body is String) { request.body = body; }
+        else { request.body = jsonEncode(body); }
+      }
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
+      return await http.Response.fromStream(streamedResponse);
+    } finally { client.close(); }
+  }
   // ── POST /api/employees/createemployee ────────────────────────────────────
   // Spring: @PostMapping("/createemployee") @RequestBody User user
   // Pass _buildPayload() directly from the Add Employee modal
@@ -35,9 +71,9 @@ class EmployeeService {
   static Future<List<dynamic>> getAllEmployees() async {
     final token = TokenService.accessToken;
 
-    final response = await http.get(
+    final response = await _resilientGet(
       Uri.parse("$baseUrl/getallemployees"),
-      headers: {"Authorization": "Bearer $token"},
+      {"Authorization": "Bearer $token"},
     );
 
     print("GET ALL EMPLOYEES STATUS: ${response.statusCode}");
@@ -57,13 +93,13 @@ class EmployeeService {
   ) async {
     final token = TokenService.accessToken;
 
-    final response = await http.put(
+    final response = await _resilientPut(
       Uri.parse("$baseUrl/updateemployee?id=$id"),
-      headers: {
+      {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",
       },
-      body: jsonEncode(payload),
+      payload,
     );
 
     print("UPDATE EMPLOYEE STATUS: ${response.statusCode}");
@@ -108,9 +144,9 @@ class EmployeeService {
   }) async {
     final token = TokenService.accessToken;
 
-    final response = await http.get(
+    final response = await _resilientGet(
       Uri.parse("$baseUrl/getmyprojects?page=$page&size=$size"),
-      headers: {"Authorization": "Bearer $token"},
+      {"Authorization": "Bearer $token"},
     );
 
     print("GET MY PROJECTS STATUS: ${response.statusCode}");
@@ -130,11 +166,10 @@ class EmployeeService {
   ) async {
     final token = TokenService.accessToken;
 
-    final response = await http.put(
-      Uri.parse(
-        "$baseUrl/updatemypassword?oldPassword=$oldPassword&newPassword=$newPassword",
-      ),
-      headers: {"Authorization": "Bearer $token"},
+    final response = await _resilientPut(
+      Uri.parse("$baseUrl/updatemypassword?oldPassword=$oldPassword&newPassword=$newPassword"),
+      {"Authorization": "Bearer $token"},
+      null,
     );
 
     print("UPDATE PASSWORD STATUS: ${response.statusCode}");
@@ -148,13 +183,13 @@ class EmployeeService {
 
     // The backend User model has a 'profileImage' field.
     // If the payload contains a Base64 string here, the database will store it directly.
-    final response = await http.put(
+    final response = await _resilientPut(
       Uri.parse("$baseUrl/updatemyprofile"),
-      headers: {
+      {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",
       },
-      body: jsonEncode(payload),
+      payload,
     );
 
     print("UPDATE MY PROFILE STATUS: ${response.statusCode}");
@@ -184,5 +219,26 @@ class EmployeeService {
 
     print("UPDATE PROFILE IMAGE STATUS: ${response.statusCode}");
     return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  // ── GET /api/employees/getemployeedata ────────────────────────────────────
+  // Spring: @GetMapping("/getemployeedata")
+  // Returns current logged-in employee details
+  static Future<Map<String, dynamic>?> getEmployeeData() async {
+    final token = TokenService.accessToken;
+
+    final response = await _resilientGet(
+      Uri.parse("$baseUrl/getemployeedata"),
+      {"Authorization": "Bearer $token"},
+    );
+
+    print("GET EMPLOYEE DATA STATUS: ${response.statusCode}");
+    print("GET EMPLOYEE DATA BODY:   ${response.body}");
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      print("GET EMPLOYEE DATA DECODED: $decoded");
+      return decoded['data'] as Map<String, dynamic>?;
+    }
+    return null;
   }
 }

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../models/app_models.dart';
 import '../widgets/common_widgets.dart';
+import '../services/employee_service.dart';
 
 // Role-specific dashboard sections
 import 'sections/admin_dashboard_section.dart';
@@ -16,6 +17,8 @@ import 'sections/draftsman_dashboard_section.dart';
 import 'sections/liaison_manager_dashboard_section.dart';
 import 'sections/liaison_officer_dashboard_section.dart';
 import 'sections/liaison_assistant_dashboard_section.dart';
+
+import 'sections/dashboard_role_views.dart';
 
 // Feature sections
 import 'sections/projects_section.dart';
@@ -46,10 +49,65 @@ class _MainAppScreenState extends State<MainAppScreen> {
   String _currentSection = 'dashboard';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int? _projectToEdit;
+  late AppUser _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = widget.user;
+    _refreshProfile();
+  }
+
+  Future<void> _refreshProfile() async {
+    if (_user.info.label == 'CLIENT') return;
+
+    try {
+      final profile = await EmployeeService.getEmployeeData();
+      print("[MainAppScreen] Fetched profile: $profile");
+      
+      if (profile != null) {
+        // RESILIENT NAME EXTRACTION - Handles nested or flat, camel or snake
+        String? fName = profile['firstName']?.toString() ?? profile['first_name']?.toString();
+        String? lName = profile['lastName']?.toString() ?? profile['last_name']?.toString();
+
+        // Check if nested inside 'employee' or 'user' object (Spring Data REST common pattern)
+        if (fName == null && profile['user'] != null) {
+          final u = profile['user'];
+          fName = u['firstName']?.toString() ?? u['first_name']?.toString();
+          lName = u['lastName']?.toString() ?? u['last_name']?.toString();
+        }
+        if (fName == null && profile['employee'] != null) {
+          final e = profile['employee'];
+          fName = e['firstName']?.toString() ?? e['first_name']?.toString();
+          lName = e['lastName']?.toString() ?? e['last_name']?.toString();
+        }
+
+        final finalFName = fName ?? _user.info.firstName;
+        final finalLName = lName ?? _user.info.lastName;
+
+        // Diagnostic Toast (Temporary)
+        _toast("Detected Name: $finalFName $finalLName");
+
+        setState(() {
+          _user = _user.copyWith(
+            info: _user.info.copyWith(
+              name: '$finalFName $finalLName'.trim(),
+              firstName: finalFName,
+              lastName: finalLName,
+              initials: (finalFName.isNotEmpty ? finalFName[0] : '') + (finalLName.isNotEmpty ? finalLName[0] : ''),
+              profileImage: (profile['profileImage'] ?? profile['profile_image'])?.toString(),
+            ),
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint('[MainAppScreen] Error refreshing profile: $e');
+    }
+  }
 
   // Bottom nav customization based on user group
   List<String> get _bottomNavItems {
-    final role = widget.user.role;
+    final role = _user.role;
 
     // Management roles (Admin, Co-Founder, HR) get specific bottom nav
     if (role == UserRole.admin || role == UserRole.coFounder || role == UserRole.hr) {
@@ -62,7 +120,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
   // Sidebar items customization
   List<String> get _sidebarNavItems {
-    final role = widget.user.role;
+    final role = _user.role;
     if (role == UserRole.admin || role == UserRole.coFounder || role == UserRole.hr) {
       return managementSidebarNav;
     }
@@ -80,27 +138,30 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
   // ── Role-specific dashboard ─────────────────────────────────────────────
   Widget _buildDashboard() {
-    switch (widget.user.role) {
+    switch (_user.role) {
       case UserRole.admin:
-        return AdminDashboardSection(user: widget.user, onNavigate: _navigate);
+        if (_user.info.label == 'CLIENT') {
+          return ClientDashboardView(user: _user, onNavigate: _navigate);
+        }
+        return AdminDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.coFounder:
-        return CoFounderDashboardSection(user: widget.user, onNavigate: _navigate);
+        return CoFounderDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.hr:
-        return HrDashboardSection(user: widget.user, onNavigate: _navigate);
+        return HrDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.srArchitect:
-        return SrArchitectDashboardSection(user: widget.user, onNavigate: _navigate);
+        return SrArchitectDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.jrArchitect:
-        return JrArchitectDashboardSection(user: widget.user, onNavigate: _navigate);
+        return JrArchitectDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.srEngineer:
-        return SrEngineerDashboardSection(user: widget.user, onNavigate: _navigate);
+        return SrEngineerDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.draftsman:
-        return DraftsmanDashboardSection(user: widget.user, onNavigate: _navigate);
+        return DraftsmanDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.liaisonManager:
-        return LiaisonManagerDashboardSection(user: widget.user, onNavigate: _navigate);
+        return LiaisonManagerDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.liaisonOfficer:
-        return LiaisonOfficerDashboardSection(user: widget.user, onNavigate: _navigate);
+        return LiaisonOfficerDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.liaisonAssistant:
-        return LiaisonAssistantDashboardSection(user: widget.user, onNavigate: _navigate);
+        return LiaisonAssistantDashboardSection(user: _user, onNavigate: _navigate);
     }
   }
 
@@ -108,15 +169,15 @@ class _MainAppScreenState extends State<MainAppScreen> {
   Widget _buildSection() {
     switch (_currentSection) {
       case 'dashboard':     return _buildDashboard();
-      case 'projects':      return ProjectsSection(user: widget.user, onToast: _toast, editProjectId: _projectToEdit);
-      case 'tasks':         return TasksSection(user: widget.user, onToast: _toast);
-      case 'attendance':    if ([UserRole.admin, UserRole.hr].contains(widget.user.role)) {
+      case 'projects':      return ProjectsSection(user: _user, onToast: _toast, editProjectId: _projectToEdit);
+      case 'tasks':         return TasksSection(user: _user, onToast: _toast);
+      case 'attendance':    if ([UserRole.admin, UserRole.hr].contains(_user.role)) {
                               return EmployeesSection(onToast: _toast, initialTabIndex: 1);
                             }
-                            return AttendanceSection(user: widget.user, onToast: _toast);
-      case 'leaves':        return LeavesSection(user: widget.user, onToast: _toast);
+                            return AttendanceSection(user: _user, onToast: _toast);
+      case 'leaves':        return LeavesSection(user: _user, onToast: _toast);
       case 'site':          return SitesScreen(
-                              user: widget.user, 
+                              user: _user, 
                               onToast: _toast,
                               onEditProject: (id) {
                                 setState(() {
@@ -125,14 +186,14 @@ class _MainAppScreenState extends State<MainAppScreen> {
                                 });
                               },
                             );
-      case 'materials':     return MaterialsSection(user: widget.user, onToast: _toast);
-      case 'renders':       return RendersSection(user: widget.user, onToast: _toast);
+      case 'materials':     return MaterialsSection(user: _user, onToast: _toast);
+      case 'renders':       return RendersSection(user: _user, onToast: _toast);
       case 'employees':     return EmployeesSection(onToast: _toast);
       case 'clients':       return ClientsSection(onToast: _toast);
       case 'reports':       return ReportsSection(onToast: _toast);
       case 'notifications': return NotificationsSection(onToast: _toast);
-      case 'profile':       return ProfileSection(user: widget.user, onLogout: widget.onLogout, onToast: _toast);
-      case 'enquiry':       return EnquirySection(user: widget.user, onToast: _toast);
+      case 'profile':       return ProfileSection(user: _user, onLogout: widget.onLogout, onToast: _toast);
+      case 'enquiry':       return EnquirySection(user: _user, onToast: _toast);
       default:              return _buildDashboard();
     }
   }
@@ -220,7 +281,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   ),
                 ),
                 Text(
-                  widget.user.info.label,
+                  _user.info.label,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     color: AppColors.onSurfaceVariant,
@@ -263,7 +324,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
           GestureDetector(
             onTap: () => _navigate('profile'),
             child: AvatarWidget(
-              initials: widget.user.info.initials,
+              initials: _user.info.initials,
               size: 36,
               fontSize: 13,
             ),
@@ -424,7 +485,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   child: Row(
                     children: [
                       AvatarWidget(
-                        initials: widget.user.info.initials,
+                        initials: _user.info.initials,
                         size: 36,
                         fontSize: 13,
                       ),
@@ -434,7 +495,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.user.info.name,
+                              _user.info.name,
                               style: GoogleFonts.plusJakartaSans(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
@@ -442,7 +503,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                               ),
                             ),
                             Text(
-                              widget.user.info.label,
+                              _user.info.label,
                               style: GoogleFonts.plusJakartaSans(
                                 color: Colors.white.withOpacity(0.65),
                                 fontSize: 11,

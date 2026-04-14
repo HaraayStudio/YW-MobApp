@@ -15,6 +15,8 @@ enum UserRole {
 
 class UserRoleInfo {
   final String name;
+  final String firstName;
+  final String lastName;
   final String initials;
   final String email;
   final String label;
@@ -23,6 +25,8 @@ class UserRoleInfo {
 
   const UserRoleInfo({
     required this.name,
+    required this.firstName,
+    required this.lastName,
     required this.initials,
     required this.email,
     required this.label,
@@ -32,6 +36,8 @@ class UserRoleInfo {
 
   UserRoleInfo copyWith({
     String? name,
+    String? firstName,
+    String? lastName,
     String? initials,
     String? email,
     String? label,
@@ -39,16 +45,17 @@ class UserRoleInfo {
     String? profileImage,
   }) {
     return UserRoleInfo(
-      name:     name     ?? this.name,
+      name: name ?? this.name,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       initials: initials ?? this.initials,
-      email:    email    ?? this.email,
-      label:    label    ?? this.label,
-      nav:      nav      ?? this.nav,
+      email: email ?? this.email,
+      label: label ?? this.label,
+      nav: nav ?? this.nav,
       profileImage: profileImage ?? this.profileImage,
     );
   }
 }
-
 
 class AppUser {
   final int id;
@@ -60,20 +67,54 @@ class AppUser {
     required this.id,
     required this.role,
     required this.info,
-    this.token, 
+    this.token,
   });
+
+  AppUser copyWith({
+    int? id,
+    UserRole? role,
+    UserRoleInfo? info,
+    String? token,
+  }) {
+    return AppUser(
+      id: id ?? this.id,
+      role: role ?? this.role,
+      info: info ?? this.info,
+      token: token ?? this.token,
+    );
+  }
 }
 
 // Finalized Navigation Logic
-const List<String> managementSidebarNav = ['dashboard', 'clients', 'enquiry', 'projects', 'site', 'employees', 'profile'];
-const List<String> managementBottomNav    = ['dashboard', 'projects', 'clients', 'employees'];
+const List<String> managementSidebarNav = [
+  'dashboard',
+  'clients',
+  'enquiry',
+  'projects',
+  'site',
+  'employees',
+  'profile',
+];
+const List<String> managementBottomNav = [
+  'dashboard',
+  'projects',
+  'clients',
+  'employees',
+];
 
-const List<String> employeeSidebarNav   = ['dashboard', 'projects', 'site'];
-const List<String> employeeBottomNav      = ['dashboard', 'projects', 'site', 'attendance'];
+const List<String> employeeSidebarNav = ['dashboard', 'projects', 'site'];
+const List<String> employeeBottomNav = [
+  'dashboard',
+  'projects',
+  'site',
+  'attendance',
+];
 
 const Map<UserRole, UserRoleInfo> roleMap = {
   UserRole.admin: UserRoleInfo(
     name: 'Admin',
+    firstName: 'Admin',
+    lastName: '',
     initials: 'AD',
     email: 'admin@yw.com',
     label: 'ADMIN',
@@ -81,6 +122,8 @@ const Map<UserRole, UserRoleInfo> roleMap = {
   ),
   UserRole.coFounder: UserRoleInfo(
     name: 'Co-Founder',
+    firstName: 'Co-Founder',
+    lastName: '',
     initials: 'CF',
     email: 'cofounder@yw.com',
     label: 'CO_FOUNDER',
@@ -88,6 +131,8 @@ const Map<UserRole, UserRoleInfo> roleMap = {
   ),
   UserRole.hr: UserRoleInfo(
     name: 'HR Manager',
+    firstName: 'HR',
+    lastName: 'Manager',
     initials: 'HR',
     email: 'hr@yw.com',
     label: 'HR',
@@ -95,6 +140,8 @@ const Map<UserRole, UserRoleInfo> roleMap = {
   ),
   UserRole.srArchitect: UserRoleInfo(
     name: 'Senior Architect',
+    firstName: 'Senior',
+    lastName: 'Architect',
     initials: 'SA',
     email: 'srarch@yw.com',
     label: 'SR_ARCHITECT',
@@ -102,6 +149,8 @@ const Map<UserRole, UserRoleInfo> roleMap = {
   ),
   UserRole.jrArchitect: UserRoleInfo(
     name: 'Junior Architect',
+    firstName: 'Junior',
+    lastName: 'Architect',
     initials: 'JA',
     email: 'jrarch@yw.com',
     label: 'JR_ARCHITECT',
@@ -109,6 +158,8 @@ const Map<UserRole, UserRoleInfo> roleMap = {
   ),
   UserRole.srEngineer: UserRoleInfo(
     name: 'Senior Engineer',
+    firstName: 'Senior',
+    lastName: 'Engineer',
     initials: 'SE',
     email: 'sreng@yw.com',
     label: 'SR_ENGINEER',
@@ -116,6 +167,8 @@ const Map<UserRole, UserRoleInfo> roleMap = {
   ),
   UserRole.draftsman: UserRoleInfo(
     name: 'Draftsman',
+    firstName: 'Draftsman',
+    lastName: '',
     initials: 'DM',
     email: 'drafts@yw.com',
     label: 'DRAFTSMAN',
@@ -123,6 +176,8 @@ const Map<UserRole, UserRoleInfo> roleMap = {
   ),
   UserRole.liaisonManager: UserRoleInfo(
     name: 'Liaison Manager',
+    firstName: 'Liaison',
+    lastName: 'Manager',
     initials: 'LM',
     email: 'liaisonmgr@yw.com',
     label: 'LIAISON_MANAGER',
@@ -130,6 +185,8 @@ const Map<UserRole, UserRoleInfo> roleMap = {
   ),
   UserRole.liaisonOfficer: UserRoleInfo(
     name: 'Liaison Officer',
+    firstName: 'Liaison',
+    lastName: 'Officer',
     initials: 'LO',
     email: 'liaisonoff@yw.com',
     label: 'LIAISON_OFFICER',
@@ -137,6 +194,8 @@ const Map<UserRole, UserRoleInfo> roleMap = {
   ),
   UserRole.liaisonAssistant: UserRoleInfo(
     name: 'Liaison Assistant',
+    firstName: 'Liaison',
+    lastName: 'Assistant',
     initials: 'LA',
     email: 'liaisonasst@yw.com',
     label: 'LIAISON_ASSISTANT',
@@ -149,25 +208,86 @@ class NavItem {
   final IconData iconData;
   final String label;
 
-  const NavItem({required this.key, required this.iconData, required this.label});
+  const NavItem({
+    required this.key,
+    required this.iconData,
+    required this.label,
+  });
 }
 
 const Map<String, NavItem> navConfig = {
-  'dashboard': NavItem(key: 'dashboard', iconData: Icons.dashboard_rounded, label: 'Dashboard'),
-  'clients': NavItem(key: 'clients', iconData: Icons.business_center_rounded, label: 'Clients'),
-  'projects': NavItem(key: 'projects', iconData: Icons.folder_special_rounded, label: 'Projects'),
-  'tasks': NavItem(key: 'tasks', iconData: Icons.task_alt_rounded, label: 'Tasks'),
-  'employees': NavItem(key: 'employees', iconData: Icons.group_rounded, label: 'Employees'),
-  'attendance': NavItem(key: 'attendance', iconData: Icons.fingerprint_rounded, label: 'Attendance'),
-  'leaves': NavItem(key: 'leaves', iconData: Icons.event_available_rounded, label: 'Leaves'),
-  'site': NavItem(key: 'site', iconData: Icons.construction_rounded, label: 'Sites'),
-  'materials': NavItem(key: 'materials', iconData: Icons.inventory_2_rounded, label: 'Materials'),
-  'renders': NavItem(key: 'renders', iconData: Icons.view_in_ar_rounded, label: 'Renders'),
-  'reports': NavItem(key: 'reports', iconData: Icons.analytics_rounded, label: 'Reports'),
-  'notifications': NavItem(key: 'notifications', iconData: Icons.notifications_rounded, label: 'Alerts'),
-  'enquiry': NavItem(key: 'enquiry', iconData: Icons.question_answer_rounded, label: 'Enquiries'),
-  'profile': NavItem(key: 'profile', iconData: Icons.manage_accounts_rounded, label: 'Profile'),
+  'dashboard': NavItem(
+    key: 'dashboard',
+    iconData: Icons.dashboard_rounded,
+    label: 'Dashboard',
+  ),
+  'clients': NavItem(
+    key: 'clients',
+    iconData: Icons.business_center_rounded,
+    label: 'Clients',
+  ),
+  'projects': NavItem(
+    key: 'projects',
+    iconData: Icons.folder_special_rounded,
+    label: 'Projects',
+  ),
+  'tasks': NavItem(
+    key: 'tasks',
+    iconData: Icons.task_alt_rounded,
+    label: 'Tasks',
+  ),
+  'employees': NavItem(
+    key: 'employees',
+    iconData: Icons.group_rounded,
+    label: 'Employees',
+  ),
+  'attendance': NavItem(
+    key: 'attendance',
+    iconData: Icons.fingerprint_rounded,
+    label: 'Attendance',
+  ),
+  'leaves': NavItem(
+    key: 'leaves',
+    iconData: Icons.event_available_rounded,
+    label: 'Leaves',
+  ),
+  'site': NavItem(
+    key: 'site',
+    iconData: Icons.construction_rounded,
+    label: 'Sites',
+  ),
+  'materials': NavItem(
+    key: 'materials',
+    iconData: Icons.inventory_2_rounded,
+    label: 'Materials',
+  ),
+  'renders': NavItem(
+    key: 'renders',
+    iconData: Icons.view_in_ar_rounded,
+    label: 'Renders',
+  ),
+  'reports': NavItem(
+    key: 'reports',
+    iconData: Icons.analytics_rounded,
+    label: 'Reports',
+  ),
+  'notifications': NavItem(
+    key: 'notifications',
+    iconData: Icons.notifications_rounded,
+    label: 'Alerts',
+  ),
+  'enquiry': NavItem(
+    key: 'enquiry',
+    iconData: Icons.question_answer_rounded,
+    label: 'Enquiries',
+  ),
+  'profile': NavItem(
+    key: 'profile',
+    iconData: Icons.manage_accounts_rounded,
+    label: 'Profile',
+  ),
 };
+
 class Client {
   final int id;
   final String name;

@@ -7,6 +7,25 @@ import 'package:yw_architects/api/constants.dart';
 class AttendanceService {
   static const String baseUrl = ApiConstants.baseUrl;
 
+  /// Resilient HTTP helpers to prevent 3xx-no-Location crashes
+  static Future<http.Response> _resilientGet(Uri url, Map<String, String> headers) async {
+    final client = http.Client();
+    try {
+      final request = http.Request('GET', url)..headers.addAll(headers)..followRedirects = false;
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
+      return await http.Response.fromStream(streamedResponse);
+    } finally { client.close(); }
+  }
+
+  static Future<http.Response> _resilientPatch(Uri url, Map<String, String> headers) async {
+    final client = http.Client();
+    try {
+      final request = http.Request('PATCH', url)..headers.addAll(headers)..followRedirects = false;
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
+      return await http.Response.fromStream(streamedResponse);
+    } finally { client.close(); }
+  }
+
   static Future<Map<String, String>> _getHeaders() async {
     final token = TokenService.accessToken;
     return {
@@ -18,9 +37,9 @@ class AttendanceService {
   /// GET /attendance/today
   static Future<List<dynamic>> getTodayAttendance() async {
     try {
-      final response = await http.get(
+      final response = await _resilientGet(
         Uri.parse('$baseUrl/attendance/today'),
-        headers: await _getHeaders(),
+        await _getHeaders(),
       );
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
@@ -70,12 +89,12 @@ class AttendanceService {
   /// PATCH /attendance/{userId}/checkin?date=...&time=...
   static Future<bool> recordCheckIn(int userId, String date, String time) async {
     try {
-      final response = await http.patch(
+      final response = await _resilientPatch(
         Uri.parse('$baseUrl/attendance/$userId/checkin').replace(queryParameters: {
           'date': date,
           'time': time,
         }),
-        headers: await _getHeaders(),
+        await _getHeaders(),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -87,18 +106,73 @@ class AttendanceService {
   /// PATCH /attendance/{userId}/checkout?date=...&time=...&attendanceStatus=...
   static Future<bool> recordCheckOut(int userId, String date, String time, String status) async {
     try {
-      final response = await http.patch(
+      final response = await _resilientPatch(
         Uri.parse('$baseUrl/attendance/$userId/checkout').replace(queryParameters: {
           'date': date,
           'time': time,
           'attendanceStatus': status,
         }),
-        headers: await _getHeaders(),
+        await _getHeaders(),
       );
       return response.statusCode == 200;
     } catch (e) {
       debugPrint("Error recording check-out: $e");
       return false;
     }
+  }
+
+  /// PATCH /attendance/recordmycheckIn?date=...&time=...
+  static Future<bool> recordMyCheckIn(String date, String time) async {
+    try {
+      final response = await _resilientPatch(
+        Uri.parse('$baseUrl/attendance/recordmycheckIn').replace(queryParameters: {
+          'date': date,
+          'time': time,
+        }),
+        await _getHeaders(),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint("Error recording my check-in: $e");
+      return false;
+    }
+  }
+
+  /// PATCH /attendance/recordmycheckout?date=...&time=...&attendanceStatus=...
+  static Future<bool> recordMyCheckOut(String date, String time, String status) async {
+    try {
+      final response = await _resilientPatch(
+        Uri.parse('$baseUrl/attendance/recordmycheckout').replace(queryParameters: {
+          'date': date,
+          'time': time,
+          'attendanceStatus': status,
+        }),
+        await _getHeaders(),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint("Error recording my check-out: $e");
+      return false;
+    }
+  }
+
+  /// GET /attendance/getmymonthlyattendance?month=X&year=Y
+  static Future<List<dynamic>> getMyMonthlyAttendance(int month, int year) async {
+    try {
+      final response = await _resilientGet(
+        Uri.parse('$baseUrl/attendance/getmymonthlyattendance').replace(queryParameters: {
+          'month': month.toString(),
+          'year': year.toString(),
+        }),
+        await _getHeaders(),
+      );
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        return decoded['data'] as List<dynamic>? ?? [];
+      }
+    } catch (e) {
+      debugPrint("Error fetching my monthly attendance: $e");
+    }
+    return [];
   }
 }
