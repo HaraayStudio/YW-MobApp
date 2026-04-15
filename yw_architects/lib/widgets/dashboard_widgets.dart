@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import 'common_widgets.dart';
 
@@ -93,7 +95,7 @@ class DashboardBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxVal = data.values.isEmpty ? 1.0 : data.values.reduce(math.max);
+    final maxVal = data.values.isEmpty ? 1.0 : data.values.reduce((v, e) => v > e ? v : e);
     
     return CardContainer(
       title: title,
@@ -275,15 +277,15 @@ class _DonutPainter extends CustomPainter {
 
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
-    final strokeWidth = 14.0;
+    const strokeWidth = 14.0;
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
-    double startAngle = -math.pi / 2;
+    double startAngle = -3.14159 / 2;
     for (int i = 0; i < data.length; i++) {
-      final sweepAngle = (data[i] / total) * 2 * math.pi;
+      final sweepAngle = (data[i] / total) * 2 * 3.14159;
       paint.color = colors[i % colors.length];
       
       canvas.drawArc(
@@ -306,6 +308,8 @@ class DashboardAttendanceCard extends StatelessWidget {
   final String? checkIn;
   final String? checkOut;
   final String workingHours;
+  final String currentTime;
+  final String todayDate;
   final VoidCallback onCheckIn;
   final VoidCallback onCheckOut;
   final bool isLoading;
@@ -315,101 +319,122 @@ class DashboardAttendanceCard extends StatelessWidget {
     this.checkIn,
     this.checkOut,
     required this.workingHours,
+    required this.currentTime,
+    required this.todayDate,
     required this.onCheckIn,
     required this.onCheckOut,
     this.isLoading = false,
   });
 
+  String _formatTime(String raw) {
+    try {
+      final parts = raw.split(':');
+      final hour = int.parse(parts[0]);
+      final min = int.parse(parts[1]);
+      final dt = DateTime(2000, 1, 1, hour, min);
+      return DateFormat('hh:mm a').format(dt);
+    } catch (_) {
+      return raw;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isCheckedIn = checkIn != null && checkOut == null;
+    final hasCheckedIn = checkIn != null;
+    final hasCheckedOut = checkOut != null;
+    
+    final inTime = hasCheckedIn ? _formatTime(checkIn!) : '--:--';
+    final outTime = hasCheckedOut ? _formatTime(checkOut!) : '--:--';
 
     return CardContainer(
       padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.fingerprint_rounded, color: AppColors.primary),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Attendance',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                    Text(
-                      'Log your daily presence',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (workingHours != "0h")
-                GoldChip(
-                  text: workingHours,
-                  bg: AppColors.chipDoneBg,
-                  fg: AppColors.chipDoneFg,
-                ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _LogItem(label: 'Check In', time: checkIn ?? '--:--'),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.outline),
-              ),
-              Expanded(
-                child: _LogItem(label: 'Check Out', time: checkOut ?? '--:--'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: isCheckedIn || isLoading ? null : onCheckIn,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: BorderSide(color: isCheckedIn ? AppColors.outlineVariant : AppColors.primary),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text(
-                    'CHECK IN',
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'TODAY',
                     style: TextStyle(
+                      fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: isCheckedIn ? AppColors.onSurfaceVariant : AppColors.primary,
+                      color: AppColors.onSurfaceVariant,
+                      letterSpacing: 1,
                     ),
                   ),
+                  Text(
+                    todayDate,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    currentTime,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const Text(
+                    'Live Time',
+                    style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _timeBox(
+                  'Check In',
+                  inTime,
+                  hasCheckedIn ? 'Success' : 'Pending',
+                  hasCheckedIn,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _timeBox(
+                  'Check Out',
+                  outTime,
+                  hasCheckedOut ? 'Success' : 'Working...',
+                  hasCheckedOut,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: GoldGradientButton(
+                  text: hasCheckedIn ? 'Checked In' : 'Check In',
+                  icon: Icons.login_rounded,
+                  verticalPadding: 12,
+                  onTap: hasCheckedIn || isLoading ? null : onCheckIn,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: GoldGradientButton(
-                  text: 'CHECK OUT',
-                  onTap: !isCheckedIn || isLoading ? null : onCheckOut,
-                  verticalPadding: 14,
+                  text: hasCheckedOut ? 'Checked Out' : 'Check Out',
+                  icon: Icons.logout_rounded,
+                  verticalPadding: 12,
+                  onTap: (!hasCheckedIn || hasCheckedOut || isLoading) ? null : onCheckOut,
                 ),
               ),
             ],
@@ -418,28 +443,43 @@ class DashboardAttendanceCard extends StatelessWidget {
       ),
     );
   }
-}
 
-class _LogItem extends StatelessWidget {
-  final String label;
-  final String time;
-  const _LogItem({required this.label, required this.time});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          time,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.onSurface),
-        ),
-      ],
+  Widget _timeBox(String label, String time, String sub, bool active) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: active ? AppColors.primary.withOpacity(0.05) : AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: active ? Border.all(color: AppColors.primary.withOpacity(0.2)) : null,
+      ),
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            time,
+            style: TextStyle(
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+              color: active ? AppColors.primary : AppColors.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            sub,
+            style: TextStyle(
+              fontSize: 10,
+              color: active ? AppColors.primary : AppColors.onSurfaceVariant.withOpacity(0.7),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

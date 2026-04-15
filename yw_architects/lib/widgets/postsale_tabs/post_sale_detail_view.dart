@@ -16,7 +16,7 @@ class PostSaleDetailView extends StatefulWidget {
   final int projectId;
   final VoidCallback onBack;
   final Function(Map<String, dynamic>) onEdit;
-  final Function(int projectId)? onNavigateToSite; // NEW: navigate to site for this project
+  final Function(int projectId)? onNavigateToSite;
   final AppUser user;
 
   const PostSaleDetailView({
@@ -32,12 +32,17 @@ class PostSaleDetailView extends StatefulWidget {
   State<PostSaleDetailView> createState() => _PostSaleDetailViewState();
 }
 
-class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTickerProviderStateMixin {
+class _PostSaleDetailViewState extends State<PostSaleDetailView>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   Map<String, dynamic>? _project;
   bool _isLoading = true;
 
-  bool get _isManagement => [UserRole.admin, UserRole.coFounder, UserRole.hr].contains(widget.user.role);
+  bool get _isManagement => [
+    UserRole.admin,
+    UserRole.coFounder,
+    UserRole.hr,
+  ].contains(widget.user.role);
 
   @override
   void initState() {
@@ -59,7 +64,9 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
     setState(() => _isLoading = true);
     try {
       // Fetch both the overarching PostSale mapped graph AND the raw Full Project (to get heavy fields like Address & Area missed by LiteDTO)
-      final postSaleFuture = PostSalesService.getPostSaleByProjectId(widget.projectId);
+      final postSaleFuture = PostSalesService.getPostSaleByProjectId(
+        widget.projectId,
+      );
       final fullProjectFuture = ProjectService.getProjectById(widget.projectId);
 
       final results = await Future.wait([postSaleFuture, fullProjectFuture]);
@@ -88,9 +95,7 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
       return const Column(
         children: [
           SizedBox(height: 100),
-          Center(
-            child: CircularProgressIndicator(color: AppColors.primary),
-          ),
+          Center(child: CircularProgressIndicator(color: AppColors.primary)),
         ],
       );
     }
@@ -109,10 +114,16 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
     final projectNode = _project!['project'] ?? {};
     final clientNode = _project!['client'] ?? {};
 
-    final pName = projectNode['projectName'] ?? projectNode['project_name'] ?? 'Unknown Project';
-    final pCode = projectNode['projectCode'] ?? projectNode['project_code'] ?? '—';
+    final pName =
+        projectNode['projectName'] ??
+        projectNode['project_name'] ??
+        'Unknown Project';
+    final pCode =
+        projectNode['projectCode'] ?? projectNode['project_code'] ?? '—';
     final clientId = clientNode['id']?.toString() ?? 'N/A';
-    final date = projectNode['projectCreatedDateTime']?.toString().split('T').first ?? '';
+    final date =
+        projectNode['projectCreatedDateTime']?.toString().split('T').first ??
+        '';
 
     final status = projectNode['projectStatus']?.toString() ?? 'IN_PROGRESS';
 
@@ -129,20 +140,27 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
             children: [
               TextButton.icon(
                 onPressed: widget.onBack,
-                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primary),
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppColors.primary,
+                ),
                 label: const Text(
                   'Back to Projects',
-                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              IconButton.filled(
-                onPressed: () => widget.onEdit(_project!),
-                icon: const Icon(Icons.edit_rounded, size: 18),
-                style: IconButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+              if (_isManagement)
+                IconButton.filled(
+                  onPressed: () => widget.onEdit(_project!),
+                  icon: const Icon(Icons.edit_rounded, size: 18),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -163,10 +181,16 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
                       decoration: BoxDecoration(
                         color: AppColors.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.3),
+                        ),
                       ),
                       child: const Center(
-                        child: Icon(Icons.apartment_rounded, color: AppColors.primary, size: 28),
+                        child: Icon(
+                          Icons.apartment_rounded,
+                          color: AppColors.primary,
+                          size: 28,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -176,21 +200,38 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
                         children: [
                           Text(
                             pName.toString(),
-                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.onSurface),
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.onSurface,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Row(
                             children: [
                               Text(
                                 '#${_project!['id']}',
-                                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 13),
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
                               ),
                               const SizedBox(width: 8),
-                              const Text('•', style: TextStyle(color: AppColors.outlineVariant)),
+                              const Text(
+                                '•',
+                                style: TextStyle(
+                                  color: AppColors.outlineVariant,
+                                ),
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 pCode.toString(),
-                                style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                  color: AppColors.onSurfaceVariant,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
@@ -201,27 +242,46 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
                             children: [
                               _PostSaleStatusBadge(status: status),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isNotified ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                                  color: isNotified
+                                      ? const Color(0xFFDCFCE7)
+                                      : const Color(0xFFFEF3C7),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: isNotified ? const Color(0xFF16A34A).withOpacity(0.3) : const Color(0xFFD97706).withOpacity(0.3),
+                                    color: isNotified
+                                        ? const Color(
+                                            0xFF16A34A,
+                                          ).withOpacity(0.3)
+                                        : const Color(
+                                            0xFFD97706,
+                                          ).withOpacity(0.3),
                                   ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
-                                      isNotified ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+                                      isNotified
+                                          ? Icons.check_circle_rounded
+                                          : Icons.warning_amber_rounded,
                                       size: 14,
-                                      color: isNotified ? const Color(0xFF166534) : const Color(0xFFB45309),
+                                      color: isNotified
+                                          ? const Color(0xFF166534)
+                                          : const Color(0xFFB45309),
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      isNotified ? 'Client Notified' : 'Not Notified',
+                                      isNotified
+                                          ? 'Client Notified'
+                                          : 'Not Notified',
                                       style: TextStyle(
-                                        color: isNotified ? const Color(0xFF166534) : const Color(0xFFB45309),
+                                        color: isNotified
+                                            ? const Color(0xFF166534)
+                                            : const Color(0xFFB45309),
                                         fontSize: 10,
                                         fontWeight: FontWeight.w800,
                                       ),
@@ -247,7 +307,9 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
             decoration: BoxDecoration(
               color: AppColors.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+              border: Border.all(
+                color: AppColors.outlineVariant.withOpacity(0.3),
+              ),
             ),
             child: TabBar(
               controller: _tabController,
@@ -260,8 +322,14 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
               ),
               labelColor: Colors.white,
               unselectedLabelColor: AppColors.onSurfaceVariant,
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
               tabs: [
                 const Tab(text: 'Overview'),
                 const Tab(text: 'Client'),
@@ -295,14 +363,8 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView> with SingleTick
                     onRefresh: _fetchData,
                     onTabRequest: (idx) => _tabController.animateTo(idx),
                   ),
-                  TaxTabView(
-                    project: _project!,
-                    onRefresh: _fetchData,
-                  ),
-                  PaymentsTabView(
-                    project: _project!,
-                    onRefresh: _fetchData,
-                  ),
+                  TaxTabView(project: _project!, onRefresh: _fetchData),
+                  PaymentsTabView(project: _project!, onRefresh: _fetchData),
                 ],
               ],
             ),
@@ -339,12 +401,26 @@ class _PostSaleStatusBadge extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         children: [
-          Container(width: 6, height: 6, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+          ),
           const SizedBox(width: 4),
-          Text(status.replaceFirst('_', ' '), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: fg)),
+          Text(
+            status.replaceFirst('_', ' '),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: fg,
+            ),
+          ),
         ],
       ),
     );

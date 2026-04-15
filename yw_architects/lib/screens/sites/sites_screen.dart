@@ -59,15 +59,24 @@ class _SitesScreenState extends State<SitesScreen> {
     }
   }
 
+  bool get _isManager => [
+    UserRole.admin,
+    UserRole.coFounder,
+    UserRole.hr
+  ].contains(widget.user.role);
+
   List<Site> get _filteredSites {
     if (_activeFilter == 'All') return _sites;
-    return _sites.where((s) => s.status.toUpperCase() == _activeFilter).toList();
+    return _sites
+        .where((s) => s.status.toUpperCase() == _activeFilter)
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_selectedSite != null) {
       return SiteDetailsSection(
+        user: widget.user,
         site: _selectedSite!,
         onBack: () => setState(() => _selectedSite = null),
         onEditProject: widget.onEditProject,
@@ -96,7 +105,7 @@ class _SitesScreenState extends State<SitesScreen> {
       activeFilter: _activeFilter,
       onFilterChange: (filter) => setState(() => _activeFilter = filter),
       onSiteTap: (site) => setState(() => _selectedSite = site),
-      onAddSite: () => setState(() => _showForm = true),
+      onAddSite: _isManager ? () => setState(() => _showForm = true) : null,
     );
   }
 }

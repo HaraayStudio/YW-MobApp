@@ -182,7 +182,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                               },
                             );
       case 'tasks':         return TasksSection(user: _user, onToast: _toast);
-      case 'attendance':    if ([UserRole.admin, UserRole.hr].contains(_user.role)) {
+      case 'attendance':    if ([UserRole.admin, UserRole.hr, UserRole.coFounder].contains(_user.role)) {
                               return EmployeesSection(onToast: _toast, initialTabIndex: 1);
                             }
                             return AttendanceSection(user: _user, onToast: _toast);

@@ -148,17 +148,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 24),
-                            const Text(
-                              'Architectural\nMastery Begins Here.',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.onSurface,
-                                height: 1.2,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 32),
                             const Text(
                               'Sign in to your workspace',
                               style: TextStyle(
@@ -316,16 +306,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 24),
-                            const Center(
-                              child: Text(
-                                '© 2021 YW Architects. All rights reserved.',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
+
                           ],
                         ),
                       ),
@@ -517,28 +498,7 @@ class _EmployeeLoginFormState extends State<_EmployeeLoginForm> {
             ),
           ),
         ),
-        const SizedBox(height: 20),
-
-        // Developer Hint
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-            border: const Border(
-              left: BorderSide(color: AppColors.primaryContainer, width: 2),
-            ),
-          ),
-          child: const Text(
-            'Try: admin@yw.com / admin123',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
 
         _AnimatedAuthButton(
           text: 'Sign In →',
@@ -550,19 +510,6 @@ class _EmployeeLoginFormState extends State<_EmployeeLoginForm> {
         ),
 
         const SizedBox(height: 12),
-        Center(
-          child: TextButton(
-            onPressed: widget.onForgotPassword,
-            child: const Text(
-              'Forgot Password?',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -642,28 +589,7 @@ class _ClientLoginFormState extends State<_ClientLoginForm> {
             ),
           ),
         ),
-        const SizedBox(height: 20),
-
-        // Developer Hint
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-            border: const Border(
-              left: BorderSide(color: AppColors.primaryContainer, width: 2),
-            ),
-          ),
-          child: const Text(
-            'Try: client@yw.com / client123',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
 
         _AnimatedAuthButton(
           text: 'Access Project →',
@@ -672,20 +598,7 @@ class _ClientLoginFormState extends State<_ClientLoginForm> {
               widget.onClientLogin(_emailCtrl.text.trim(), _pwCtrl.text.trim()),
         ),
 
-        const SizedBox(height: 12),
-        Center(
-          child: TextButton(
-            onPressed: widget.onForgotPassword,
-            child: const Text(
-              'Need help?',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ),
+
       ],
     );
   }

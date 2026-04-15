@@ -10,7 +10,14 @@ import '../../widgets/postsale_tabs/post_sale_detail_view.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../utils/base64_utils.dart';
-import '../../widgets/common_widgets.dart' show ProgressBar, SectionHeader, CardContainer, GoldGradientButton, StatusChip, AvatarWidget;
+import '../../widgets/common_widgets.dart'
+    show
+        ProgressBar,
+        SectionHeader,
+        CardContainer,
+        GoldGradientButton,
+        StatusChip,
+        AvatarWidget;
 
 class ProjectsSection extends StatefulWidget {
   final AppUser user;
@@ -159,7 +166,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           ? _formatDate(getD('projectEndDateTime', 'project_end_date_time'))
           : '',
     );
-    
+
     _pickedLogoBase64 = null; // Reset for new edit session
 
     // Background refresh — if API works, it will update with latest data
@@ -219,7 +226,10 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
           // Also update the selected project / edit form if this is the current one
           if (_selectedProject != null) {
-            final pid = _selectedProject?['projectId'] ?? _selectedProject?['id'] ?? _selectedProject?['project_id'];
+            final pid =
+                _selectedProject?['projectId'] ??
+                _selectedProject?['id'] ??
+                _selectedProject?['project_id'];
             if (pid == projectId) {
               _selectedProject = res;
               _initEditFormFields(res);
@@ -366,7 +376,10 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         _editCtrls['projectExpectedEndDate']?.text,
       ),
       'projectEndDateTime': _toIso(_editCtrls['projectEndDateTime']?.text),
-      'logoUrl': _pickedLogoBase64 ?? _selectedProject?['logoUrl'] ?? _selectedProject?['logo_url'],
+      'logoUrl':
+          _pickedLogoBase64 ??
+          _selectedProject?['logoUrl'] ??
+          _selectedProject?['logo_url'],
     };
 
     final projectId =
@@ -695,13 +708,14 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     }
   }
 
-  bool get canCreate => [
+  bool get _isManager => [
     UserRole.admin,
     UserRole.coFounder,
-    UserRole.srArchitect,
-    UserRole.srEngineer,
-    UserRole.liaisonManager,
+    UserRole.hr,
   ].contains(widget.user.role);
+
+  bool get canCreate => _isManager;
+
 
   List<Map<String, dynamic>> get _filtered {
     if (_filter == 'All') return _projects;
@@ -793,7 +807,10 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
     final statusKey = (_editCtrls['projectStatus']?.text ?? 'PLANNING')
         .toUpperCase();
-    final statusCfg = _STATUS_CONFIG[statusKey] ?? _STATUS_CONFIG['PLANNING'] ?? _STATUS_CONFIG.values.first;
+    final statusCfg =
+        _STATUS_CONFIG[statusKey] ??
+        _STATUS_CONFIG['PLANNING'] ??
+        _STATUS_CONFIG.values.first;
 
     return Container(
       decoration: BoxDecoration(
@@ -1196,7 +1213,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       imageQuality: 50,
       maxWidth: 512,
     );
-    
+
     if (image != null) {
       setState(() => _isPickingLogo = true);
       final base64String = await Base64Utils.toDataUrl(image);
@@ -1211,8 +1228,11 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   }
 
   Widget _buildEditLogoTab() {
-    final currentLogo = _pickedLogoBase64 ?? _selectedProject?['logoUrl'] ?? _selectedProject?['logo_url'];
-    
+    final currentLogo =
+        _pickedLogoBase64 ??
+        _selectedProject?['logoUrl'] ??
+        _selectedProject?['logo_url'];
+
     return SingleChildScrollView(
       child: Center(
         child: Column(
@@ -1228,17 +1248,23 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                   color: AppColors.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: AppColors.primary.withOpacity(_pickedLogoBase64 != null ? 0.5 : 0.1),
+                    color: AppColors.primary.withOpacity(
+                      _pickedLogoBase64 != null ? 0.5 : 0.1,
+                    ),
                     width: 2,
                   ),
                 ),
                 clipBehavior: Clip.hardEdge,
-                child: _isPickingLogo 
-                  ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-                  : _buildLogoPreview(
-                      currentLogo, 
-                      name: _editCtrls['projectName']?.text ?? _selectedProject?['name']
-                    ),
+                child: _isPickingLogo
+                    ? const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : _buildLogoPreview(
+                        currentLogo,
+                        name:
+                            _editCtrls['projectName']?.text ??
+                            _selectedProject?['name'],
+                      ),
               ),
             ),
             const SizedBox(height: 24),
@@ -1250,18 +1276,23 @@ class _ProjectsSectionState extends State<ProjectsSection> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text(
-                _pickedLogoBase64 != null 
-                  ? "New logo selected. Click 'Save Changes' to update the database."
-                  : "This logo is identifying the project across all reports and the client portal.",
+                _pickedLogoBase64 != null
+                    ? "New logo selected. Click 'Save Changes' to update the database."
+                    : "This logo is identifying the project across all reports and the client portal.",
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
             ),
             const SizedBox(height: 32),
             OutlinedButton.icon(
               onPressed: _pickLogo,
               icon: const Icon(Icons.add_photo_alternate_rounded),
-              label: Text(_pickedLogoBase64 != null ? "Change Selection" : "Select Logo"),
+              label: Text(
+                _pickedLogoBase64 != null ? "Change Selection" : "Select Logo",
+              ),
             ),
             const SizedBox(height: 40),
           ],
@@ -1277,7 +1308,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       imageQuality: 50,
       maxWidth: 512,
     );
-    
+
     if (image != null) {
       setState(() => _isPickingLogo = true);
       final base64String = await Base64Utils.toDataUrl(image);
@@ -1295,7 +1326,12 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     if (logo == null || logo.toString().isEmpty) {
       if (name != null && name.isNotEmpty) {
         return AvatarWidget(
-          initials: name.split(' ').map((s) => s.isNotEmpty ? s[0] : '').take(2).join().toUpperCase(),
+          initials: name
+              .split(' ')
+              .map((s) => s.isNotEmpty ? s[0] : '')
+              .take(2)
+              .join()
+              .toUpperCase(),
           size: 160, // This will be constrained by parent
           fontSize: 18,
         );
@@ -1303,9 +1339,16 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       return const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.add_photo_alternate_rounded, size: 48, color: AppColors.outline),
+          Icon(
+            Icons.add_photo_alternate_rounded,
+            size: 48,
+            color: AppColors.outline,
+          ),
           SizedBox(height: 8),
-          Text("Tap to Select", style: TextStyle(fontSize: 12, color: AppColors.outline)),
+          Text(
+            "Tap to Select",
+            style: TextStyle(fontSize: 12, color: AppColors.outline),
+          ),
         ],
       );
     }
@@ -1314,7 +1357,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       try {
         final base64String = logo.toString().split(',').last;
         return Image.memory(
-          base64Decode(base64String), 
+          base64Decode(base64String),
           fit: BoxFit.cover,
           errorBuilder: (ctx, err, stack) => _initialsFallback(name),
         );
@@ -1332,11 +1375,16 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
   Widget _initialsFallback(String? name) {
     return AvatarWidget(
-      initials: name != null && name.isNotEmpty 
-          ? name.split(' ').map((s) => s.isNotEmpty ? s[0] : '').take(2).join().toUpperCase()
-          : '?', 
-      size: 160, 
-      fontSize: 18
+      initials: name != null && name.isNotEmpty
+          ? name
+                .split(' ')
+                .map((s) => s.isNotEmpty ? s[0] : '')
+                .take(2)
+                .join()
+                .toUpperCase()
+          : '?',
+      size: 160,
+      fontSize: 18,
     );
   }
 
@@ -1626,262 +1674,236 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          SectionHeader(
-            title: 'Projects',
-            subtitle: '${_projects.length} active engagements',
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 36,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: tabs.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (_, i) {
-                final t = tabs[i];
-                final active = _filter == t;
-                return GestureDetector(
-                  onTap: () => setState(() => _filter = t),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: active ? AppColors.primary : Colors.transparent,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      t,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: active ? Colors.white : AppColors.outline,
-                      ),
-                    ),
-                  ),
-                );
-              },
+            SectionHeader(
+              title: 'Projects',
+              subtitle: '${_projects.length} active engagements',
             ),
-          ),
-          const SizedBox(height: 16),
-          if (_isLoading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.only(top: 40),
-                child: CircularProgressIndicator(color: AppColors.primary),
-              ),
-            )
-          else if (_filtered.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.only(top: 40),
-                child: Text(
-                  "No projects found",
-                  style: TextStyle(color: AppColors.onSurfaceVariant),
+            const SizedBox(height: 10),
+            if (_isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 40),
+                  child: CircularProgressIndicator(color: AppColors.primary),
                 ),
-              ),
-            )
-          else
-            ..._filtered.map(
-              (p) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() => _detailId = p['id'] as int);
-                    // Fetch full data silently to replace "N/A" with real database data
-                    _fetchFullProjectDetails(p['id'] as int, silent: true);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLowest,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.outlineVariant.withOpacity(0.15),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
+              )
+            else if (_filtered.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 40),
+                  child: Text(
+                    "No projects found",
+                    style: TextStyle(color: AppColors.onSurfaceVariant),
+                  ),
+                ),
+              )
+            else
+              ..._filtered.map(
+                (p) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() => _detailId = p['id'] as int);
+                      // Fetch full data silently to replace "N/A" with real database data
+                      _fetchFullProjectDetails(p['id'] as int, silent: true);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.outlineVariant.withOpacity(0.15),
                         ),
-                      ],
-                    ),
-                    clipBehavior: Clip.hardEdge,
-                    child: Column(
-                      children: [
-                        ProgressBar(percent: p['pct'] as double, height: 5),
-                        Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.surfaceContainerLow,
-                                      borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      clipBehavior: Clip.hardEdge,
+                      child: Column(
+                        children: [
+                          ProgressBar(percent: p['pct'] as double, height: 5),
+                          Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.surfaceContainerLow,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      margin: const EdgeInsets.only(right: 16),
+                                      clipBehavior: Clip.hardEdge,
+                                      child: _buildLogoPreview(
+                                        p['_raw']?['logoUrl'] ??
+                                            p['_raw']?['logo_url'],
+                                        name: p['name'] as String?,
+                                      ),
                                     ),
-                                    margin: const EdgeInsets.only(right: 16),
-                                    clipBehavior: Clip.hardEdge,
-                                    child: _buildLogoPreview(
-                                      p['_raw']?['logoUrl'] ?? p['_raw']?['logo_url'],
-                                      name: p['name'] as String?
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                p['name'] as String,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 16,
-                                                  color: AppColors.onSurface,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  p['name'] as String,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 16,
+                                                    color: AppColors.onSurface,
                                                   ),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primary
-                                                    .withOpacity(0.1),
-                                                borderRadius:
-                                                    BorderRadius.circular(999),
-                                              ),
-                                              child: Text(
-                                                p['type'] as String,
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: AppColors.primary,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          p['client'] as String,
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            color: AppColors.onSurfaceVariant,
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primary
+                                                      .withOpacity(0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        999,
+                                                      ),
+                                                ),
+                                                child: Text(
+                                                  p['type'] as String,
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: AppColors.primary,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.location_on_rounded,
-                                              size: 12,
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            p['client'] as String,
+                                            style: const TextStyle(
+                                              fontSize: 13,
                                               color: AppColors.onSurfaceVariant,
                                             ),
-                                            const SizedBox(width: 2),
-                                            Text(
-                                              p['location'] as String,
-                                              style: const TextStyle(
-                                                fontSize: 11,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.location_on_rounded,
+                                                size: 12,
                                                 color:
                                                     AppColors.onSurfaceVariant,
                                               ),
+                                              const SizedBox(width: 2),
+                                              Text(
+                                                p['location'] as String,
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: AppColors
+                                                      .onSurfaceVariant,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    StatusChip(status: p['status'] as String),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: [
+                                    _infoBox(
+                                      'Code',
+                                      p['code'] as String? ?? '—',
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _infoBox(
+                                      'Area',
+                                      p['area'] as String? ?? 'N/A',
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _infoBox('Updates', '${p['updates']}'),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: (p['team'] as List<dynamic>)
+                                          .map<Widget>(
+                                            (m) => Padding(
+                                              padding: const EdgeInsets.only(
+                                                right: 4,
+                                              ),
+                                              child: AvatarWidget(
+                                                initials: m as String,
+                                                size: 28,
+                                                fontSize: 9,
+                                              ),
                                             ),
-                                          ],
+                                          )
+                                          .toList(),
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.schedule_rounded,
+                                          size: 14,
+                                          color: AppColors.primaryContainer,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Due: ${p['deadline']}',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.onSurfaceVariant,
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  StatusChip(status: p['status'] as String),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              Row(
-                                children: [
-                                  _infoBox('Code', p['code'] as String? ?? '—'),
-                                  const SizedBox(width: 8),
-                                  _infoBox(
-                                    'Area',
-                                    p['area'] as String? ?? 'N/A',
-                                  ),
-                                  const SizedBox(width: 8),
-                                  _infoBox('Updates', '${p['updates']}'),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: (p['team'] as List<dynamic>)
-                                        .map<Widget>(
-                                          (m) => Padding(
-                                            padding: const EdgeInsets.only(
-                                              right: 4,
-                                            ),
-                                            child: AvatarWidget(
-                                              initials: m as String,
-                                              size: 28,
-                                              fontSize: 9,
-                                            ),
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.schedule_rounded,
-                                        size: 14,
-                                        color: AppColors.primaryContainer,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Due: ${p['deadline']}',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          if (canCreate)
-            GoldGradientButton(
-              text: 'Create New Project',
-              icon: Icons.add_rounded,
-              onTap: () => setState(() => _showCreateForm = true),
-            ),
-        ],
+            if (canCreate)
+              GoldGradientButton(
+                text: 'Create New Project',
+                icon: Icons.add_rounded,
+                onTap: () => setState(() => _showCreateForm = true),
+              ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _infoBox(String label, String val) {
     return Expanded(
@@ -1963,15 +1985,22 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                 color: AppColors.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppColors.primary.withOpacity(_createLogoBase64 != null ? 0.5 : 0.1),
+                  color: AppColors.primary.withOpacity(
+                    _createLogoBase64 != null ? 0.5 : 0.1,
+                  ),
                   width: 1.5,
                 ),
               ),
               clipBehavior: Clip.hardEdge,
-              child: _isPickingLogo 
-                ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-                : _createLogoBase64 != null
-                  ? Image.memory(base64Decode(_createLogoBase64!.split(',').last), fit: BoxFit.cover)
+              child: _isPickingLogo
+                  ? const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : _createLogoBase64 != null
+                  ? Image.memory(
+                      base64Decode(_createLogoBase64!.split(',').last),
+                      fit: BoxFit.cover,
+                    )
                   : const Center(
                       child: Icon(
                         Icons.add_photo_alternate_rounded,
@@ -1998,8 +2027,13 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                     ),
                     if (_createLogoBase64 != null)
                       IconButton(
-                        onPressed: () => setState(() => _createLogoBase64 = null),
-                        icon: const Icon(Icons.delete_outline_rounded, size: 16, color: AppColors.error),
+                        onPressed: () =>
+                            setState(() => _createLogoBase64 = null),
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          size: 16,
+                          color: AppColors.error,
+                        ),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
@@ -2625,7 +2659,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           Row(
             children: [
               const Icon(
-                Icons.edit_note_rounded,
+                Icons.notes_rounded,
                 color: AppColors.primary,
                 size: 22,
               ),
@@ -2776,9 +2810,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       'postSalesStatus': _selectedStatus,
       'notified': _isNotified,
       'remark': _remarkController.text,
-      'project': {
-        'logoUrl': _createLogoBase64,
-      }
+      'project': {'logoUrl': _createLogoBase64},
     };
 
     if (!_isNewClient) {
@@ -2856,20 +2888,21 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                   ),
                 ),
               ),
-              IconButton.filled(
-                onPressed: () {
-                  setState(() {
-                    _selectedProject = p;
-                    _initEditForm(p);
-                    _isEditing = true;
-                  });
-                },
-                icon: const Icon(Icons.edit_rounded, size: 18),
-                style: IconButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+              if (_isManager)
+                IconButton.filled(
+                  onPressed: () {
+                    setState(() {
+                      _selectedProject = p;
+                      _initEditForm(p);
+                      _isEditing = true;
+                    });
+                  },
+                  icon: const Icon(Icons.edit_rounded, size: 18),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 12),

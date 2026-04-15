@@ -98,7 +98,7 @@ class Site {
 
     var structList = json['structures'] as List?;
     var stageList = json['stages'] as List?;
-    var teamList = json['team'] as List? ?? json['employees'] as List?;
+    var teamList = json['workingEmployees'] as List? ?? json['team'] as List? ?? json['employees'] as List?;
     var visitList = json['siteVisits'] as List? ?? json['visits'] as List?;
     var meetingList = json['meetings'] as List?;
     var reraList =

@@ -10,7 +10,7 @@ class SiteListSection extends StatelessWidget {
   final Function(Site) onSiteTap;
   final String activeFilter;
   final Function(String) onFilterChange;
-  final VoidCallback onAddSite;
+  final VoidCallback? onAddSite;
 
   const SiteListSection({
     super.key,
@@ -19,20 +19,27 @@ class SiteListSection extends StatelessWidget {
     required this.onSiteTap,
     required this.activeFilter,
     required this.onFilterChange,
-    required this.onAddSite,
+    this.onAddSite,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF6F7F0), // Matches external React Web specific off-white green
+      color: const Color(
+        0xFFF6F7F0,
+      ), // Matches external React Web specific off-white green
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20, top: 32, bottom: 20),
+              padding: const EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 32,
+                bottom: 20,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -56,7 +63,7 @@ class SiteListSection extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // Content Area
             if (isLoading)
               const Center(
@@ -71,7 +78,11 @@ class SiteListSection extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 60),
                   child: Column(
                     children: [
-                      Icon(Icons.construction_rounded, size: 64, color: AppColors.outline.withOpacity(0.3)),
+                      Icon(
+                        Icons.construction_rounded,
+                        size: 64,
+                        color: AppColors.outline.withOpacity(0.3),
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         "No sites found",
@@ -92,8 +103,10 @@ class SiteListSection extends StatelessWidget {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     // Decide whether we are displaying 2 columns (phone) or 3+ (tablet/web)
-                    int crossAxisCount = constraints.maxWidth > 800 ? 4 : (constraints.maxWidth > 500 ? 3 : 2);
-                    
+                    int crossAxisCount = constraints.maxWidth > 800
+                        ? 4
+                        : (constraints.maxWidth > 500 ? 3 : 2);
+
                     return GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -101,7 +114,8 @@ class SiteListSection extends StatelessWidget {
                         crossAxisCount: crossAxisCount,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        childAspectRatio: 0.85, // Adjust this ratio based on card height/width visualization
+                        childAspectRatio:
+                            0.85, // Adjust this ratio based on card height/width visualization
                       ),
                       itemCount: sites.length,
                       itemBuilder: (context, index) {
@@ -123,7 +137,10 @@ class SiteListSection extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(4),
@@ -148,7 +165,10 @@ class SiteListSection extends StatelessWidget {
                     ),
                     const SizedBox(width: 16),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(4),
@@ -165,7 +185,7 @@ class SiteListSection extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
             const SizedBox(height: 20),
           ],
         ),

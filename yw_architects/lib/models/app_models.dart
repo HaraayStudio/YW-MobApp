@@ -93,6 +93,7 @@ const List<String> managementSidebarNav = [
   'projects',
   'site',
   'employees',
+  'attendance',
   'profile',
 ];
 const List<String> managementBottomNav = [
@@ -102,7 +103,7 @@ const List<String> managementBottomNav = [
   'employees',
 ];
 
-const List<String> employeeSidebarNav = ['dashboard', 'projects', 'site'];
+const List<String> employeeSidebarNav = ['dashboard', 'projects', 'site', 'attendance'];
 const List<String> employeeBottomNav = [
   'dashboard',
   'projects',

@@ -16,14 +16,17 @@ import '../../../services/stage_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:url_launcher/url_launcher.dart';
+import '../../../models/app_models.dart';
 
 class SiteDetailsSection extends StatefulWidget {
   final Site site;
   final VoidCallback onBack;
   final Function(int) onEditProject;
+  final AppUser user;
 
   const SiteDetailsSection({
     super.key,
+    required this.user,
     required this.site,
     required this.onBack,
     required this.onEditProject,
@@ -36,6 +39,12 @@ class SiteDetailsSection extends StatefulWidget {
 class _SiteDetailsSectionState extends State<SiteDetailsSection>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool get _isManager => [
+    UserRole.admin,
+    UserRole.coFounder,
+    UserRole.hr
+  ].contains(widget.user.role);
+
   late Site _detailedSite;
   bool _isLoading = false;
 
@@ -89,7 +98,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     return docs;
   }
 
-  void _recursiveCollectDocs(List<SiteStage> stages, List<Map<String, dynamic>> results, Set<int> seenIds) {
+  void _recursiveCollectDocs(
+    List<SiteStage> stages,
+    List<Map<String, dynamic>> results,
+    Set<int> seenIds,
+  ) {
     for (var stage in stages) {
       if (stage.documents.isNotEmpty) {
         for (var doc in stage.documents) {
@@ -665,8 +678,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _EditSiteButton(
-                    onPressed: () => widget.onEditProject(
+                  if (_isManager)
+                    _EditSiteButton(
+                      onPressed: () => widget.onEditProject(
                       _detailedSite.projectId > 0
                           ? _detailedSite.projectId
                           : _detailedSite.id,
@@ -1261,7 +1275,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: SizedBox(
-          width: MediaQuery.of(context).size.width < 500 ? 550 : MediaQuery.of(context).size.width,
+          width: MediaQuery.of(context).size.width < 500
+              ? 550
+              : MediaQuery.of(context).size.width,
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
@@ -1283,10 +1299,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
   Widget _buildDocumentRow(StageDocument doc, String stageName) {
     final fileName = doc.fileName ?? "Unnamed File";
     final type = doc.documentType ?? "FILE";
-    final dateStr =
-        doc.uploadedAt != null
-            ? DateFormat('dd MMM yyyy').format(doc.uploadedAt!)
-            : "--";
+    final dateStr = doc.uploadedAt != null
+        ? DateFormat('dd MMM yyyy').format(doc.uploadedAt!)
+        : "--";
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
@@ -2071,38 +2086,38 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => _showEditSiteVisitDialog(visit),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.edit_rounded,
-                            size: 12,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            "Edit",
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
+                        if (_isManager)
+                    GestureDetector(
+                      onTap: () => _showEditSiteVisitDialog(visit),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.edit_rounded,
+                              size: 12,
                               color: AppColors.primary,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            Text(
+                              "Edit",
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ],
@@ -3330,7 +3345,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            DateFormat('dd-MM-yyyy HH:mm').format(selectedDate),
+                                            DateFormat(
+                                              'dd-MM-yyyy HH:mm',
+                                            ).format(selectedDate),
                                             style: GoogleFonts.plusJakartaSans(
                                               fontSize: 12.5,
                                               fontWeight: FontWeight.w600,
@@ -3379,7 +3396,13 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                         onTap: () async {
                           final result = await fp.FilePicker.pickFiles(
                             type: fp.FileType.custom,
-                            allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx'],
+                            allowedExtensions: [
+                              'pdf',
+                              'doc',
+                              'docx',
+                              'xls',
+                              'xlsx',
+                            ],
                             allowMultiple: true,
                           );
                           if (result != null) {
@@ -3440,8 +3463,14 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                     description: descController.text.trim(),
                                     locationNote: noteController.text.trim(),
                                     visitDateTime: selectedDate,
-                                    photoPaths: pickedPhotos.map((f) => f.path!).where((p) => p != null).toList(),
-                                    documentPaths: pickedDocs.map((f) => f.path!).where((p) => p != null).toList(),
+                                    photoPaths: pickedPhotos
+                                        .map((f) => f.path!)
+                                        .where((p) => p != null)
+                                        .toList(),
+                                    documentPaths: pickedDocs
+                                        .map((f) => f.path!)
+                                        .where((p) => p != null)
+                                        .toList(),
                                   );
 
                               if (mounted)
@@ -3565,7 +3594,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: count == 0 ? AppColors.onSurfaceVariant : AppColors.primary,
+                  color: count == 0
+                      ? AppColors.onSurfaceVariant
+                      : AppColors.primary,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -6610,11 +6641,8 @@ class _StageTile extends StatelessWidget {
           children: [
             const Divider(height: 1, indent: 16, endIndent: 16),
             ...subStages.map(
-              (sub) => _SubStageTile(
-                stage: sub,
-                onRefresh: onRefresh,
-                depth: 1,
-              ),
+              (sub) =>
+                  _SubStageTile(stage: sub, onRefresh: onRefresh, depth: 1),
             ),
             const SizedBox(height: 8),
           ],
@@ -6661,11 +6689,14 @@ class _SubStageTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _formatStageName(stage.customStageName ?? stage.stageName),
+                      _formatStageName(
+                        stage.customStageName ?? stage.stageName,
+                      ),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: depth == 1 ? 12 : 11,
-                        fontWeight:
-                            depth == 1 ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: depth == 1
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                         color: AppColors.onSurface,
                       ),
                     ),

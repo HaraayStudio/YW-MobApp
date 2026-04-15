@@ -142,34 +142,7 @@ class _EnquirySectionState extends State<EnquirySection>
             _applyFilters();
           },
         ),
-        const SizedBox(height: 16),
-        Container(
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: TabBar(
-            controller: _tabController,
-            dividerColor: Colors.transparent,
-            indicatorSize: TabBarIndicatorSize.tab,
-            labelColor: Colors.white,
-            unselectedLabelColor: AppColors.onSurfaceVariant,
-            indicator: BoxDecoration(
-              gradient: goldGradient,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            labelStyle: GoogleFonts.plusJakartaSans(
-                fontWeight: FontWeight.w700, fontSize: 13),
-            unselectedLabelStyle: GoogleFonts.plusJakartaSans(
-                fontWeight: FontWeight.w600, fontSize: 13),
-            tabs: const [
-              Tab(text: 'All'),
-              Tab(text: 'Onboarded'),
-              Tab(text: 'Pending'),
-            ],
-          ),
-        ),
+        const SizedBox(height: 10),
       ],
     );
   }

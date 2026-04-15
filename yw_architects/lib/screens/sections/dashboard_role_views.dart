@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/app_models.dart';
@@ -38,14 +39,23 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
   Map<String, int> _statusDistribution = {};
   Map<String, double> _monthlyProjects = {};
 
+
   @override
   void initState() {
     super.initState();
     _fetchData();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+
+
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
+    final now = DateTime.now();
     try {
       final results = await Future.wait([
         ProjectService.getAllProjects(),
@@ -59,6 +69,7 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
       final emps = results[2] as List<dynamic>;
       final leads = results[3] as List<dynamic>;
 
+
       // Calculate distributions
       final distro = <String, int>{};
       for (var p in projects) {
@@ -69,7 +80,6 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
 
       // Monthly projects (last 6 months)
       final monthly = <String, double>{};
-      final now = DateTime.now();
       for (int i = 5; i >= 0; i--) {
         final d = DateTime(now.year, now.month - i, 1);
         final key = DateFormat('MMM').format(d);
@@ -105,6 +115,8 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
     }
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -127,6 +139,8 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
                   'Good ${AppTheme.getGreeting()}, ${widget.user.info.firstName} 👋',
               subtitle: DateFormat('EEEE, d MMM yyyy').format(DateTime.now()),
             ),
+            const SizedBox(height: 24),
+
             const SizedBox(height: 24),
 
             // Stats Grid
@@ -293,27 +307,49 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
   int _completedCount = 0;
   int _onHoldCount = 0;
   double _completionRate = 0.0;
+  Timer? _clockTimer;
+  String _currentTimeString = "";
 
   @override
   void initState() {
     super.initState();
+    _currentTimeString = DateFormat('hh:mm:ss a').format(DateTime.now());
+    _startClock();
     _fetchData();
+  }
+
+  @override
+  void dispose() {
+    _clockTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startClock() {
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentTimeString = DateFormat('hh:mm:ss a').format(DateTime.now());
+        });
+      }
+    });
   }
 
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
+    final now = DateTime.now();
     try {
       final results = await Future.wait([
         EmployeeService.getMyProjects(),
-        AttendanceService.getTodayAttendance(),
+        AttendanceService.getMyMonthlyAttendance(now.month, now.year), // Personalized for timing sync
       ]);
 
       final projects = results[0] as List<dynamic>;
       final attendanceList = results[1] as List<dynamic>;
 
-      // Today's attendance for ME
+      // Match by today's date for 100% parity with Attendance section
+      final todayStr = DateFormat('yyyy-MM-dd').format(now);
       final myToday = attendanceList.cast<Map<String, dynamic>>().firstWhere(
-        (a) => a['userId'] == widget.user.id,
+        (a) => a['attendanceDate'] == todayStr,
         orElse: () => {},
       );
 
@@ -339,14 +375,49 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
   }
 
   Future<void> _handleCheckIn() async {
+    // Explicit duplicate check
+    if (_todayAttendance != null && _todayAttendance!['checkIn'] != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Already Checked In for today!')),
+      );
+      return;
+    }
+
     final now = DateTime.now();
     final date = DateFormat('yyyy-MM-dd').format(now);
     final time = DateFormat('HH:mm:ss').format(now);
     final success = await AttendanceService.recordMyCheckIn(date, time);
-    if (success) _fetchData();
+    
+    if (!mounted) return;
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Check-In Successful')),
+      );
+      _fetchData();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Check-In Failed'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   Future<void> _handleCheckOut() async {
+    // Check if check-in exists before checking out
+    if (_todayAttendance == null || _todayAttendance!['checkIn'] == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please Check-In first!'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    // Explicit duplicate check for checkout
+    if (_todayAttendance!['checkOut'] != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Already Checked Out for today!')),
+      );
+      return;
+    }
+
     final now = DateTime.now();
     final date = DateFormat('yyyy-MM-dd').format(now);
     final time = DateFormat('HH:mm:ss').format(now);
@@ -355,7 +426,18 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
       time,
       'PRESENT',
     );
-    if (success) _fetchData();
+
+    if (!mounted) return;
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Check-Out Successful')),
+      );
+      _fetchData();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Check-Out Failed'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
@@ -387,6 +469,8 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
               checkIn: _todayAttendance?['checkIn'],
               checkOut: _todayAttendance?['checkOut'],
               workingHours: _calculateHours(),
+              currentTime: _currentTimeString,
+              todayDate: DateFormat('EEEE, d MMMM').format(DateTime.now()),
               onCheckIn: _handleCheckIn,
               onCheckOut: _handleCheckOut,
             ),

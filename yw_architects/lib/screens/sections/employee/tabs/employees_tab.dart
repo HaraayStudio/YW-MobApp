@@ -5,6 +5,9 @@ import 'package:yw_architects/widgets/common_widgets.dart';
 import 'package:yw_architects/services/employee_service.dart';
 import 'package:yw_architects/screens/sections/employee/models/employee_models.dart';
 import 'package:yw_architects/screens/sections/employee/widgets/employee_widgets.dart';
+import 'package:yw_architects/services/attendance_service.dart';
+import 'package:yw_architects/services/project_service.dart';
+import 'package:yw_architects/services/site_service.dart';
 
 class EmployeesListTab extends StatefulWidget {
   final Function(String) onToast;
@@ -118,22 +121,7 @@ class _EmployeesListTabState extends State<EmployeesListTab> {
             onChanged: (v) => setState(() => _searchQuery = v),
           ),
         ),
-        const SizedBox(height: 15),
-        SizedBox(
-          height: 38,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            scrollDirection: Axis.horizontal,
-            itemCount: deptTabs.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, i) => _DeptChip(
-              label: deptTabs[i],
-              isSelected: _selectedDept == deptTabs[i],
-              onTap: () => setState(() => _selectedDept = deptTabs[i]),
-            ),
-          ),
-        ),
-        const SizedBox(height: 15),
+        const SizedBox(height: 5),
       ],
     );
   }
@@ -215,15 +203,69 @@ class _DeptChip extends StatelessWidget {
   }
 }
 
-class _EmployeeProfileView extends StatelessWidget {
+class _EmployeeProfileView extends StatefulWidget {
   final EmployeeModel employee;
   final VoidCallback onBack;
   final Function(String) onToast;
+
   const _EmployeeProfileView({
     required this.employee,
     required this.onBack,
     required this.onToast,
   });
+
+  @override
+  State<_EmployeeProfileView> createState() => _EmployeeProfileViewState();
+}
+
+class _EmployeeProfileViewState extends State<_EmployeeProfileView> {
+  bool _statsLoading = true;
+  String _attendanceValueStr = '...';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchStats();
+  }
+
+  Future<void> _fetchStats() async {
+    setState(() => _statsLoading = true);
+    try {
+      final now = DateTime.now();
+
+      // 1. Fetch Attendance & Count Days Present this month
+      final attData = await AttendanceService.getAllEmployeesMonthlyAttendance(
+        now.month,
+        now.year,
+      );
+      
+      // Filter for this specific user AND status 'PRESENT'
+      final userRecords = attData.where((r) {
+        // Attendance records often have nested user objects: r['user']['id']
+        final userObj = r['user'] as Map<String, dynamic>?;
+        final nestedId = userObj?['id']?.toString();
+        final flatId = r['userId']?.toString();
+        
+        final userIdMatch = (nestedId == widget.employee.id.toString()) || 
+                           (flatId == widget.employee.id.toString());
+                           
+        final statusMatch = r['status']?.toString().toUpperCase() == 'PRESENT';
+        return userIdMatch && statusMatch;
+      }).toList();
+
+      debugPrint("[STATS DEBUG] ${widget.employee.name}: Attendance=${userRecords.length}");
+
+      if (mounted) {
+        setState(() {
+          _attendanceValueStr = '${userRecords.length} Days';
+          _statsLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching employee stats: $e");
+      if (mounted) setState(() => _statsLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -235,17 +277,16 @@ class _EmployeeProfileView extends StatelessWidget {
           _buildBackButton(),
           const SizedBox(height: 20),
           _ProfileHero(
-            e: employee,
-            onToast: onToast,
+            e: widget.employee,
+            onToast: widget.onToast,
             onRefresh: () {
-              // We need to refresh both the current profile view and the list behind it
-              onBack();
+              widget.onBack();
             },
           ),
           const SizedBox(height: 24),
           _buildStats(),
           const SizedBox(height: 24),
-          _DetailsCard(e: employee),
+          _DetailsCard(e: widget.employee),
         ],
       ),
     );
@@ -253,7 +294,7 @@ class _EmployeeProfileView extends StatelessWidget {
 
   Widget _buildBackButton() {
     return InkWell(
-      onTap: onBack,
+      onTap: widget.onBack,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -277,32 +318,10 @@ class _EmployeeProfileView extends StatelessWidget {
   }
 
   Widget _buildStats() {
-    return Row(
-      children: [
-        Expanded(
-          child: _StatBox(
-            label: 'Projects',
-            value: '${employee.projects}',
-            icon: Icons.folder_rounded,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatBox(
-            label: 'Tasks',
-            value: '${employee.tasksDone}',
-            icon: Icons.task_alt_rounded,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatBox(
-            label: 'Attendance',
-            value: employee.attendance,
-            icon: Icons.fingerprint_rounded,
-          ),
-        ),
-      ],
+    return _StatBox(
+      label: 'Monthly Presence',
+      value: _statsLoading ? '...' : _attendanceValueStr,
+      icon: Icons.fingerprint_rounded,
     );
   }
 }

@@ -8,22 +8,40 @@ class AttendanceService {
   static const String baseUrl = ApiConstants.baseUrl;
 
   /// Resilient HTTP helpers to prevent 3xx-no-Location crashes
-  static Future<http.Response> _resilientGet(Uri url, Map<String, String> headers) async {
+  static Future<http.Response> _resilientGet(
+    Uri url,
+    Map<String, String> headers,
+  ) async {
     final client = http.Client();
     try {
-      final request = http.Request('GET', url)..headers.addAll(headers)..followRedirects = false;
-      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
+      final request = http.Request('GET', url)
+        ..headers.addAll(headers)
+        ..followRedirects = false;
+      final streamedResponse = await client
+          .send(request)
+          .timeout(const Duration(seconds: 15));
       return await http.Response.fromStream(streamedResponse);
-    } finally { client.close(); }
+    } finally {
+      client.close();
+    }
   }
 
-  static Future<http.Response> _resilientPatch(Uri url, Map<String, String> headers) async {
+  static Future<http.Response> _resilientPatch(
+    Uri url,
+    Map<String, String> headers,
+  ) async {
     final client = http.Client();
     try {
-      final request = http.Request('PATCH', url)..headers.addAll(headers)..followRedirects = false;
-      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
+      final request = http.Request('PATCH', url)
+        ..headers.addAll(headers)
+        ..followRedirects = false;
+      final streamedResponse = await client
+          .send(request)
+          .timeout(const Duration(seconds: 15));
       return await http.Response.fromStream(streamedResponse);
-    } finally { client.close(); }
+    } finally {
+      client.close();
+    }
   }
 
   static Future<Map<String, String>> _getHeaders() async {
@@ -52,10 +70,15 @@ class AttendanceService {
   }
 
   /// POST /attendance/bulk?date=YYYY-MM-DD
-  static Future<bool> markBulkAttendance(String date, List<Map<String, dynamic>> records) async {
+  static Future<bool> markBulkAttendance(
+    String date,
+    List<Map<String, dynamic>> records,
+  ) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/attendance/bulk').replace(queryParameters: {'date': date}),
+        Uri.parse(
+          '$baseUrl/attendance/bulk',
+        ).replace(queryParameters: {'date': date}),
         body: json.encode(records),
         headers: await _getHeaders(),
       );
@@ -67,13 +90,15 @@ class AttendanceService {
   }
 
   /// GET /attendance/all?month=X&year=Y
-  static Future<List<dynamic>> getAllEmployeesMonthlyAttendance(int month, int year) async {
+  static Future<List<dynamic>> getAllEmployeesMonthlyAttendance(
+    int month,
+    int year,
+  ) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/attendance/all').replace(queryParameters: {
-          'month': month.toString(),
-          'year': year.toString(),
-        }),
+        Uri.parse('$baseUrl/attendance/all').replace(
+          queryParameters: {'month': month.toString(), 'year': year.toString()},
+        ),
         headers: await _getHeaders(),
       );
       if (response.statusCode == 200) {
@@ -87,13 +112,16 @@ class AttendanceService {
   }
 
   /// PATCH /attendance/{userId}/checkin?date=...&time=...
-  static Future<bool> recordCheckIn(int userId, String date, String time) async {
+  static Future<bool> recordCheckIn(
+    int userId,
+    String date,
+    String time,
+  ) async {
     try {
       final response = await _resilientPatch(
-        Uri.parse('$baseUrl/attendance/$userId/checkin').replace(queryParameters: {
-          'date': date,
-          'time': time,
-        }),
+        Uri.parse(
+          '$baseUrl/attendance/$userId/checkin',
+        ).replace(queryParameters: {'date': date, 'time': time}),
         await _getHeaders(),
       );
       return response.statusCode == 200;
@@ -104,14 +132,21 @@ class AttendanceService {
   }
 
   /// PATCH /attendance/{userId}/checkout?date=...&time=...&attendanceStatus=...
-  static Future<bool> recordCheckOut(int userId, String date, String time, String status) async {
+  static Future<bool> recordCheckOut(
+    int userId,
+    String date,
+    String time,
+    String status,
+  ) async {
     try {
       final response = await _resilientPatch(
-        Uri.parse('$baseUrl/attendance/$userId/checkout').replace(queryParameters: {
-          'date': date,
-          'time': time,
-          'attendanceStatus': status,
-        }),
+        Uri.parse('$baseUrl/attendance/$userId/checkout').replace(
+          queryParameters: {
+            'date': date,
+            'time': time,
+            'attendanceStatus': status,
+          },
+        ),
         await _getHeaders(),
       );
       return response.statusCode == 200;
@@ -125,10 +160,9 @@ class AttendanceService {
   static Future<bool> recordMyCheckIn(String date, String time) async {
     try {
       final response = await _resilientPatch(
-        Uri.parse('$baseUrl/attendance/recordmycheckIn').replace(queryParameters: {
-          'date': date,
-          'time': time,
-        }),
+        Uri.parse(
+          '$baseUrl/attendance/recordmycheckIn',
+        ).replace(queryParameters: {'date': date, 'time': time}),
         await _getHeaders(),
       );
       return response.statusCode == 200;
@@ -139,14 +173,20 @@ class AttendanceService {
   }
 
   /// PATCH /attendance/recordmycheckout?date=...&time=...&attendanceStatus=...
-  static Future<bool> recordMyCheckOut(String date, String time, String status) async {
+  static Future<bool> recordMyCheckOut(
+    String date,
+    String time,
+    String status,
+  ) async {
     try {
       final response = await _resilientPatch(
-        Uri.parse('$baseUrl/attendance/recordmycheckout').replace(queryParameters: {
-          'date': date,
-          'time': time,
-          'attendanceStatus': status,
-        }),
+        Uri.parse('$baseUrl/attendance/recordmycheckout').replace(
+          queryParameters: {
+            'date': date,
+            'time': time,
+            'attendanceStatus': status,
+          },
+        ),
         await _getHeaders(),
       );
       return response.statusCode == 200;
@@ -157,13 +197,15 @@ class AttendanceService {
   }
 
   /// GET /attendance/getmymonthlyattendance?month=X&year=Y
-  static Future<List<dynamic>> getMyMonthlyAttendance(int month, int year) async {
+  static Future<List<dynamic>> getMyMonthlyAttendance(
+    int month,
+    int year,
+  ) async {
     try {
       final response = await _resilientGet(
-        Uri.parse('$baseUrl/attendance/getmymonthlyattendance').replace(queryParameters: {
-          'month': month.toString(),
-          'year': year.toString(),
-        }),
+        Uri.parse('$baseUrl/attendance/getmymonthlyattendance').replace(
+          queryParameters: {'month': month.toString(), 'year': year.toString()},
+        ),
         await _getHeaders(),
       );
       if (response.statusCode == 200) {
