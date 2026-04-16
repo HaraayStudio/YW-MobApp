@@ -8,7 +8,7 @@ class ApiConstants {
   static String get host {
     if (kIsWeb) return 'localhost';
     try {
-      if (Platform.isAndroid) return '10.0.2.2';
+      if (Platform.isAndroid) return '10.0.2.2';     // for android emulator
     } catch (_) {}
     return _host;
   }

@@ -17,6 +17,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:url_launcher/url_launcher.dart';
 import '../../../models/app_models.dart';
+import 'package:yw_architects/widgets/postsale_tabs/structures_tab_view.dart';
 
 class SiteDetailsSection extends StatefulWidget {
   final Site site;
@@ -564,7 +565,12 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               _buildDocumentsTab(),
               _buildTeamTab(),
               _buildSiteVisitsTab(),
-              _buildPlaceholderTab("Structures"),
+              StructuresTabView(
+                projectId: _detailedSite.projectId > 0 ? _detailedSite.projectId : _detailedSite.id,
+                structures: _detailedSite.structures,
+                user: widget.user,
+                onRefresh: _fetchFullDetails,
+              ),
               _buildMeetingsTab(),
               _buildReraTab(),
             ],

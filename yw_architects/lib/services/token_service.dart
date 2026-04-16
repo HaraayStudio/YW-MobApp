@@ -53,12 +53,16 @@ class TokenService {
   static Future<void> init() async {
     try {
       print("[TokenService] Initializing SharedPreferences...");
-      _prefs = await SharedPreferences.getInstance()
-          .timeout(const Duration(seconds: 4));
+      // Removed .timeout() which causes LateInitializationError if it fails
+      _prefs = await SharedPreferences.getInstance();
       await _loadToMemory();
       print("[TokenService] Initialization successful.");
     } catch (e) {
       print("[TokenService] ERROR during initialization: $e");
+      // Fallback: retry one more time if it failed
+      try {
+         _prefs = await SharedPreferences.getInstance();
+      } catch (_) {}
     }
   }
 
@@ -72,9 +76,14 @@ class TokenService {
     accessToken = access;
     refreshToken = refresh;
 
-    await _prefs.setString('accessToken', access);
-    if (refresh != null) {
-      await _prefs.setString('refreshToken', refresh);
+    // Guard against late init error
+    try {
+      await _prefs.setString('accessToken', access);
+      if (refresh != null) {
+        await _prefs.setString('refreshToken', refresh);
+      }
+    } catch (e) {
+      print("[TokenService] Could not persist tokens: $e");
     }
   }
 
@@ -87,7 +96,9 @@ class TokenService {
   static Future<void> clearTokens() async {
     accessToken = null;
     refreshToken = null;
-    await _prefs.remove('accessToken');
-    await _prefs.remove('refreshToken');
+    try {
+      await _prefs.remove('accessToken');
+      await _prefs.remove('refreshToken');
+    } catch (_) {}
   }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'structure_model.dart';
+export 'structure_model.dart';
 
 class Site {
   final int id;
@@ -621,34 +623,7 @@ class SiteVisitDocument {
   }
 }
 
-class SiteStructure {
-  final int id;
-  final String structureName;
-  final String structureType;
-  final String usageType;
-  final int? totalFloors;
-  final double? builtUpArea;
 
-  SiteStructure({
-    required this.id,
-    required this.structureName,
-    required this.structureType,
-    required this.usageType,
-    this.totalFloors,
-    this.builtUpArea,
-  });
-
-  factory SiteStructure.fromJson(Map<String, dynamic> json) {
-    return SiteStructure(
-      id: json['id'] ?? 0,
-      structureName: json['structureName'] ?? '',
-      structureType: json['structureType'] ?? '',
-      usageType: json['usageType'] ?? '',
-      totalFloors: json['totalFloors'],
-      builtUpArea: json['builtUpArea']?.toDouble(),
-    );
-  }
-}
 
 class StageDocument {
   final int id;
