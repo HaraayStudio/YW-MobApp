@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import 'package:yw_architects/models/app_models.dart';
 import '../../widgets/common_widgets.dart';
 
 class SiteSection extends StatelessWidget {
   final Function(String) onToast;
+  final AppUser user;
 
-  const SiteSection({super.key, required this.onToast});
+  const SiteSection({super.key, required this.onToast, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -76,12 +78,13 @@ class SiteSection extends StatelessWidget {
                         )),
                       ]),
                       const SizedBox(height: 12),
-                      GoldGradientButton(
-                        text: 'GPS Check Out',
-                        icon: Icons.gps_fixed_rounded,
-                        verticalPadding: 14,
-                        onTap: () => onToast('GPS check-out recorded!'),
-                      ),
+                      if (user.role != UserRole.client)
+                        GoldGradientButton(
+                          text: 'GPS Check Out',
+                          icon: Icons.gps_fixed_rounded,
+                          verticalPadding: 14,
+                          onTap: () => onToast('GPS check-out recorded!'),
+                        ),
                     ],
                   ),
                 ),
@@ -115,51 +118,54 @@ class SiteSection extends StatelessWidget {
                       decoration: BoxDecoration(color: AppColors.surfaceContainerHigh, borderRadius: BorderRadius.circular(12)),
                       child: const Center(child: Icon(Icons.image_rounded, color: AppColors.onSurfaceVariant, size: 24)),
                     )),
-                    GestureDetector(
-                      onTap: () => onToast('Gallery opened!'),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5), style: BorderStyle.solid, width: 1.5),
-                        ),
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_photo_alternate_rounded, color: AppColors.primary, size: 22),
-                            SizedBox(height: 2),
-                            Text('Add', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                          ],
+                    if (user.role != UserRole.client)
+                      GestureDetector(
+                        onTap: () => onToast('Gallery opened!'),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5), style: BorderStyle.solid, width: 1.5),
+                          ),
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_photo_alternate_rounded, color: AppColors.primary, size: 22),
+                              SizedBox(height: 2),
+                              Text('Add', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                const Text('DAILY LOG NOTE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant, letterSpacing: 0.8)),
-                const SizedBox(height: 6),
-                TextField(
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: 'Describe today\'s site progress, observations, issues...',
-                    filled: true,
-                    fillColor: AppColors.surfaceContainerLow,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                if (user.role != UserRole.client) ...[
+                  const SizedBox(height: 14),
+                  const Text('DAILY LOG NOTE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant, letterSpacing: 0.8)),
+                  const SizedBox(height: 6),
+                  TextField(
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Describe today\'s site progress, observations, issues...',
+                      filled: true,
+                      fillColor: AppColors.surfaceContainerLow,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                Row(children: [
-                  Expanded(child: _dropdownField('Site Area', ['Ground Floor', 'First Floor', 'Basement', 'Rooftop'])),
-                  const SizedBox(width: 10),
-                  Expanded(child: _dropdownField('Activity Type', ['Concrete Work', 'Masonry', 'Electrical', 'Plumbing', 'Finishing'])),
-                ]),
-                const SizedBox(height: 14),
-                GoldGradientButton(
-                  text: 'Submit Daily Log',
-                  icon: Icons.upload_rounded,
-                  onTap: () => onToast('Daily log submitted!'),
-                ),
+                  const SizedBox(height: 14),
+                  Row(children: [
+                    Expanded(child: _dropdownField('Site Area', ['Ground Floor', 'First Floor', 'Basement', 'Rooftop'])),
+                    const SizedBox(width: 10),
+                    Expanded(child: _dropdownField('Activity Type', ['Concrete Work', 'Masonry', 'Electrical', 'Plumbing', 'Finishing'])),
+                  ]),
+                  const SizedBox(height: 14),
+                  GoldGradientButton(
+                    text: 'Submit Daily Log',
+                    icon: Icons.upload_rounded,
+                    onTap: () => onToast('Daily log submitted!'),
+                  ),
+                ],
               ],
             ),
           ),
@@ -170,13 +176,14 @@ class SiteSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Open Snags', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.onSurface)),
-              GestureDetector(
-                onTap: () => onToast('Snag created!'),
-                child: const Row(children: [
-                  Icon(Icons.add_rounded, color: AppColors.primary, size: 16),
-                  Text('Report', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
-                ]),
-              ),
+              if (user.role != UserRole.client)
+                GestureDetector(
+                  onTap: () => onToast('Snag created!'),
+                  child: const Row(children: [
+                    Icon(Icons.add_rounded, color: AppColors.primary, size: 16),
+                    Text('Report', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                  ]),
+                ),
             ],
           ),
           const SizedBox(height: 12),

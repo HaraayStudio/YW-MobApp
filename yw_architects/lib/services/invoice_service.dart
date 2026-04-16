@@ -4,7 +4,7 @@ import 'token_service.dart';
 import '../api/constants.dart';
 
 class InvoiceService {
-  static const String _base = "${ApiConstants.baseUrl}/invoices";
+  static String get _base => "${ApiConstants.baseUrl}/invoices";
 
   // ─── PROFORMA ──────────────────────────────────────────────────────────────
 

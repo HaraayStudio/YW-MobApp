@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import 'package:yw_architects/models/app_models.dart';
 import '../common_widgets.dart';
 
 class OverviewTabView extends StatelessWidget {
   final Map<String, dynamic> project;
+  final AppUser user;
 
-  const OverviewTabView({Key? key, required this.project}) : super(key: key);
+  const OverviewTabView({Key? key, required this.project, required this.user}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

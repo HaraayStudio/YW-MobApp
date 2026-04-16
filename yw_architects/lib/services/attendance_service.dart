@@ -5,7 +5,7 @@ import 'package:yw_architects/services/token_service.dart';
 import 'package:yw_architects/api/constants.dart';
 
 class AttendanceService {
-  static const String baseUrl = ApiConstants.baseUrl;
+  static String get baseUrl => ApiConstants.baseUrl;
 
   /// Resilient HTTP helpers to prevent 3xx-no-Location crashes
   static Future<http.Response> _resilientGet(

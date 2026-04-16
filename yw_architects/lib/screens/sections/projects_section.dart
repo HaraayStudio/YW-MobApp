@@ -491,8 +491,19 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
-      final data = await PostSalesService.getAllPostSales();
+      var data = await PostSalesService.getAllPostSales();
       debugPrint("RAW POST-SALES COUNT: ${data.length}");
+
+      // Filter for clients
+      if (widget.user.role == UserRole.client) {
+        final userId = widget.user.id;
+        data = data.where((d) {
+          final client = d['client'] ?? {};
+          final clientId = client['id'];
+          return clientId == userId;
+        }).toList();
+        debugPrint("FILTERED POST-SALES COUNT FOR CLIENT #$userId: ${data.length}");
+      }
 
       final mappedProjects = data.map((d) {
         final project = d['project'] ?? {};
@@ -902,13 +913,14 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                 ),
               ),
               const SizedBox(width: 8),
-              GoldGradientButton(
-                text: _isSaving ? '...' : 'Save',
-                icon: _isSaving ? null : Icons.save_rounded,
-                onTap: _isSaving ? null : _saveProjectChanges,
-                width: 95,
-                verticalPadding: 8,
-              ),
+              if (widget.user.role != UserRole.client)
+                GoldGradientButton(
+                  text: _isSaving ? '...' : 'Save',
+                  icon: _isSaving ? null : Icons.save_rounded,
+                  onTap: _isSaving ? null : _saveProjectChanges,
+                  width: 95,
+                  verticalPadding: 8,
+                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -1402,16 +1414,18 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           Expanded(
             child: OutlinedButton(
               onPressed: () => setState(() => _isEditing = false),
-              child: const Text("Discard Changes"),
+              child: Text(widget.user.role == UserRole.client ? "Back" : "Discard Changes"),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: GoldGradientButton(
-              text: "Save Changes",
-              onTap: _saveProjectChanges,
+          if (widget.user.role != UserRole.client) ...[
+            const SizedBox(width: 16),
+            Expanded(
+              child: GoldGradientButton(
+                text: "Save Changes",
+                onTap: _saveProjectChanges,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

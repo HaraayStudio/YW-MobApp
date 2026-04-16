@@ -7,7 +7,7 @@ import '../models/site_model.dart';
 
 class SiteService {
   // Use /projects to align with web backend
-  static const String baseUrl = "${ApiConstants.baseUrl}/projects";
+  static String get baseUrl => "${ApiConstants.baseUrl}/projects";
 
   /// GET /api/projects/getallprojects (Paginated Site List)
   static Future<List<Site>> getSites({int page = 0, int size = 100}) async {

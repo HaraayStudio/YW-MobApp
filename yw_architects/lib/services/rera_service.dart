@@ -5,7 +5,7 @@ import 'token_service.dart';
 import '../api/constants.dart';
 
 class ReraService {
-  static const String baseUrl = "${ApiConstants.baseUrl}/rera";
+  static String get baseUrl => "${ApiConstants.baseUrl}/rera";
 
   /// Create a new RERA project
   /// POST /api/rera/project/{projectId}

@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/base64_utils.dart';
+import '../api/constants.dart';
 
 class GoldGradientButton extends StatelessWidget {
   final String text;
@@ -154,6 +157,7 @@ class AvatarWidget extends StatelessWidget {
   final double size;
   final double fontSize;
   final Color? color;
+  final String? imageUrl;
 
   const AvatarWidget({
     super.key,
@@ -161,10 +165,14 @@ class AvatarWidget extends StatelessWidget {
     this.size = 40,
     this.fontSize = 14,
     this.color,
+    this.imageUrl,
   });
 
   @override
   Widget build(BuildContext context) {
+    final String? effectiveUrl = _getEffectiveUrl();
+    final bool isBase64 = effectiveUrl != null && Base64Utils.isBase64(effectiveUrl);
+
     return Container(
       width: size,
       height: size,
@@ -172,18 +180,40 @@ class AvatarWidget extends StatelessWidget {
         color: color,
         gradient: color == null ? goldGradient : null,
         borderRadius: BorderRadius.circular(999),
+        image: effectiveUrl != null && effectiveUrl.isNotEmpty
+            ? DecorationImage(
+                image: isBase64
+                    ? MemoryImage(base64Decode(effectiveUrl.split(',').last)) as ImageProvider
+                    : NetworkImage(effectiveUrl),
+                fit: BoxFit.cover,
+                onError: (exception, stackTrace) {
+                  // This is handled by the child fallback UI as well
+                },
+              )
+            : null,
       ),
-      child: Center(
-        child: Text(
-          initials,
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: fontSize,
-          ),
-        ),
-      ),
+      child: effectiveUrl == null || effectiveUrl.isEmpty
+          ? Center(
+              child: Text(
+                initials,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: fontSize,
+                ),
+              ),
+            )
+          : null,
     );
+  }
+
+  String? _getEffectiveUrl() {
+    if (imageUrl == null || imageUrl!.isEmpty) return null;
+    if (Base64Utils.isBase64(imageUrl)) return imageUrl;
+    if (imageUrl!.startsWith('http')) return imageUrl;
+    
+    // Relative path handling
+    return "${ApiConstants.serverUrl}${imageUrl!.startsWith('/') ? '' : '/'}$imageUrl";
   }
 }
 

@@ -4,7 +4,7 @@ import 'token_service.dart';
 import '../api/constants.dart';
 
 class SiteVisitService {
-  static const String baseUrl = "${ApiConstants.baseUrl}/site-visits";
+  static String get baseUrl => "${ApiConstants.baseUrl}/site-visits";
 
   /// Creates a site visit. Uses `http.MultipartRequest` because the backend
   /// expects `multipart/form-data` due to the optional photo/document attachments.

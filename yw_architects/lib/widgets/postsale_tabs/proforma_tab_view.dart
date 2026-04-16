@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import 'package:yw_architects/models/app_models.dart';
 import '../common_widgets.dart';
 import 'invoice_forms.dart';
 import 'invoice_card.dart';
@@ -8,10 +9,17 @@ import '../../services/invoice_service.dart';
 
 class ProformaTabView extends StatefulWidget {
   final Map<String, dynamic> project;
+  final AppUser user;
   final VoidCallback? onRefresh;
   final Function(int)? onTabRequest;
 
-  const ProformaTabView({Key? key, required this.project, this.onRefresh, this.onTabRequest}) : super(key: key);
+  const ProformaTabView({
+    Key? key,
+    required this.project,
+    required this.user,
+    this.onRefresh,
+    this.onTabRequest,
+  }) : super(key: key);
 
   @override
   State<ProformaTabView> createState() => _ProformaTabViewState();
@@ -90,16 +98,17 @@ class _ProformaTabViewState extends State<ProformaTabView> {
                 ),
               ),
               const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: () => _openCreateDialog(),
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('New Proforma', style: TextStyle(fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF78511E),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              if (widget.user.role != UserRole.client)
+                ElevatedButton.icon(
+                  onPressed: () => _openCreateDialog(),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('New Proforma', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF78511E),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -113,13 +122,14 @@ class _ProformaTabViewState extends State<ProformaTabView> {
               itemCount: _invoices.length,
               itemBuilder: (context, index) {
                 final inv = _invoices[index];
+                final bool isClient = widget.user.role == UserRole.client;
                 return InvoiceCard(
                   invoice: inv,
                   isTax: false,
-                  onDelete: () => _handleDelete(inv['id']),
+                  onDelete: isClient ? null : () => _handleDelete(inv['id']),
                   onView: () => _openPreview(inv),
-                  onConvert: () => _handleConvert(inv['id']),
-                  onPaid: () => _handleMarkPaid(inv),
+                  onConvert: isClient ? null : () => _handleConvert(inv['id']),
+                  onPaid: isClient ? null : () => _handleMarkPaid(inv),
                 );
               },
             ),

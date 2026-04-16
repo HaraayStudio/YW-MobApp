@@ -11,6 +11,7 @@ enum UserRole {
   liaisonManager,
   liaisonOfficer,
   liaisonAssistant,
+  client,
 }
 
 class UserRoleInfo {
@@ -22,6 +23,11 @@ class UserRoleInfo {
   final String label;
   final List<String> nav;
   final String? profileImage;
+  final String phone;
+  final String joinDate;
+  final String address;
+  final String gstCertificate;
+  final String pan;
 
   const UserRoleInfo({
     required this.name,
@@ -32,6 +38,11 @@ class UserRoleInfo {
     required this.label,
     required this.nav,
     this.profileImage,
+    this.phone = '',
+    this.joinDate = '',
+    this.address = '',
+    this.gstCertificate = '',
+    this.pan = '',
   });
 
   UserRoleInfo copyWith({
@@ -43,6 +54,11 @@ class UserRoleInfo {
     String? label,
     List<String>? nav,
     String? profileImage,
+    String? phone,
+    String? joinDate,
+    String? address,
+    String? gstCertificate,
+    String? pan,
   }) {
     return UserRoleInfo(
       name: name ?? this.name,
@@ -53,6 +69,11 @@ class UserRoleInfo {
       label: label ?? this.label,
       nav: nav ?? this.nav,
       profileImage: profileImage ?? this.profileImage,
+      phone: phone ?? this.phone,
+      joinDate: joinDate ?? this.joinDate,
+      address: address ?? this.address,
+      gstCertificate: gstCertificate ?? this.gstCertificate,
+      pan: pan ?? this.pan,
     );
   }
 }
@@ -85,31 +106,20 @@ class AppUser {
   }
 }
 
-// Finalized Navigation Logic
-const List<String> managementSidebarNav = [
-  'dashboard',
-  'clients',
-  'enquiry',
-  'projects',
-  'site',
-  'employees',
-  'attendance',
-  'profile',
-];
-const List<String> managementBottomNav = [
-  'dashboard',
-  'projects',
-  'clients',
-  'employees',
-];
+// Full access: 'dashboard', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile', 'enquiry'
+const List<String> managementSidebarNav = ['dashboard', 'clients', 'enquiry', 'projects', 'site', 'employees', 'attendance', 'profile'];
+const List<String> managementBottomNav = ['dashboard', 'projects', 'clients', 'employees'];
+const List<String> employeeSidebarNav = ['dashboard', 'projects', 'site', 'attendance', 'profile'];
+const List<String> employeeBottomNav = ['dashboard', 'projects', 'site', 'attendance'];
+const List<String> clientSidebarNav = ['dashboard', 'projects', 'profile'];
+const List<String> clientBottomNav = ['dashboard', 'projects', 'profile'];
 
-const List<String> employeeSidebarNav = ['dashboard', 'projects', 'site', 'attendance'];
-const List<String> employeeBottomNav = [
-  'dashboard',
-  'projects',
-  'site',
-  'attendance',
-];
+const List<String> fullNav = ['dashboard', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile', 'enquiry'];
+const List<String> hrNav = ['dashboard', 'employees', 'attendance', 'leaves', 'notifications', 'profile'];
+const List<String> srNav = ['dashboard', 'projects', 'tasks', 'leaves', 'notifications', 'profile'];
+const List<String> jrNav = ['dashboard', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
+const List<String> liaisonManagerNav = ['dashboard', 'projects', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
+const List<String> liaisonFieldNav = ['dashboard', 'site', 'tasks', 'attendance', 'leaves', 'notifications', 'profile'];
 
 const Map<UserRole, UserRoleInfo> roleMap = {
   UserRole.admin: UserRoleInfo(
@@ -119,7 +129,7 @@ const Map<UserRole, UserRoleInfo> roleMap = {
     initials: 'AD',
     email: 'admin@yw.com',
     label: 'ADMIN',
-    nav: managementSidebarNav,
+    nav: fullNav,
   ),
   UserRole.coFounder: UserRoleInfo(
     name: 'Co-Founder',
@@ -128,7 +138,7 @@ const Map<UserRole, UserRoleInfo> roleMap = {
     initials: 'CF',
     email: 'cofounder@yw.com',
     label: 'CO_FOUNDER',
-    nav: managementSidebarNav,
+    nav: fullNav,
   ),
   UserRole.hr: UserRoleInfo(
     name: 'HR Manager',
@@ -137,7 +147,7 @@ const Map<UserRole, UserRoleInfo> roleMap = {
     initials: 'HR',
     email: 'hr@yw.com',
     label: 'HR',
-    nav: managementSidebarNav,
+    nav: hrNav,
   ),
   UserRole.srArchitect: UserRoleInfo(
     name: 'Senior Architect',
@@ -146,7 +156,7 @@ const Map<UserRole, UserRoleInfo> roleMap = {
     initials: 'SA',
     email: 'srarch@yw.com',
     label: 'SR_ARCHITECT',
-    nav: employeeSidebarNav,
+    nav: srNav,
   ),
   UserRole.jrArchitect: UserRoleInfo(
     name: 'Junior Architect',
@@ -155,7 +165,7 @@ const Map<UserRole, UserRoleInfo> roleMap = {
     initials: 'JA',
     email: 'jrarch@yw.com',
     label: 'JR_ARCHITECT',
-    nav: employeeSidebarNav,
+    nav: jrNav,
   ),
   UserRole.srEngineer: UserRoleInfo(
     name: 'Senior Engineer',
@@ -164,7 +174,7 @@ const Map<UserRole, UserRoleInfo> roleMap = {
     initials: 'SE',
     email: 'sreng@yw.com',
     label: 'SR_ENGINEER',
-    nav: employeeSidebarNav,
+    nav: srNav,
   ),
   UserRole.draftsman: UserRoleInfo(
     name: 'Draftsman',
@@ -173,7 +183,7 @@ const Map<UserRole, UserRoleInfo> roleMap = {
     initials: 'DM',
     email: 'drafts@yw.com',
     label: 'DRAFTSMAN',
-    nav: employeeSidebarNav,
+    nav: jrNav,
   ),
   UserRole.liaisonManager: UserRoleInfo(
     name: 'Liaison Manager',
@@ -182,7 +192,7 @@ const Map<UserRole, UserRoleInfo> roleMap = {
     initials: 'LM',
     email: 'liaisonmgr@yw.com',
     label: 'LIAISON_MANAGER',
-    nav: employeeSidebarNav,
+    nav: liaisonManagerNav,
   ),
   UserRole.liaisonOfficer: UserRoleInfo(
     name: 'Liaison Officer',
@@ -191,7 +201,7 @@ const Map<UserRole, UserRoleInfo> roleMap = {
     initials: 'LO',
     email: 'liaisonoff@yw.com',
     label: 'LIAISON_OFFICER',
-    nav: employeeSidebarNav,
+    nav: liaisonFieldNav,
   ),
   UserRole.liaisonAssistant: UserRoleInfo(
     name: 'Liaison Assistant',
@@ -200,7 +210,16 @@ const Map<UserRole, UserRoleInfo> roleMap = {
     initials: 'LA',
     email: 'liaisonasst@yw.com',
     label: 'LIAISON_ASSISTANT',
-    nav: employeeSidebarNav,
+    nav: liaisonFieldNav,
+  ),
+  UserRole.client: UserRoleInfo(
+    name: 'Client',
+    firstName: 'Client',
+    lastName: '',
+    initials: 'CL',
+    email: 'client@yw.com',
+    label: 'CLIENT',
+    nav: clientSidebarNav,
   ),
 };
 
@@ -209,150 +228,85 @@ class NavItem {
   final IconData iconData;
   final String label;
 
-  const NavItem({
-    required this.key,
-    required this.iconData,
-    required this.label,
-  });
+  const NavItem({required this.key, required this.iconData, required this.label});
 }
 
 const Map<String, NavItem> navConfig = {
-  'dashboard': NavItem(
-    key: 'dashboard',
-    iconData: Icons.dashboard_rounded,
-    label: 'Dashboard',
-  ),
-  'clients': NavItem(
-    key: 'clients',
-    iconData: Icons.business_center_rounded,
-    label: 'Clients',
-  ),
-  'projects': NavItem(
-    key: 'projects',
-    iconData: Icons.folder_special_rounded,
-    label: 'Projects',
-  ),
-  'tasks': NavItem(
-    key: 'tasks',
-    iconData: Icons.task_alt_rounded,
-    label: 'Tasks',
-  ),
-  'employees': NavItem(
-    key: 'employees',
-    iconData: Icons.group_rounded,
-    label: 'Employees',
-  ),
-  'attendance': NavItem(
-    key: 'attendance',
-    iconData: Icons.fingerprint_rounded,
-    label: 'Attendance',
-  ),
-  'leaves': NavItem(
-    key: 'leaves',
-    iconData: Icons.event_available_rounded,
-    label: 'Leaves',
-  ),
-  'site': NavItem(
-    key: 'site',
-    iconData: Icons.construction_rounded,
-    label: 'Sites',
-  ),
-  'materials': NavItem(
-    key: 'materials',
-    iconData: Icons.inventory_2_rounded,
-    label: 'Materials',
-  ),
-  'renders': NavItem(
-    key: 'renders',
-    iconData: Icons.view_in_ar_rounded,
-    label: 'Renders',
-  ),
-  'reports': NavItem(
-    key: 'reports',
-    iconData: Icons.analytics_rounded,
-    label: 'Reports',
-  ),
-  'notifications': NavItem(
-    key: 'notifications',
-    iconData: Icons.notifications_rounded,
-    label: 'Alerts',
-  ),
-  'enquiry': NavItem(
-    key: 'enquiry',
-    iconData: Icons.question_answer_rounded,
-    label: 'Enquiries',
-  ),
-  'profile': NavItem(
-    key: 'profile',
-    iconData: Icons.manage_accounts_rounded,
-    label: 'Profile',
-  ),
+  'dashboard': NavItem(key: 'dashboard', iconData: Icons.dashboard_rounded, label: 'Dashboard'),
+  'projects': NavItem(key: 'projects', iconData: Icons.folder_special_rounded, label: 'Projects'),
+  'tasks': NavItem(key: 'tasks', iconData: Icons.task_alt_rounded, label: 'Tasks'),
+  'employees': NavItem(key: 'employees', iconData: Icons.group_rounded, label: 'Employees'),
+  'clients': NavItem(key: 'clients', iconData: Icons.people_alt_rounded, label: 'Clients'),
+  'attendance': NavItem(key: 'attendance', iconData: Icons.fingerprint_rounded, label: 'Attendance'),
+  'leaves': NavItem(key: 'leaves', iconData: Icons.event_available_rounded, label: 'Leaves'),
+  'site': NavItem(key: 'site', iconData: Icons.construction_rounded, label: 'Site'),
+  'materials': NavItem(key: 'materials', iconData: Icons.inventory_2_rounded, label: 'Materials'),
+  'renders': NavItem(key: 'renders', iconData: Icons.view_in_ar_rounded, label: 'Renders'),
+  'reports': NavItem(key: 'reports', iconData: Icons.analytics_rounded, label: 'Reports'),
+  'notifications': NavItem(key: 'notifications', iconData: Icons.notifications_rounded, label: 'Alerts'),
+  'profile': NavItem(key: 'profile', iconData: Icons.manage_accounts_rounded, label: 'Profile'),
+  'enquiry': NavItem(key: 'enquiry', iconData: Icons.question_answer_rounded, label: 'Inquiry'),
 };
 
-class Quotation {
-  final int id;
-  final String quotationNumber;
-  final bool accepted;
-  final bool sended;
-  final String? validTill;
-  final String? notes;
-  final double? budget;
-  final String? createdAt;
-
-  const Quotation({
-    required this.id,
-    required this.quotationNumber,
-    required this.accepted,
-    required this.sended,
-    this.validTill,
-    this.notes,
-    this.budget,
-    this.createdAt,
-  });
-
-  /// Derived status matching web app logic: accepted > sent > draft
-  String get status {
-    if (accepted) return 'ACCEPTED';
-    if (sended) return 'SENT';
-    return 'DRAFT';
-  }
-
-  factory Quotation.fromJson(Map<String, dynamic> json) {
-    return Quotation(
-      id: json['id'] ?? 0,
-      quotationNumber: json['quotationNumber']?.toString() ?? '—',
-      accepted: json['accepted'] == true,
-      sended: json['sended'] == true,
-      validTill: json['validTill']?.toString(),
-      notes: json['quotationDetails']?.toString() ?? json['notes']?.toString(),
-      budget: json['budget'] != null ? double.tryParse(json['budget'].toString()) : null,
-      createdAt: json['createdAt']?.toString() ?? json['dateIssued']?.toString(),
-    );
-  }
-}
+// ── Shared Models ─────────────────────────────────────────────────────────
 
 class Client {
   final int id;
   final String name;
-  final String? email;
-  final String? phone;
-  final String? address;
+  final String email;
+  final String phone;
 
-  Client({
+  const Client({
     required this.id,
     required this.name,
-    this.email,
-    this.phone,
-    this.address,
+    required this.email,
+    required this.phone,
   });
 
   factory Client.fromJson(Map<String, dynamic> json) {
     return Client(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? 'Unknown',
-      email: json['email'],
-      phone: json['phone']?.toString(),
-      address: json['address'],
+      id: json['id'] as int? ?? 0,
+      name: json['name']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? json['mobile']?.toString() ?? '',
+    );
+  }
+}
+
+class Quotation {
+  final int id;
+  final String quotationNumber;
+  final String title;
+  final double amount;
+  final String status;
+  final String? notes;
+  final String? createdAt;
+  final bool sended;
+  final bool accepted;
+
+  const Quotation({
+    required this.id,
+    required this.quotationNumber,
+    required this.title,
+    required this.amount,
+    required this.status,
+    this.notes,
+    this.createdAt,
+    this.sended = false,
+    this.accepted = false,
+  });
+
+  factory Quotation.fromJson(Map<String, dynamic> json) {
+    return Quotation(
+      id: json['id'] as int? ?? 0,
+      quotationNumber: json['quotationNumber']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+      status: json['status']?.toString() ?? 'DRAFT',
+      notes: json['notes']?.toString(),
+      createdAt: json['createdAt']?.toString(),
+      sended: json['sended'] == true || json['sended'] == 'true',
+      accepted: json['accepted'] == true || json['accepted'] == 'true',
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import 'package:yw_architects/models/app_models.dart';
 import '../common_widgets.dart';
 import 'invoice_forms.dart';
 import 'invoice_card.dart';
@@ -8,9 +9,15 @@ import '../../services/invoice_service.dart';
 
 class TaxTabView extends StatefulWidget {
   final Map<String, dynamic> project;
+  final AppUser user;
   final VoidCallback? onRefresh;
 
-  const TaxTabView({Key? key, required this.project, this.onRefresh}) : super(key: key);
+  const TaxTabView({
+    Key? key,
+    required this.project,
+    required this.user,
+    this.onRefresh,
+  }) : super(key: key);
 
   @override
   State<TaxTabView> createState() => _TaxTabViewState();
@@ -88,16 +95,17 @@ class _TaxTabViewState extends State<TaxTabView> {
                 ),
               ),
               const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: () => _openCreateDialog(),
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('New Tax Invoice', style: TextStyle(fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E293B),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              if (widget.user.role != UserRole.client)
+                ElevatedButton.icon(
+                  onPressed: () => _openCreateDialog(),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('New Tax Invoice', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E293B),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -111,12 +119,13 @@ class _TaxTabViewState extends State<TaxTabView> {
               itemCount: _invoices.length,
               itemBuilder: (context, index) {
                 final inv = _invoices[index];
+                final bool isClient = widget.user.role == UserRole.client;
                 return InvoiceCard(
                   invoice: inv,
                   isTax: true,
-                  onDelete: () => _handleDelete(inv['id']),
+                  onDelete: isClient ? null : () => _handleDelete(inv['id']),
                   onView: () => _openPreview(inv),
-                  onPaid: () => _handleMarkPaid(inv),
+                  onPaid: isClient ? null : () => _handleMarkPaid(inv),
                 );
               },
             ),

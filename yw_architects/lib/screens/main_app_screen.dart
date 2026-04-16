@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../models/app_models.dart';
 import '../widgets/common_widgets.dart';
-import '../services/employee_service.dart';
 
 // Role-specific dashboard sections
 import 'sections/admin_dashboard_section.dart';
@@ -34,6 +33,7 @@ import 'sections/reports_section.dart';
 import 'sections/notifications_section.dart';
 import 'sections/profile_section.dart';
 import 'sections/enquiry_section.dart';
+import '../services/profile_service.dart';
 
 class MainAppScreen extends StatefulWidget {
   final AppUser user;
@@ -60,42 +60,50 @@ class _MainAppScreenState extends State<MainAppScreen> {
   }
 
   Future<void> _refreshProfile() async {
-    if (_user.info.label == 'CLIENT') return;
-
     try {
-      final profile = await EmployeeService.getEmployeeData();
-      print("[MainAppScreen] Fetched profile: $profile");
+      final profile = await ProfileService.getMyProfile(
+        role: _user.role,
+        id: _user.id,
+        email: _user.info.email,
+      );
+      debugPrint("[MainAppScreen] Fetched profile Keys: ${profile?.keys.toList()}");
       
       if (profile != null) {
-        // RESILIENT NAME EXTRACTION - Handles nested or flat, camel or snake
-        String? fName = profile['firstName']?.toString() ?? profile['first_name']?.toString();
-        String? lName = profile['lastName']?.toString() ?? profile['last_name']?.toString();
-
-        // Check if nested inside 'employee' or 'user' object (Spring Data REST common pattern)
-        if (fName == null && profile['user'] != null) {
-          final u = profile['user'];
-          fName = u['firstName']?.toString() ?? u['first_name']?.toString();
-          lName = u['lastName']?.toString() ?? u['last_name']?.toString();
+        // If the ID was previously 0 (failed resolution at login), update it now
+        if (_user.id == 0 && profile['id'] != null) {
+          final int newId = profile['id'] as int;
+          debugPrint("[MainAppScreen] Updating User ID from 0 to $newId");
+          setState(() {
+            _user = _user.copyWith(id: newId);
+          });
         }
-        if (fName == null && profile['employee'] != null) {
-          final e = profile['employee'];
-          fName = e['firstName']?.toString() ?? e['first_name']?.toString();
-          lName = e['lastName']?.toString() ?? e['last_name']?.toString();
-        }
+        final String apiName = ProfileService.extractFullName(profile);
+        final String apiPhone = profile['phone']?.toString() ?? profile['mobile']?.toString() ?? profile['phone_number']?.toString() ?? '';
+        final String apiJoinDate = profile['joinDate']?.toString() ?? profile['join_date']?.toString() ?? '';
+        final String apiEmail = profile['email']?.toString() ?? _user.info.email;
+        
+        // Check if token name is just a role placeholder
+        final bool isRoleInToken = _user.info.firstName.toLowerCase() == _user.role.name.replaceFirst('_', ' ').toLowerCase() ||
+                                  _user.info.firstName.toLowerCase() == _user.role.name.toLowerCase();
 
-        final finalFName = fName ?? _user.info.firstName;
-        final finalLName = lName ?? _user.info.lastName;
+        final finalName = apiName.isNotEmpty 
+            ? apiName 
+            : (isRoleInToken ? _user.info.name : _user.info.name); // Keep token name if it's real
 
-        // Diagnostic Toast (Temporary)
-        _toast("Detected Name: $finalFName $finalLName");
+        final parts = finalName.split(' ');
+        final fName = parts.isNotEmpty ? parts[0] : '';
+        final lName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
 
         setState(() {
           _user = _user.copyWith(
             info: _user.info.copyWith(
-              name: '$finalFName $finalLName'.trim(),
-              firstName: finalFName,
-              lastName: finalLName,
-              initials: (finalFName.isNotEmpty ? finalFName[0] : '') + (finalLName.isNotEmpty ? finalLName[0] : ''),
+              name: finalName.trim(),
+              firstName: fName,
+              lastName: lName,
+              initials: (fName.isNotEmpty ? fName[0] : '') + (lName.isNotEmpty ? lName[0] : ''),
+              email: apiEmail,
+              phone: apiPhone,
+              joinDate: apiJoinDate,
               profileImage: (profile['profileImage'] ?? profile['profile_image'])?.toString(),
             ),
           );
@@ -115,6 +123,10 @@ class _MainAppScreenState extends State<MainAppScreen> {
       return managementBottomNav;
     }
 
+    if (role == UserRole.client) {
+      return clientBottomNav;
+    }
+
     // All other employees
     return employeeBottomNav;
   }
@@ -124,6 +136,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
     final role = _user.role;
     if (role == UserRole.admin || role == UserRole.coFounder || role == UserRole.hr) {
       return managementSidebarNav;
+    }
+    if (role == UserRole.client) {
+      return clientSidebarNav;
     }
     return employeeSidebarNav;
   }
@@ -141,12 +156,11 @@ class _MainAppScreenState extends State<MainAppScreen> {
   Widget _buildDashboard() {
     switch (_user.role) {
       case UserRole.admin:
-        if (_user.info.label == 'CLIENT') {
-          return ClientDashboardView(user: _user, onNavigate: _navigate);
-        }
         return AdminDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.coFounder:
         return CoFounderDashboardSection(user: _user, onNavigate: _navigate);
+      case UserRole.client:
+        return ClientDashboardView(user: _user, onNavigate: _navigate);
       case UserRole.hr:
         return HrDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.srArchitect:
@@ -163,6 +177,8 @@ class _MainAppScreenState extends State<MainAppScreen> {
         return LiaisonOfficerDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.liaisonAssistant:
         return LiaisonAssistantDashboardSection(user: _user, onNavigate: _navigate);
+      default:
+        return AdminDashboardSection(user: _user, onNavigate: _navigate);
     }
   }
 
@@ -338,6 +354,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
             onTap: () => _navigate('profile'),
             child: AvatarWidget(
               initials: _user.info.initials,
+              imageUrl: _user.info.profileImage, // Now uses the new network image capability
               size: 36,
               fontSize: 13,
             ),

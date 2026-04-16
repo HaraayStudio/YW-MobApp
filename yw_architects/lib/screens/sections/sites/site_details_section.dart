@@ -45,6 +45,8 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     UserRole.hr
   ].contains(widget.user.role);
 
+  bool get _isClient => widget.user.role == UserRole.client;
+
   late Site _detailedSite;
   bool _isLoading = false;
 
@@ -1593,34 +1595,35 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   color: AppColors.onSurface,
                 ),
               ),
-              ElevatedButton.icon(
-                onPressed: _showAddEmployeeDialog,
-                icon: const Icon(
-                  Icons.add_rounded,
-                  size: 18,
-                  color: Colors.white,
-                ),
-                label: Text(
-                  "Add Employee",
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+              if (!_isClient)
+                ElevatedButton.icon(
+                  onPressed: _showAddEmployeeDialog,
+                  icon: const Icon(
+                    Icons.add_rounded,
+                    size: 18,
                     color: Colors.white,
                   ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF705C00),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+                  label: Text(
+                    "Add Employee",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF705C00),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -1973,34 +1976,35 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   color: AppColors.onSurface,
                 ),
               ),
-              ElevatedButton.icon(
-                onPressed: _showAddSiteVisitDialog,
-                icon: const Icon(
-                  Icons.add_rounded,
-                  size: 18,
-                  color: Colors.white,
-                ),
-                label: Text(
-                  "Add Site Visit",
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+              if (!_isClient)
+                ElevatedButton.icon(
+                  onPressed: _showAddSiteVisitDialog,
+                  icon: const Icon(
+                    Icons.add_rounded,
+                    size: 18,
                     color: Colors.white,
                   ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF705C00),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+                  label: Text(
+                    "Add Site Visit",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF705C00),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -5350,23 +5354,24 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                   ),
                 ],
               ),
-              ElevatedButton.icon(
-                onPressed: _showAddReraDialog,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text("Add RERA"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF705C00),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+              if (!_isClient)
+                ElevatedButton.icon(
+                  onPressed: _showAddReraDialog,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text("Add RERA"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF705C00),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 20),

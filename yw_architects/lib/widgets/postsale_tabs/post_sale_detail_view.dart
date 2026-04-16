@@ -47,7 +47,8 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _isManagement ? 6 : 3, vsync: this);
+    final bool showAllTabs = _isManagement || widget.user.role == UserRole.client;
+    _tabController = TabController(length: showAllTabs ? 6 : 3, vsync: this);
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
@@ -152,7 +153,7 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView>
                   ),
                 ),
               ),
-              if (_isManagement)
+              if (_isManagement || widget.user.role == UserRole.client)
                 IconButton.filled(
                   onPressed: () => widget.onEdit(_project!),
                   icon: const Icon(Icons.edit_rounded, size: 18),
@@ -334,7 +335,7 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView>
                 const Tab(text: 'Overview'),
                 const Tab(text: 'Client'),
                 const Tab(text: 'Sites'),
-                if (_isManagement) ...[
+                if (_isManagement || widget.user.role == UserRole.client) ...[
                   const Tab(text: 'Proforma Invoices'),
                   const Tab(text: 'Tax Invoices'),
                   const Tab(text: 'Payments'),
@@ -349,7 +350,7 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView>
             child: IndexedStack(
               index: _tabController.index,
               children: [
-                OverviewTabView(project: _project!),
+                OverviewTabView(project: _project!, user: widget.user),
                 ClientTabView(project: _project!),
                 SitesTabView(
                   project: _project!,
@@ -357,14 +358,23 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView>
                       ? () => widget.onNavigateToSite!(widget.projectId)
                       : null,
                 ),
-                if (_isManagement) ...[
+                if (_isManagement || widget.user.role == UserRole.client) ...[
                   ProformaTabView(
                     project: _project!,
+                    user: widget.user,
                     onRefresh: _fetchData,
                     onTabRequest: (idx) => _tabController.animateTo(idx),
                   ),
-                  TaxTabView(project: _project!, onRefresh: _fetchData),
-                  PaymentsTabView(project: _project!, onRefresh: _fetchData),
+                  TaxTabView(
+                    project: _project!,
+                    user: widget.user,
+                    onRefresh: _fetchData,
+                  ),
+                  PaymentsTabView(
+                    project: _project!,
+                    user: widget.user,
+                    onRefresh: _fetchData,
+                  ),
                 ],
               ],
             ),

@@ -7,7 +7,7 @@ import '../api/constants.dart';
 class EmployeeService {
   //static const String baseUrl = "http://localhost:8080/api/employees";
   //static const String baseUrl = "http://10.0.2.2:8080/api/employees";
-  static const String baseUrl = "${ApiConstants.baseUrl}/employees";
+  static String get baseUrl => "${ApiConstants.baseUrl}/employees";
 
   /// Resilient HTTP helpers that don't crash on redirects (3xx without Location)
   static Future<http.Response> _resilientGet(Uri url, Map<String, String> headers) async {

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io' show Platform, SocketException;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
+import '../api/constants.dart';
 import '../models/app_models.dart';
 import 'token_service.dart';
 
@@ -11,18 +12,8 @@ import 'token_service.dart';
 /// credentials are sent as URL query parameters.
 class AuthService {
   // ─── Host / Port ──────────────────────────────────────────────────────────
-  static const String _host = 'localhost';
-  static const int _port = 8080;
-
-  // On Android emulator "localhost" routes to the emulator itself, not the PC.
-  // 10.0.2.2 is the standard alias that reaches the host machine.
-  static String get _resolvedHost {
-    if (kIsWeb) return _host; // Web: CORS+fetch, localhost is fine
-    try {
-      if (Platform.isAndroid) return '10.0.2.2';
-    } catch (_) {}
-    return _host; // desktop / iOS / macOS
-  }
+  static String get _resolvedHost => ApiConstants.host;
+  static int get _port => 8080;
 
   // ─── Build Uri with @RequestParam query params ─────────────────────────────
   // Using Uri.http() causes Dart to percent-encode special chars automatically,
@@ -75,15 +66,17 @@ class AuthService {
         return UserRole.liaisonOfficer;
       case 'LIAISON_ASSISTANT':
         return UserRole.liaisonAssistant;
+      case 'CLIENT':
+        return UserRole.client;
       default:
         assert(() {
           // ignore: avoid_print
           print(
-            '[AuthService] Unrecognised role: "$roleStr" — defaulting to admin',
+            '[AuthService] Unrecognised role: "$roleStr" — defaulting to employee',
           );
           return true;
         }());
-        return UserRole.admin;
+        return UserRole.draftsman;
     }
   }
 
@@ -91,14 +84,16 @@ class AuthService {
   static AppUser _buildEmployeeUser(String accessToken, String fallbackEmail) {
     final payload = _decodeJwt(accessToken);
     final roleStr = payload['role'] as String?;
-    final email = (payload['sub'] as String?) ?? fallbackEmail;
     final roleEnum = _parseRole(roleStr);
     final baseInfo = roleMap[roleEnum] ?? roleMap[UserRole.admin]!;
 
     final id = payload['id'] as int? ?? 0;
-
-    final fName = payload['firstName'] as String? ?? baseInfo.firstName;
-    final lName = payload['lastName'] as String? ?? baseInfo.lastName;
+    final fName = payload['firstName'] as String? ?? '';
+    final lName = payload['lastName'] as String? ?? '';
+    final email = (payload['sub'] as String?) ?? fallbackEmail;
+    final phone = payload['phone']?.toString() ?? payload['mobile']?.toString() ?? '';
+    final empId = payload['employeeId']?.toString() ?? id.toString();
+    final joinDate = payload['joinDate']?.toString() ?? '';
 
     return AppUser(
       id: id,
@@ -113,6 +108,8 @@ class AuthService {
         label: baseInfo.label,
         nav: baseInfo.nav,
         profileImage: payload['profileImage'] as String?,
+        phone: phone,
+        joinDate: joinDate,
       ),
     );
   }
@@ -239,14 +236,24 @@ class AuthService {
         final payload = _decodeJwt(accessToken);
         final tokenEmail = (payload['sub'] as String?) ?? email;
 
-        final id = payload['id'] as int? ?? 0;
+        // Try to find the ID in the response body first, then fallback to JWT, then default to 0
+        final id = data['id'] as int? ?? data['clientId'] as int? ?? payload['id'] as int? ?? 0;
 
-        final fName = payload['firstName'] as String? ?? 'Client';
-        final lName = payload['lastName'] as String? ?? '';
+        final fullName = payload['name']?.toString() ?? payload['fullName']?.toString() ?? '';
+        String fName = payload['firstName'] as String? ?? '';
+        String lName = payload['lastName'] as String? ?? '';
+
+        if (fullName.isNotEmpty && fName.isEmpty) {
+          final parts = fullName.split(' ');
+          fName = parts.first;
+          lName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+        } else if (fName.isEmpty) {
+          fName = 'Client';
+        }
 
         return AppUser(
           id: id,
-          role: UserRole.admin,
+          role: UserRole.client,
           token: accessToken,
           info: UserRoleInfo(
             name: '$fName $lName'.trim(),
@@ -255,8 +262,12 @@ class AuthService {
             initials: (fName.isNotEmpty ? fName[0] : 'C') + (lName.isNotEmpty ? lName[0] : 'L'),
             email: tokenEmail,
             label: 'CLIENT',
-            nav: const ['dashboard', 'projects', 'profile'],
+            nav: clientSidebarNav,
             profileImage: payload['profileImage'] as String?,
+            phone: payload['phone']?.toString() ?? payload['mobile']?.toString() ?? '',
+            address: payload['address']?.toString() ?? payload['address']?.toString() ?? '',
+            gstCertificate: payload['gstcertificate']?.toString() ?? '',
+            pan: payload['pan']?.toString() ?? '',
           ),
         );
       } else {
@@ -309,11 +320,21 @@ class AuthService {
       final id = payload['id'] as int? ?? 0;
 
       if (roleStr.trim().toUpperCase() == 'CLIENT') {
-        final fName = payload['firstName'] as String? ?? 'Client';
-        final lName = payload['lastName'] as String? ?? '';
+        final fullName = payload['name']?.toString() ?? payload['fullName']?.toString() ?? '';
+        String fName = payload['firstName'] as String? ?? '';
+        String lName = payload['lastName'] as String? ?? '';
+
+        if (fullName.isNotEmpty && fName.isEmpty) {
+          final parts = fullName.split(' ');
+          fName = parts.first;
+          lName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+        } else if (fName.isEmpty) {
+          fName = 'Client';
+        }
+
         return AppUser(
           id: id,
-          role: UserRole.admin,
+          role: UserRole.client,
           token: token,
           info: UserRoleInfo(
             name: '$fName $lName'.trim(),
@@ -322,8 +343,12 @@ class AuthService {
             initials: (fName.isNotEmpty ? fName[0] : 'C') + (lName.isNotEmpty ? lName[0] : 'L'),
             email: emailStr,
             label: 'CLIENT',
-            nav: const ['dashboard', 'projects', 'profile'],
+            nav: clientSidebarNav,
             profileImage: payload['profileImage'] as String?,
+            phone: payload['phone']?.toString() ?? payload['mobile']?.toString() ?? '',
+            address: payload['address']?.toString() ?? '',
+            gstCertificate: payload['gstcertificate']?.toString() ?? '',
+            pan: payload['pan']?.toString() ?? '',
           ),
         );
       } else {

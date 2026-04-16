@@ -5,7 +5,7 @@ import 'token_service.dart';
 import '../api/constants.dart';
 
 class MeetingService {
-  static const String baseUrl = "${ApiConstants.baseUrl}/meetings";
+  static String get baseUrl => "${ApiConstants.baseUrl}/meetings";
 
   /// Create a new meeting linked to a project layout
   /// POST /api/meetings/create?projectId={projectId}&createdBy={createdBy}

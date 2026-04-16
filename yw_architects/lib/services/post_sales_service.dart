@@ -6,7 +6,7 @@ import 'package:http_parser/http_parser.dart';
 import '../api/constants.dart';
 
 class PostSalesService {
-  static const String baseUrl = "${ApiConstants.baseUrl}/postsales";
+  static String get baseUrl => "${ApiConstants.baseUrl}/postsales";
 
   /// Creates a new Post-Sale record (which creates a Project).
   /// [isOldClient] should be true if linking to an existing client ID.

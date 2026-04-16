@@ -1,12 +1,18 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 class ApiConstants {
-  // Local development URL
-  // static const String baseUrl = "http://localhost:8080/api";
+  static const String _host = '192.168.31.212';
+  static const int _port = 8080;
 
-  // Emulator URL
-  // static const String baseUrl = "http://10.0.2.2:8080/api";
+  static String get host {
+    if (kIsWeb) return 'localhost';
+    try {
+      if (Platform.isAndroid) return '10.0.2.2';
+    } catch (_) {}
+    return _host;
+  }
 
-  // For Mobile
-  static const String baseUrl = "http://192.168.31.212:8080/api";
-
-
+  static String get baseUrl => "http://$host:$_port/api";
+  static String get serverUrl => "http://$host:$_port";
 }

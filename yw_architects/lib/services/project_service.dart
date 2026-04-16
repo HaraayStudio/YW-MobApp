@@ -6,7 +6,7 @@ import '../api/constants.dart';
 import 'package:flutter/foundation.dart';
 
 class ProjectService {
-  static const String baseUrl = "${ApiConstants.baseUrl}/projects";
+  static String get baseUrl => "${ApiConstants.baseUrl}/projects";
 
   /// Resilient HTTP helpers to prevent 3xx-no-Location crashes
   static Future<http.Response> _resilientGet(Uri url, Map<String, String> headers) async {

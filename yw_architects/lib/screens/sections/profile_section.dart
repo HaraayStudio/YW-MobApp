@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/app_models.dart';
 import '../../widgets/common_widgets.dart';
-import '../../services/employee_service.dart';
+import '../../services/profile_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../utils/base64_utils.dart';
@@ -27,17 +27,75 @@ class ProfileSection extends StatefulWidget {
 
 class _ProfileSectionState extends State<ProfileSection> {
   bool _notificationsOn = true;
+  Map<String, dynamic>? _userData;
+  bool _isLoadingData = false;
+  int _projectCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  @override
+  void didUpdateWidget(ProfileSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the parent (MainAppScreen) resolves the ID from 0 to a real ID, 
+    // we must re-fetch the profile data.
+    if (oldWidget.user.id != widget.user.id) {
+      _fetchUserData();
+    }
+  }
+
+  Future<void> _fetchUserData() async {
+    if (!mounted) return;
+    setState(() => _isLoadingData = true);
+
+    // ── Fetch profile independently so a project error never wipes out the name ──
+    try {
+      final profile = await ProfileService.getMyProfile(
+        role: widget.user.role,
+        id: widget.user.id,
+        email: widget.user.info.email,
+      );
+      debugPrint("PROFILE RAW DATA: $profile");
+      if (mounted && profile != null) {
+        setState(() => _userData = profile);
+      }
+    } catch (e) {
+      debugPrint("PROFILE FETCH ERROR: $e");
+    }
+
+    // ── Fetch project count independently ────────────────────────────────────
+    try {
+      final projects = await ProfileService.getMyProjects();
+      if (mounted) {
+        setState(() => _projectCount = projects.length);
+      }
+    } catch (e) {
+      debugPrint("PROJECTS FETCH ERROR: $e");
+    }
+
+    if (mounted) setState(() => _isLoadingData = false);
+  }
+
+  // Date formatting is handled by ProfileService.formatDate()
+
 
   void _openEditProfile(BuildContext context) async {
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _EditProfileModal(user: widget.user),
+      builder: (ctx) => _EditProfileModal(
+        user: widget.user,
+        initialUserData: _userData,
+      ),
     );
 
     if (result == true) {
       widget.onToast("Profile updated!");
+      _fetchUserData(); // Refresh local data after update
     }
   }
 
@@ -62,30 +120,21 @@ class _ProfileSectionState extends State<ProfileSection> {
     final picker = ImagePicker();
     final XFile? image = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 50, // Reduce size for Base64 storage
-      maxWidth: 512,
+      imageQuality: 80, // Better quality supported natively
+      maxWidth: 1024,
     );
     
     if (image != null) {
       widget.onToast("Uploading profile picture...");
       
-      final base64String = await Base64Utils.toDataUrl(image);
-      if (base64String == null) {
-        widget.onToast("Failed to process image.");
-        return;
-      }
-
-      // We send it via updateMyProfile because it's a JSON-based update
-      final success = await EmployeeService.updateMyProfile({
-        "id": widget.user.id,
-        "email": widget.user.info.email,
-        "profileImage": base64String,
-      });
+      // Upload using the native multipart file mechanism instead of Base64 strings 
+      // preventing Hibernate JPA 'Data Too Long' transaction crashes.
+      final success = await ProfileService.updateMyProfileImage(image.path);
 
       if (success) {
         widget.onToast("Profile picture updated!");
-        // Note: In a real app, you'd trigger a state refresh higher up
-        // to update the global user object.
+        // Note: Re-fetch the profile to ensure the new image URL syncs
+        _fetchUserData();
       } else {
         widget.onToast("Failed to upload image.");
       }
@@ -149,7 +198,40 @@ class _ProfileSectionState extends State<ProfileSection> {
       },
     ];
 
+    // ── Name resolution: Sync widget.user.info with _userData ──
+    final String apiName = ProfileService.extractFullName(_userData);
+    final String email = _userData?['email']?.toString() ?? widget.user.info.email;
+    
+    // Ultimate fallback: If the database and token both entirely lacked a name, 
+    // gracefully derive a display name from the email (e.g. sharmaji@gmail.com -> Sharmaji)
+    String fullName = apiName.isNotEmpty ? apiName : widget.user.info.name;
+    if (fullName.trim().isEmpty && email.contains('@')) {
+      final prefix = email.split('@')[0];
+      if (prefix.isNotEmpty) {
+        fullName = prefix[0].toUpperCase() + prefix.substring(1).toLowerCase();
+      }
+    } else if (fullName.trim().isEmpty) {
+      fullName = 'Unknown User';
+    }
+    
+    final dynamic rawId = _userData?['id'] ?? widget.user.id;
+    final String displayId = widget.user.role == UserRole.client 
+        ? 'CL-${rawId.toString().padLeft(3, '0')}' 
+        : ProfileService.formatEmployeeId(rawId);
+    
+    final String? rawJoinDate = _userData?['join_date']?.toString() ?? _userData?['joinDate']?.toString() ?? (widget.user.info.joinDate.isNotEmpty ? widget.user.info.joinDate : null);
+    final String joinDateString = ProfileService.formatDate(rawJoinDate);
+
+    final String? adhar = _userData?['adhar_number']?.toString() ?? _userData?['adharNumber']?.toString();
+    final String? pan = _userData?['pan_number']?.toString() ?? _userData?['panNumber']?.toString();
+    final String phone = _userData?['phone']?.toString() ?? _userData?['mobile']?.toString() ?? widget.user.info.phone;
+
+    if (_isLoadingData && _userData == null) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+    }
+
     return SingleChildScrollView(
+
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
         child: Column(
@@ -184,7 +266,7 @@ class _ProfileSectionState extends State<ProfileSection> {
                           Transform.translate(
                             offset: const Offset(0, -28),
                             child: GestureDetector(
-                              onTap: _pickImage,
+                              onTap: widget.user.role == UserRole.client ? null : _pickImage,
                               child: Stack(
                                 children: [
                                   Container(
@@ -201,22 +283,23 @@ class _ProfileSectionState extends State<ProfileSection> {
                                     clipBehavior: Clip.hardEdge,
                                     child: _buildProfileImage(),
                                   ),
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.camera_alt_rounded,
-                                        size: 10,
-                                        color: AppColors.primary,
+                                  if (widget.user.role != UserRole.client)
+                                    Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.camera_alt_rounded,
+                                          size: 10,
+                                          color: AppColors.primary,
+                                        ),
                                       ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -263,7 +346,10 @@ class _ProfileSectionState extends State<ProfileSection> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.user.info.name,
+                              // If API name is blank and fallback failed, 'fullName' holds our derived name.
+                              fullName.isNotEmpty 
+                                  ? fullName 
+                                  : (_isLoadingData ? 'Loading...' : 'Unknown User'),
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
@@ -279,24 +365,24 @@ class _ProfileSectionState extends State<ProfileSection> {
                             ),
                             const SizedBox(height: 10),
                             Row(
-                              children: const [
-                                GoldChip(
+                              children: [
+                                const GoldChip(
                                   text: 'Active',
                                   bg: AppColors.chipDoneBg,
                                   fg: AppColors.chipDoneFg,
                                 ),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Chip(
                                   label: Text(
-                                    'YW-2024-007',
-                                    style: TextStyle(
+                                    displayId,
+                                    style: const TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
                                       color: AppColors.primary,
                                       letterSpacing: 0.3,
                                     ),
                                   ),
-                                  backgroundColor: Color(0x26B8952A),
+                                  backgroundColor: const Color(0x26B8952A),
                                   padding: EdgeInsets.zero,
                                 ),
                               ],
@@ -315,7 +401,7 @@ class _ProfileSectionState extends State<ProfileSection> {
           // Quick stats
           Row(
             children: [
-              _stat('4', 'Projects'),
+              _stat(_projectCount.toString(), 'Projects'),
               const SizedBox(width: 10),
               _stat('38', 'Tasks'),
               const SizedBox(width: 10),
@@ -342,29 +428,43 @@ class _ProfileSectionState extends State<ProfileSection> {
                   {
                     'icon': Icons.mail_rounded,
                     'label': 'Email',
-                    'val': widget.user.info.email,
+                    'val': email,
                   },
                   {
                     'icon': Icons.phone_rounded,
                     'label': 'Phone',
-                    'val': '+91 98765 43210',
+                    'val': phone,
                   },
                   {
                     'icon': Icons.home_work_rounded,
-                    'label': 'Office',
-                    'val': 'YW Architects HQ, Pune',
+                    'label': widget.user.role == UserRole.client ? 'Address' : 'Office',
+                    'val': _userData?['address']?.toString() ?? 'YW Architects HQ, Pune',
                   },
-                  {
-                    'icon': Icons.badge_rounded,
-                    'label': 'Employee ID',
-                    'val': 'YW-2024-007',
-                  },
-                  {
-                    'icon': Icons.calendar_today_rounded,
-                    'label': 'Date of Joining',
-                    'val': '15 March 2024',
-                  },
-                ]).map(
+                  if (widget.user.role != UserRole.client)
+                    {
+                      'icon': Icons.calendar_today_rounded,
+                      'label': 'Date of Joining',
+                      'val': joinDateString,
+                    },
+                  if (widget.user.role == UserRole.client)
+                     {
+                       'icon': Icons.description_rounded,
+                       'label': 'GST Certificate',
+                       'val': _userData?['gstcertificate']?.toString() ?? widget.user.info.gstCertificate,
+                     },
+                  if (adhar != null && adhar.isNotEmpty && adhar != "0" && widget.user.role != UserRole.client)
+                    {
+                      'icon': Icons.badge_rounded,
+                      'label': 'Aadhaar Card',
+                      'val': adhar,
+                    },
+                   if ((pan != null && pan.isNotEmpty) || widget.user.role == UserRole.client) 
+                    {
+                      'icon': Icons.credit_card_rounded,
+                      'label': widget.user.role == UserRole.client ? 'PAN Number' : 'PAN Card',
+                      'val': pan ?? widget.user.info.pan,
+                    },
+                ].where((e) => e['val'].toString().isNotEmpty && e['val'] != '—').map(
                   (i) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(
@@ -406,7 +506,7 @@ class _ProfileSectionState extends State<ProfileSection> {
                       ],
                     ),
                   ),
-                ),
+                ).toList()),
               ],
             ),
           ),
@@ -542,7 +642,7 @@ class _ProfileSectionState extends State<ProfileSection> {
 }
 
   Widget _buildProfileImage() {
-    final imageUrl = widget.user.info.profileImage;
+    final imageUrl = _userData?['profileImage']?.toString() ?? widget.user.info.profileImage;
     
     if (imageUrl != null && imageUrl.isNotEmpty) {
       if (Base64Utils.isBase64(imageUrl)) {
@@ -570,11 +670,25 @@ class _ProfileSectionState extends State<ProfileSection> {
   }
 
   Widget _buildInitials() {
+    final String apiName = ProfileService.extractFullName(_userData);
+    String initials = '';
+    
+    if (apiName.isNotEmpty) {
+      final parts = apiName.split(' ');
+      if (parts.length > 1) {
+        initials = (parts[0].isNotEmpty ? parts[0][0] : '') + (parts[parts.length-1].isNotEmpty ? parts[parts.length-1][0] : '');
+      } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+        initials = parts[0][0];
+      }
+    } else {
+      initials = widget.user.info.initials;
+    }
+
     return Container(
       decoration: BoxDecoration(gradient: goldGradient),
       child: Center(
         child: Text(
-          widget.user.info.initials,
+          initials.toUpperCase(),
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w800,
@@ -619,7 +733,8 @@ class _ProfileSectionState extends State<ProfileSection> {
 
 class _EditProfileModal extends StatefulWidget {
   final AppUser user;
-  const _EditProfileModal({required this.user});
+  final Map<String, dynamic>? initialUserData;
+  const _EditProfileModal({required this.user, this.initialUserData});
 
   @override
   State<_EditProfileModal> createState() => _EditProfileModalState();
@@ -639,10 +754,27 @@ class _EditProfileModalState extends State<_EditProfileModal> {
   @override
   void initState() {
     super.initState();
-    _firstNameController = TextEditingController(text: widget.user.info.firstName);
-    _lastNameController = TextEditingController(text: widget.user.info.lastName);
-    _phoneController = TextEditingController(text: "9876543210"); 
-    _birthDateController = TextEditingController(text: "1995-01-01");
+    final d = widget.initialUserData;
+    _firstNameController = TextEditingController(
+      text: d?['first_name']?.toString() ?? d?['firstName']?.toString() ?? widget.user.info.firstName,
+    );
+    _lastNameController = TextEditingController(
+      text: d?['last_name']?.toString() ?? d?['lastName']?.toString() ?? widget.user.info.lastName,
+    );
+    _phoneController = TextEditingController(
+      text: d?['phone']?.toString() ?? "9876543210",
+    );
+    _birthDateController = TextEditingController(
+      text: d?['birth_date']?.toString() ?? d?['birthDate']?.toString() ?? "1995-01-01",
+    );
+    
+    if (d != null) {
+      final gender = d['gender']?.toString().toUpperCase();
+      if (gender != null) _selectedGender = gender;
+      
+      final blood = (d['blood_group'] ?? d['bloodGroup'])?.toString().toUpperCase();
+      if (blood != null) _selectedBlood = blood;
+    }
   }
 
   Future<void> _pickDate() async {
@@ -665,16 +797,21 @@ class _EditProfileModalState extends State<_EditProfileModal> {
     setState(() => _isSaving = true);
     try {
       final payload = {
-        "firstName": _firstNameController.text.trim(),
+        "id": widget.user.id,
+        "first_name": _firstNameController.text.trim(),
+        "last_name": _lastNameController.text.trim(),
+        "firstName": _firstNameController.text.trim(), // Dual mapping for compatibility
         "lastName": _lastNameController.text.trim(),
         "phone": _phoneController.text.trim(),
         "email": widget.user.info.email,
         "gender": _selectedGender,
+        "blood_group": _selectedBlood,
         "bloodGroup": _selectedBlood,
+        "birth_date": _birthDateController.text.trim(),
         "birthDate": _birthDateController.text.trim(),
       };
 
-      final success = await EmployeeService.updateMyProfile(payload);
+      final success = await ProfileService.updateMyProfile(payload);
       if (success) {
         if (mounted) Navigator.pop(context, true);
       } else {
@@ -839,7 +976,7 @@ class _ChangePasswordModalState extends State<_ChangePasswordModal> {
 
     setState(() => _isLoading = true);
     try {
-      final success = await EmployeeService.updateMyPassword(_oldController.text, _newController.text);
+      final success = await ProfileService.updateMyPassword(_oldController.text, _newController.text);
       if (success) {
         widget.onToast("Password changed successfully!");
         if (mounted) Navigator.pop(context);

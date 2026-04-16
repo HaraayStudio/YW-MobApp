@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import 'package:yw_architects/models/app_models.dart';
 import '../common_widgets.dart';
 import 'invoice_forms.dart';
 import '../../services/invoice_service.dart';
 
 class PaymentsTabView extends StatefulWidget {
   final Map<String, dynamic> project;
+  final AppUser user;
   final VoidCallback? onRefresh;
 
-  const PaymentsTabView({Key? key, required this.project, this.onRefresh}) : super(key: key);
+  const PaymentsTabView({
+    Key? key,
+    required this.project,
+    required this.user,
+    this.onRefresh,
+  }) : super(key: key);
 
   @override
   State<PaymentsTabView> createState() => _PaymentsTabViewState();
@@ -114,22 +121,23 @@ class _PaymentsTabViewState extends State<PaymentsTabView> {
                 ),
               ),
               const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: _taxInvoices.isEmpty 
-                  ? () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please generate a Tax Invoice first to record payments.'))
-                      );
-                    }
-                  : () => _handleRecordPayment(),
-                icon: const Icon(Icons.add_rounded, size: 16),
-                label: const Text('Record Payment', style: TextStyle(fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              if (widget.user.role != UserRole.client)
+                ElevatedButton.icon(
+                  onPressed: _taxInvoices.isEmpty 
+                    ? () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please generate a Tax Invoice first to record payments.'))
+                        );
+                      }
+                    : () => _handleRecordPayment(),
+                  icon: const Icon(Icons.add_rounded, size: 16),
+                  label: const Text('Record Payment', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),

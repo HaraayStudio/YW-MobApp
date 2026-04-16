@@ -5,7 +5,7 @@ import '../api/constants.dart';
 import 'token_service.dart';
 
 class InquiryService {
-  static const String baseUrl = "${ApiConstants.baseUrl}/presales";
+  static String get baseUrl => "${ApiConstants.baseUrl}/presales";
 
   static Map<String, String> get _authHeaders => {"Authorization": "Bearer ${TokenService.accessToken}"};
   static Map<String, String> get _jsonHeaders => {

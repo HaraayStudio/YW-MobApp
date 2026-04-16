@@ -4,7 +4,7 @@ import 'token_service.dart';
 import '../api/constants.dart';
 
 class ClientService {
-  static const String baseUrl = "${ApiConstants.baseUrl}/clients";
+  static String get baseUrl => "${ApiConstants.baseUrl}/clients";
 
   // POST /api/clients/createclient
   static Future<bool> createClient(Map<String, dynamic> payload) async {
@@ -88,5 +88,20 @@ class ClientService {
 
     print("DELETE CLIENT STATUS: ${response.statusCode}");
     return response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204;
+  }
+
+  /// NEW: Resolves a client ID by matching their email in the database.
+  /// Used as a fallback when the login ID is not available in the token.
+  static Future<int?> resolveClientIdByEmail(String email) async {
+    try {
+      final clients = await getAllClients();
+      for (var client in clients) {
+        final cEmail = client['email']?.toString().toLowerCase();
+        if (cEmail == email.toLowerCase()) {
+          return client['id'] as int?;
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 }

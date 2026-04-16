@@ -78,6 +78,7 @@ UserRole backendToRole(String val) {
     case 'LIAISON_MANAGER': return UserRole.liaisonManager;
     case 'LIAISON_OFFICER': return UserRole.liaisonOfficer;
     case 'LIAISON_ASSISTANT': return UserRole.liaisonAssistant;
+    case 'CLIENT': return UserRole.client;
     default: return UserRole.jrArchitect;
   }
 }
@@ -94,6 +95,7 @@ String roleToDept(UserRole role) {
     case UserRole.liaisonManager:
     case UserRole.liaisonOfficer:
     case UserRole.liaisonAssistant: return 'Liaison';
+    case UserRole.client: return 'Client';
   }
 }
 
@@ -109,6 +111,7 @@ String roleToBackend(UserRole role) {
     case UserRole.liaisonManager:   return 'LIAISON_MANAGER';
     case UserRole.liaisonOfficer:   return 'LIAISON_OFFICER';
     case UserRole.liaisonAssistant: return 'LIAISON_ASSISTANT';
+    case UserRole.client:           return 'CLIENT';
   }
 }
 

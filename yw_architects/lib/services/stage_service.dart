@@ -5,7 +5,7 @@ import 'token_service.dart';
 import '../api/constants.dart';
 
 class StageService {
-  static const String baseUrl = "${ApiConstants.baseUrl}/stages";
+  static String get baseUrl => "${ApiConstants.baseUrl}/stages";
 
   /// POST /api/stages/{stageId}/documents/addDocument/{documentName}/{documentType}
   static Future<bool> addStageDocument({
