@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../theme/app_theme.dart';
 import '../../services/invoice_service.dart';
+import '../../services/rera_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class TaxInvoiceFormDialog extends StatefulWidget {
   final Map<String, dynamic> client;
   final int postSalesId;
   final VoidCallback onSuccess;
 
-  const TaxInvoiceFormDialog({Key? key, required this.client, required this.postSalesId, required this.onSuccess}) : super(key: key);
+  const TaxInvoiceFormDialog({
+    Key? key,
+    required this.client,
+    required this.postSalesId,
+    required this.onSuccess,
+  }) : super(key: key);
 
   @override
   State<TaxInvoiceFormDialog> createState() => _TaxInvoiceFormDialogState();
@@ -36,7 +44,10 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
     _clientNameController.text = widget.client['name']?.toString() ?? '';
     _clientEmailController.text = widget.client['email']?.toString() ?? '';
     _clientPhoneController.text = widget.client['phone']?.toString() ?? '';
-    _gstinController.text = widget.client['gstNumber']?.toString() ?? widget.client['gstin']?.toString() ?? '';
+    _gstinController.text =
+        widget.client['gstNumber']?.toString() ??
+        widget.client['gstin']?.toString() ??
+        '';
     _addressController.text = widget.client['address']?.toString() ?? '';
 
     _netAmountController.addListener(_calculateGross);
@@ -63,7 +74,9 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
 
   Future<void> _submitRecord() async {
     if (_netAmountController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Net Amount is required')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Net Amount is required')));
       return;
     }
 
@@ -81,7 +94,10 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
       "amountInWords": _amountWordsController.text,
     };
 
-    final res = await InvoiceService.createTaxInvoice(widget.postSalesId, payload);
+    final res = await InvoiceService.createTaxInvoice(
+      widget.postSalesId,
+      payload,
+    );
     setState(() => _isSubmitting = false);
 
     if (res['success']) {
@@ -89,7 +105,9 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
       if (mounted) Navigator.pop(context);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Failed to submit')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Failed to submit')),
+        );
       }
     }
   }
@@ -103,8 +121,19 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(4), border: Border.all(color: const Color(0xFFBFDBFE))),
-            child: Text('= ₹${amount.toStringAsFixed(2)}', style: const TextStyle(color: Color(0xFF1D4ED8), fontSize: 12, fontWeight: FontWeight.bold)),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
+            ),
+            child: Text(
+              '= ₹${amount.toStringAsFixed(2)}',
+              style: const TextStyle(
+                color: Color(0xFF1D4ED8),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -116,7 +145,7 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
     final gross = double.tryParse(_grossAmountController.text) ?? 0.0;
     final cgst = double.tryParse(_cgstController.text) ?? 0;
     final sgst = double.tryParse(_sgstController.text) ?? 0;
-    
+
     if (net == 0) return const SizedBox.shrink();
 
     return Container(
@@ -124,8 +153,10 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
-        borderRadius: BorderRadius.circular(12)
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.5),
+        ),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Wrap(
         alignment: WrapAlignment.center,
@@ -135,34 +166,68 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
         children: [
           _buildSummaryItem('NET', '₹${net.toStringAsFixed(0)}'),
           const Text('+', style: TextStyle(color: AppColors.outlineVariant)),
-          _buildSummaryItem('CGST ${cgst.toStringAsFixed(0)}%', '₹${_cgstAmtValue.toStringAsFixed(2)}'),
+          _buildSummaryItem(
+            'CGST ${cgst.toStringAsFixed(0)}%',
+            '₹${_cgstAmtValue.toStringAsFixed(2)}',
+          ),
           const Text('+', style: TextStyle(color: AppColors.outlineVariant)),
-          _buildSummaryItem('SGST ${sgst.toStringAsFixed(0)}%', '₹${_sgstAmtValue.toStringAsFixed(2)}'),
+          _buildSummaryItem(
+            'SGST ${sgst.toStringAsFixed(0)}%',
+            '₹${_sgstAmtValue.toStringAsFixed(2)}',
+          ),
           const Text('='),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xFFFEF3C7),
               border: Border.all(color: const Color(0xFFFCD34D)),
-              borderRadius: BorderRadius.circular(8)
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               children: [
-                const Text('GROSS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
-                Text('₹${gross.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF92400E))),
+                const Text(
+                  'GROSS',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
+                Text(
+                  '₹${gross.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
               ],
-            )
-          )
+            ),
+          ),
         ],
-      )
+      ),
     );
   }
 
   Widget _buildSummaryItem(String label, String value) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.onSurfaceVariant)),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppColors.onSurface,
+          ),
+        ),
       ],
     );
   }
@@ -195,15 +260,27 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('New Tax Invoice', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('Invoice number will be auto-generated', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        Text(
+                          'New Tax Invoice',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Invoice number will be auto-generated',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
                       ],
                     ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close_rounded, color: Colors.white),
-                    style: IconButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.1)),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                    ),
                   ),
                 ],
               ),
@@ -220,36 +297,77 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+                        border: Border.all(
+                          color: AppColors.outlineVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.person, size: 16, color: Color(0xFF6366F1)),
+                              Icon(
+                                Icons.person,
+                                size: 16,
+                                color: Color(0xFF6366F1),
+                              ),
                               SizedBox(width: 8),
-                              Text('CLIENT DETAILS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                              Text(
+                                'CLIENT DETAILS',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildField('CLIENT NAME', _clientNameController)),
+                              Expanded(
+                                child: _buildField(
+                                  'CLIENT NAME',
+                                  _clientNameController,
+                                ),
+                              ),
                               const SizedBox(width: 16),
-                              Expanded(child: _buildField('CLIENT EMAIL', _clientEmailController)),
+                              Expanded(
+                                child: _buildField(
+                                  'CLIENT EMAIL',
+                                  _clientEmailController,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildField('CLIENT PHONE', _clientPhoneController)),
+                              Expanded(
+                                child: _buildField(
+                                  'CLIENT PHONE',
+                                  _clientPhoneController,
+                                ),
+                              ),
                               const SizedBox(width: 16),
-                              Expanded(child: _buildField('GSTIN', _gstinController, hint: 'E.G. 27AAAAA0000A1Z5')),
+                              Expanded(
+                                child: _buildField(
+                                  'GSTIN',
+                                  _gstinController,
+                                  hint: 'E.G. 27AAAAA0000A1Z5',
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          _buildField('ADDRESS', _addressController, hint: 'Full billing address', maxLines: 3),
+                          _buildField(
+                            'ADDRESS',
+                            _addressController,
+                            hint: 'Full billing address',
+                            maxLines: 3,
+                          ),
                         ],
                       ),
                     ),
@@ -260,7 +378,11 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+                        border: Border.all(
+                          color: AppColors.outlineVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,40 +396,95 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
                               const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.monetization_on, size: 16, color: Color(0xFFD97706)),
+                                  Icon(
+                                    Icons.monetization_on,
+                                    size: 16,
+                                    color: Color(0xFFD97706),
+                                  ),
                                   SizedBox(width: 8),
-                                  Text('AMOUNT DETAILS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                                  Text(
+                                    'AMOUNT DETAILS',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
                                 ],
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(12)),
-                                child: const Text('CGST & SGST amounts auto-calculated from %', style: TextStyle(fontSize: 10, color: Color(0xFF16A34A), fontWeight: FontWeight.bold)),
-                              )
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'CGST & SGST amounts auto-calculated from %',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFF16A34A),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildField('NET AMOUNT (₹) *', _netAmountController, hint: '0.00')),
+                              Expanded(
+                                child: _buildField(
+                                  'NET AMOUNT (₹) *',
+                                  _netAmountController,
+                                  hint: '0.00',
+                                ),
+                              ),
                               const SizedBox(width: 16),
-                              Expanded(child: _buildField('CGST (%)', _cgstController, hint: 'e.g. 9', suffix: _buildCalculatedAmount(_cgstAmtValue))),
+                              Expanded(
+                                child: _buildField(
+                                  'CGST (%)',
+                                  _cgstController,
+                                  hint: 'e.g. 9',
+                                  suffix: _buildCalculatedAmount(_cgstAmtValue),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildField('SGST (%)', _sgstController, hint: 'e.g. 9', suffix: _buildCalculatedAmount(_sgstAmtValue))),
+                              Expanded(
+                                child: _buildField(
+                                  'SGST (%)',
+                                  _sgstController,
+                                  hint: 'e.g. 9',
+                                  suffix: _buildCalculatedAmount(_sgstAmtValue),
+                                ),
+                              ),
                               const SizedBox(width: 16),
-                              Expanded(child: _buildField('GROSS AMOUNT (₹) *', _grossAmountController, hint: 'Auto-calculated', readOnly: true)),
+                              Expanded(
+                                child: _buildField(
+                                  'GROSS AMOUNT (₹) *',
+                                  _grossAmountController,
+                                  hint: 'Auto-calculated',
+                                  readOnly: true,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          _buildField('AMOUNT IN WORDS', _amountWordsController, hint: 'e.g. Rupees Fifty Thousand Only'),
+                          _buildField(
+                            'AMOUNT IN WORDS',
+                            _amountWordsController,
+                            hint: 'e.g. Rupees Fifty Thousand Only',
+                          ),
                           _buildSummaryBar(),
                         ],
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -317,32 +494,73 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: Border(top: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5))),
+                border: Border(
+                  top: BorderSide(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.onSurfaceVariant,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5))),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.onSurfaceVariant,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(
+                            color: AppColors.outlineVariant.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ),
-                    child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: _isSubmitting ? null : _submitRecord,
-                    icon: _isSubmitting 
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.request_quote_rounded, size: 18),
-                    label: const Text('Create Tax Invoice', style: TextStyle(fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E293B),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      onPressed: _isSubmitting ? null : _submitRecord,
+                      icon: _isSubmitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.request_quote_rounded, size: 18),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: const Text(
+                          'Create Tax Invoice',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E293B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -354,27 +572,59 @@ class _TaxInvoiceFormDialogState extends State<TaxInvoiceFormDialog> {
     );
   }
 
-  Widget _buildField(String label, TextEditingController controller, {String hint = '', bool readOnly = false, int maxLines = 1, Widget? suffix}) {
+  Widget _buildField(
+    String label,
+    TextEditingController controller, {
+    String hint = '',
+    bool readOnly = false,
+    int maxLines = 1,
+    Widget? suffix,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF64748B),
+          ),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
           readOnly: readOnly,
           maxLines: maxLines,
-          style: TextStyle(fontSize: 14, color: readOnly ? AppColors.onSurfaceVariant : AppColors.onSurface, fontWeight: readOnly ? FontWeight.bold : FontWeight.normal),
+          style: TextStyle(
+            fontSize: 14,
+            color: readOnly ? AppColors.onSurfaceVariant : AppColors.onSurface,
+            fontWeight: readOnly ? FontWeight.bold : FontWeight.normal,
+          ),
           decoration: InputDecoration(
             hintText: hint,
             suffixIcon: suffix,
-            hintStyle: TextStyle(color: AppColors.outlineVariant.withValues(alpha: 0.8)),
+            hintStyle: TextStyle(
+              color: AppColors.outlineVariant.withValues(alpha: 0.8),
+            ),
             filled: readOnly,
             fillColor: readOnly ? const Color(0xFFF1F5F9) : Colors.white,
-            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: maxLines > 1 ? 12 : 0),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2)),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: maxLines > 1 ? 12 : 0,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+            ),
           ),
         ),
       ],
@@ -387,10 +637,16 @@ class ProformaInvoiceFormDialog extends StatefulWidget {
   final int postSalesId;
   final VoidCallback onSuccess;
 
-  const ProformaInvoiceFormDialog({Key? key, required this.client, required this.postSalesId, required this.onSuccess}) : super(key: key);
+  const ProformaInvoiceFormDialog({
+    Key? key,
+    required this.client,
+    required this.postSalesId,
+    required this.onSuccess,
+  }) : super(key: key);
 
   @override
-  State<ProformaInvoiceFormDialog> createState() => _ProformaInvoiceFormDialogState();
+  State<ProformaInvoiceFormDialog> createState() =>
+      _ProformaInvoiceFormDialogState();
 }
 
 class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
@@ -417,7 +673,10 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
     _clientNameController.text = widget.client['name']?.toString() ?? '';
     _clientEmailController.text = widget.client['email']?.toString() ?? '';
     _clientPhoneController.text = widget.client['phone']?.toString() ?? '';
-    _gstinController.text = widget.client['gstNumber']?.toString() ?? widget.client['gstin']?.toString() ?? '';
+    _gstinController.text =
+        widget.client['gstNumber']?.toString() ??
+        widget.client['gstin']?.toString() ??
+        '';
     _addressController.text = widget.client['address']?.toString() ?? '';
 
     _netAmountController.addListener(_calculateGross);
@@ -444,7 +703,9 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
 
   Future<void> _submitRecord() async {
     if (_netAmountController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Net Amount is required')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Net Amount is required')));
       return;
     }
 
@@ -463,7 +724,10 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
       "validTill": _validTill?.toIso8601String().split('T')[0], // YYYY-MM-DD
     };
 
-    final res = await InvoiceService.createProformaInvoice(widget.postSalesId, payload);
+    final res = await InvoiceService.createProformaInvoice(
+      widget.postSalesId,
+      payload,
+    );
     setState(() => _isSubmitting = false);
 
     if (res['success']) {
@@ -471,7 +735,9 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
       if (mounted) Navigator.pop(context);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Failed to submit')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Failed to submit')),
+        );
       }
     }
   }
@@ -485,8 +751,19 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(4), border: Border.all(color: const Color(0xFFBFDBFE))),
-            child: Text('= ₹${amount.toStringAsFixed(2)}', style: const TextStyle(color: Color(0xFF1D4ED8), fontSize: 12, fontWeight: FontWeight.bold)),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
+            ),
+            child: Text(
+              '= ₹${amount.toStringAsFixed(2)}',
+              style: const TextStyle(
+                color: Color(0xFF1D4ED8),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -498,7 +775,7 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
     final gross = double.tryParse(_grossAmountController.text) ?? 0.0;
     final cgst = double.tryParse(_cgstController.text) ?? 0;
     final sgst = double.tryParse(_sgstController.text) ?? 0;
-    
+
     if (net == 0) return const SizedBox.shrink();
 
     return Container(
@@ -506,8 +783,10 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
-        borderRadius: BorderRadius.circular(12)
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.5),
+        ),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Wrap(
         alignment: WrapAlignment.center,
@@ -517,34 +796,68 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
         children: [
           _buildSummaryItem('NET', '₹${net.toStringAsFixed(0)}'),
           const Text('+', style: TextStyle(color: AppColors.outlineVariant)),
-          _buildSummaryItem('CGST ${cgst.toStringAsFixed(0)}%', '₹${_cgstAmtValue.toStringAsFixed(2)}'),
+          _buildSummaryItem(
+            'CGST ${cgst.toStringAsFixed(0)}%',
+            '₹${_cgstAmtValue.toStringAsFixed(2)}',
+          ),
           const Text('+', style: TextStyle(color: AppColors.outlineVariant)),
-          _buildSummaryItem('SGST ${sgst.toStringAsFixed(0)}%', '₹${_sgstAmtValue.toStringAsFixed(2)}'),
+          _buildSummaryItem(
+            'SGST ${sgst.toStringAsFixed(0)}%',
+            '₹${_sgstAmtValue.toStringAsFixed(2)}',
+          ),
           const Text('='),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xFFFEF3C7),
               border: Border.all(color: const Color(0xFFFCD34D)),
-              borderRadius: BorderRadius.circular(8)
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               children: [
-                const Text('GROSS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
-                Text('₹${gross.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF92400E))),
+                const Text(
+                  'GROSS',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
+                Text(
+                  '₹${gross.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
               ],
-            )
-          )
+            ),
+          ),
         ],
-      )
+      ),
     );
   }
 
   Widget _buildSummaryItem(String label, String value) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.onSurfaceVariant)),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppColors.onSurface,
+          ),
+        ),
       ],
     );
   }
@@ -568,24 +881,42 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
             // Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              color: const Color(0xFF6B4210), // Bronze/Gold color matching the screenshot
+              color: const Color(
+                0xFF6B4210,
+              ), // Bronze/Gold color matching the screenshot
               child: Row(
                 children: [
-                  const Icon(Icons.circle_rounded, size: 16, color: Color(0xFF8B5E34)),
+                  const Icon(
+                    Icons.circle_rounded,
+                    size: 16,
+                    color: Color(0xFF8B5E34),
+                  ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('New Proforma Invoice', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('Invoice number will be auto-generated', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        Text(
+                          'New Proforma Invoice',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Invoice number will be auto-generated',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
                       ],
                     ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close_rounded, color: Colors.white),
-                    style: IconButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.1)),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                    ),
                   ),
                 ],
               ),
@@ -602,36 +933,77 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+                        border: Border.all(
+                          color: AppColors.outlineVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.person, size: 16, color: Color(0xFF6366F1)),
+                              Icon(
+                                Icons.person,
+                                size: 16,
+                                color: Color(0xFF6366F1),
+                              ),
                               SizedBox(width: 8),
-                              Text('CLIENT DETAILS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                              Text(
+                                'CLIENT DETAILS',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildField('CLIENT NAME', _clientNameController)),
+                              Expanded(
+                                child: _buildField(
+                                  'CLIENT NAME',
+                                  _clientNameController,
+                                ),
+                              ),
                               const SizedBox(width: 16),
-                              Expanded(child: _buildField('CLIENT EMAIL', _clientEmailController)),
+                              Expanded(
+                                child: _buildField(
+                                  'CLIENT EMAIL',
+                                  _clientEmailController,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildField('CLIENT PHONE', _clientPhoneController)),
+                              Expanded(
+                                child: _buildField(
+                                  'CLIENT PHONE',
+                                  _clientPhoneController,
+                                ),
+                              ),
                               const SizedBox(width: 16),
-                              Expanded(child: _buildField('GSTIN', _gstinController, hint: 'E.G. 27AAAAA0000A1Z5')),
+                              Expanded(
+                                child: _buildField(
+                                  'GSTIN',
+                                  _gstinController,
+                                  hint: 'E.G. 27AAAAA0000A1Z5',
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          _buildField('ADDRESS', _addressController, hint: 'Full billing address', maxLines: 3),
+                          _buildField(
+                            'ADDRESS',
+                            _addressController,
+                            hint: 'Full billing address',
+                            maxLines: 3,
+                          ),
                         ],
                       ),
                     ),
@@ -642,7 +1014,11 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+                        border: Border.all(
+                          color: AppColors.outlineVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -656,36 +1032,91 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
                               const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.monetization_on, size: 16, color: Color(0xFFD97706)),
+                                  Icon(
+                                    Icons.monetization_on,
+                                    size: 16,
+                                    color: Color(0xFFD97706),
+                                  ),
                                   SizedBox(width: 8),
-                                  Text('AMOUNT DETAILS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                                  Text(
+                                    'AMOUNT DETAILS',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
                                 ],
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(12)),
-                                child: const Text('CGST & SGST amounts auto-calculated from %', style: TextStyle(fontSize: 10, color: Color(0xFF16A34A), fontWeight: FontWeight.bold)),
-                              )
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'CGST & SGST amounts auto-calculated from %',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFF16A34A),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildField('NET AMOUNT (₹) *', _netAmountController, hint: '0.00')),
+                              Expanded(
+                                child: _buildField(
+                                  'NET AMOUNT (₹) *',
+                                  _netAmountController,
+                                  hint: '0.00',
+                                ),
+                              ),
                               const SizedBox(width: 16),
-                              Expanded(child: _buildField('CGST (%)', _cgstController, hint: 'e.g. 9', suffix: _buildCalculatedAmount(_cgstAmtValue))),
+                              Expanded(
+                                child: _buildField(
+                                  'CGST (%)',
+                                  _cgstController,
+                                  hint: 'e.g. 9',
+                                  suffix: _buildCalculatedAmount(_cgstAmtValue),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildField('SGST (%)', _sgstController, hint: 'e.g. 9', suffix: _buildCalculatedAmount(_sgstAmtValue))),
+                              Expanded(
+                                child: _buildField(
+                                  'SGST (%)',
+                                  _sgstController,
+                                  hint: 'e.g. 9',
+                                  suffix: _buildCalculatedAmount(_sgstAmtValue),
+                                ),
+                              ),
                               const SizedBox(width: 16),
-                              Expanded(child: _buildField('GROSS AMOUNT (₹) *', _grossAmountController, hint: 'Auto-calculated', readOnly: true)),
+                              Expanded(
+                                child: _buildField(
+                                  'GROSS AMOUNT (₹) *',
+                                  _grossAmountController,
+                                  hint: 'Auto-calculated',
+                                  readOnly: true,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          _buildField('AMOUNT IN WORDS', _amountWordsController, hint: 'e.g. Rupees Fifty Thousand Only'),
+                          _buildField(
+                            'AMOUNT IN WORDS',
+                            _amountWordsController,
+                            hint: 'e.g. Rupees Fifty Thousand Only',
+                          ),
                           _buildSummaryBar(),
                         ],
                       ),
@@ -697,29 +1128,53 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+                        border: Border.all(
+                          color: AppColors.outlineVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.calendar_month, size: 18, color: Color(0xFF6366F1)),
+                              Icon(
+                                Icons.calendar_month,
+                                size: 18,
+                                color: Color(0xFF6366F1),
+                              ),
                               SizedBox(width: 8),
-                              Text('VALIDITY', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                              Text(
+                                'VALIDITY',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('VALID TILL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                              const Text(
+                                'VALID TILL',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
                               const SizedBox(height: 6),
                               InkWell(
                                 onTap: () async {
                                   final d = await showDatePicker(
                                     context: context,
-                                    initialDate: DateTime.now().add(const Duration(days: 30)),
+                                    initialDate: DateTime.now().add(
+                                      const Duration(days: 30),
+                                    ),
                                     firstDate: DateTime.now(),
                                     lastDate: DateTime(2040),
                                   );
@@ -729,20 +1184,36 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
                                 },
                                 borderRadius: BorderRadius.circular(8),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                                    border: Border.all(
+                                      color: const Color(0xFFCBD5E1),
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                     color: Colors.white,
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        _validTill != null ? '${_validTill!.day.toString().padLeft(2, '0')}-${_validTill!.month.toString().padLeft(2, '0')}-${_validTill!.year}' : 'dd-mm-yyyy',
-                                        style: TextStyle(color: _validTill != null ? AppColors.onSurface : AppColors.onSurfaceVariant),
+                                        _validTill != null
+                                            ? '${_validTill!.day.toString().padLeft(2, '0')}-${_validTill!.month.toString().padLeft(2, '0')}-${_validTill!.year}'
+                                            : 'dd-mm-yyyy',
+                                        style: TextStyle(
+                                          color: _validTill != null
+                                              ? AppColors.onSurface
+                                              : AppColors.onSurfaceVariant,
+                                        ),
                                       ),
-                                      const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF64748B)),
+                                      const Icon(
+                                        Icons.calendar_today_rounded,
+                                        size: 16,
+                                        color: Color(0xFF64748B),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -761,32 +1232,73 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: Border(top: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5))),
+                border: Border(
+                  top: BorderSide(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.onSurfaceVariant,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5))),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.onSurfaceVariant,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(
+                            color: AppColors.outlineVariant.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ),
-                    child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: _isSubmitting ? null : _submitRecord,
-                    icon: _isSubmitting 
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.assignment_rounded, size: 18),
-                    label: const Text('Create Proforma', style: TextStyle(fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF78511E),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      onPressed: _isSubmitting ? null : _submitRecord,
+                      icon: _isSubmitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.assignment_rounded, size: 18),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: const Text(
+                          'Create Proforma',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF78511E),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -798,27 +1310,59 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
     );
   }
 
-  Widget _buildField(String label, TextEditingController controller, {String hint = '', bool readOnly = false, int maxLines = 1, Widget? suffix}) {
+  Widget _buildField(
+    String label,
+    TextEditingController controller, {
+    String hint = '',
+    bool readOnly = false,
+    int maxLines = 1,
+    Widget? suffix,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF64748B),
+          ),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
           readOnly: readOnly,
           maxLines: maxLines,
-          style: TextStyle(fontSize: 14, color: readOnly ? AppColors.onSurfaceVariant : AppColors.onSurface, fontWeight: readOnly ? FontWeight.bold : FontWeight.normal),
+          style: TextStyle(
+            fontSize: 14,
+            color: readOnly ? AppColors.onSurfaceVariant : AppColors.onSurface,
+            fontWeight: readOnly ? FontWeight.bold : FontWeight.normal,
+          ),
           decoration: InputDecoration(
             hintText: hint,
             suffixIcon: suffix,
-            hintStyle: TextStyle(color: AppColors.outlineVariant.withValues(alpha: 0.8)),
+            hintStyle: TextStyle(
+              color: AppColors.outlineVariant.withValues(alpha: 0.8),
+            ),
             filled: readOnly,
             fillColor: readOnly ? const Color(0xFFF1F5F9) : Colors.white,
-            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: maxLines > 1 ? 12 : 0),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2)),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: maxLines > 1 ? 12 : 0,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+            ),
           ),
         ),
       ],
@@ -828,7 +1372,7 @@ class _ProformaInvoiceFormDialogState extends State<ProformaInvoiceFormDialog> {
 
 class PaymentEntryDialog extends StatefulWidget {
   final Map<String, dynamic>? invoice; // Optional if taxInvoices is provided
-  final List<dynamic>? taxInvoices;    // Optional list for selection
+  final List<dynamic>? taxInvoices; // Optional list for selection
   final bool isTax;
   final VoidCallback onSuccess;
 
@@ -838,7 +1382,8 @@ class PaymentEntryDialog extends StatefulWidget {
     this.taxInvoices,
     required this.isTax,
     required this.onSuccess,
-  }) : assert(invoice != null || taxInvoices != null), super(key: key);
+  }) : assert(invoice != null || taxInvoices != null),
+       super(key: key);
 
   @override
   State<PaymentEntryDialog> createState() => _PaymentEntryDialogState();
@@ -851,7 +1396,7 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
   String _paymentMode = 'CASH';
   DateTime _paymentDate = DateTime.now();
   bool _isSubmitting = false;
-  
+
   Map<String, dynamic>? _selectedInvoice;
   double _alreadyPaid = 0;
   double _outstanding = 0;
@@ -859,7 +1404,11 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
   @override
   void initState() {
     super.initState();
-    _selectedInvoice = widget.invoice ?? (widget.taxInvoices?.isNotEmpty == true ? (widget.taxInvoices!.first as Map<String, dynamic>) : null);
+    _selectedInvoice =
+        widget.invoice ??
+        (widget.taxInvoices?.isNotEmpty == true
+            ? (widget.taxInvoices!.first as Map<String, dynamic>)
+            : null);
     _calculateBalances();
   }
 
@@ -873,7 +1422,7 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
 
   void _calculateBalances() {
     if (_selectedInvoice == null) return;
-    
+
     final double gross = (_selectedInvoice!['grossAmount'] ?? 0.0).toDouble();
     double paid = 0;
     final payments = _selectedInvoice!['payments'] as List?;
@@ -882,18 +1431,20 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
         paid += (p['amountPaid'] ?? 0.0).toDouble();
       }
     }
-    
+
     _alreadyPaid = paid;
     _outstanding = gross - paid;
     if (_outstanding < 0) _outstanding = 0;
-    
+
     _amountController.text = _outstanding.toStringAsFixed(2);
   }
 
   Future<void> _submit() async {
     final amount = double.tryParse(_amountController.text) ?? 0.0;
     if (amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid amount')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid amount')),
+      );
       return;
     }
 
@@ -903,18 +1454,31 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
       "amountPaid": amount,
       "paymentDate": _paymentDate.toIso8601String().split('T')[0],
       "paymentMode": _paymentMode,
-      "transactionId": _transactionIdController.text.isEmpty ? null : _transactionIdController.text,
-      "remarks": _remarksController.text.isEmpty ? null : _remarksController.text,
+      "transactionId": _transactionIdController.text.isEmpty
+          ? null
+          : _transactionIdController.text,
+      "remarks": _remarksController.text.isEmpty
+          ? null
+          : _remarksController.text,
     };
 
-    final invoiceNumber = _selectedInvoice?['invoiceNumber']?.toString() ?? _selectedInvoice?['id']?.toString();
+    final invoiceNumber =
+        _selectedInvoice?['invoiceNumber']?.toString() ??
+        _selectedInvoice?['id']?.toString();
     if (invoiceNumber == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: Invoice not selected or missing identifier')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error: Invoice not selected or missing identifier'),
+        ),
+      );
       setState(() => _isSubmitting = false);
       return;
     }
 
-    final success = await InvoiceService.makeInvoicePaid(invoiceNumber, payload);
+    final success = await InvoiceService.makeInvoicePaid(
+      invoiceNumber,
+      payload,
+    );
     setState(() => _isSubmitting = false);
 
     if (success) {
@@ -923,10 +1487,14 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
     } else {
       if (mounted) {
         // Fallback or more info if needed
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Failed to record payment. Please check if the invoice exists and is unpaid.'),
-          backgroundColor: Colors.redAccent,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Failed to record payment. Please check if the invoice exists and is unpaid.',
+            ),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
       }
     }
   }
@@ -945,61 +1513,108 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              color: Colors.green.shade700,
-              child: const Row(
-                children: [
-                  Icon(Icons.payments_outlined, color: Colors.white),
-                  SizedBox(width: 12),
-                  Text('Record Payment', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                ],
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (widget.taxInvoices != null &&
+                        widget.taxInvoices!.isNotEmpty)
+                      _buildInvoiceSelectionDropdown()
+                    else
+                      Text(
+                        'Invoice: ${_selectedInvoice?['invoiceNumber'] ?? 'N/A'}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    if (_selectedInvoice != null) ...[
+                      const SizedBox(height: 12),
+                      _buildSummaryStrip(),
+                    ],
+                    const SizedBox(height: 20),
+                    _buildField('AMOUNT PAID (₹)', _amountController),
+                    const SizedBox(height: 16),
+                    _buildPaymentModeDropdown(),
+                    const SizedBox(height: 16),
+                    _buildDatePicker(),
+                    const SizedBox(height: 16),
+                    _buildField(
+                      'TRANSACTION ID / REF',
+                      _transactionIdController,
+                      hint: 'Optional',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildField(
+                      'REMARKS',
+                      _remarksController,
+                      hint: 'Optional',
+                    ),
+                  ],
+                ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // Footer
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  if (widget.taxInvoices != null && widget.taxInvoices!.isNotEmpty)
-                    _buildInvoiceSelectionDropdown()
-                  else
-                    Text('Invoice: ${_selectedInvoice?['invoiceNumber'] ?? 'N/A'}', 
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54)),
-                  
-                  if (_selectedInvoice != null) ...[
-                    const SizedBox(height: 12),
-                    _buildSummaryStrip(),
-                  ],
-                  const SizedBox(height: 20),
-                  _buildField('AMOUNT PAID (₹)', _amountController),
-                  const SizedBox(height: 16),
-                  _buildPaymentModeDropdown(),
-                  const SizedBox(height: 16),
-                  _buildDatePicker(),
-                  const SizedBox(height: 16),
-                  _buildField('TRANSACTION ID / REF', _transactionIdController, hint: 'Optional'),
-                  const SizedBox(height: 16),
-                  _buildField('REMARKS', _remarksController, hint: 'Optional'),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: _isSubmitting ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade700,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: _isSubmitting 
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('Record Payment', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                    ],
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Cancel'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade700,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Record Payment',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                    ),
                   ),
                 ],
               ),
@@ -1010,19 +1625,36 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
     );
   }
 
-  Widget _buildField(String label, TextEditingController controller, {String hint = ''}) {
+  Widget _buildField(
+    String label,
+    TextEditingController controller, {
+    String hint = '',
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Colors.black54,
+          ),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
           decoration: InputDecoration(
             hintText: hint,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 0,
+            ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.green.shade700, width: 2)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.green.shade700, width: 2),
+            ),
           ),
         ),
       ],
@@ -1033,7 +1665,14 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('PAYMENT MODE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54)),
+        const Text(
+          'PAYMENT MODE',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Colors.black54,
+          ),
+        ),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1045,9 +1684,15 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
             child: DropdownButton<String>(
               value: _paymentMode,
               isExpanded: true,
-              items: ['CASH', 'RTGS', 'CHEQUE', 'NEFT', 'IMPS', 'UPI', 'BANK_TRANSFER']
-                  .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-                  .toList(),
+              items: [
+                'CASH',
+                'RTGS',
+                'CHEQUE',
+                'NEFT',
+                'IMPS',
+                'UPI',
+                'BANK_TRANSFER',
+              ].map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
               onChanged: (val) {
                 if (val != null) setState(() => _paymentMode = val);
               },
@@ -1062,7 +1707,14 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('PAYMENT DATE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54)),
+        const Text(
+          'PAYMENT DATE',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Colors.black54,
+          ),
+        ),
         const SizedBox(height: 6),
         InkWell(
           onTap: () async {
@@ -1083,8 +1735,14 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('${_paymentDate.day}-${_paymentDate.month}-${_paymentDate.year}'),
-                const Icon(Icons.calendar_today_rounded, size: 16, color: Colors.black54),
+                Text(
+                  '${_paymentDate.day}-${_paymentDate.month}-${_paymentDate.year}',
+                ),
+                const Icon(
+                  Icons.calendar_today_rounded,
+                  size: 16,
+                  color: Colors.black54,
+                ),
               ],
             ),
           ),
@@ -1097,11 +1755,21 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('SELECT INVOICE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+        const Text(
+          'SELECT INVOICE',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Colors.blueGrey,
+          ),
+        ),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<Map<String, dynamic>>(
               value: _selectedInvoice,
@@ -1111,7 +1779,9 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
                 final Map<String, dynamic> tiMap = ti as Map<String, dynamic>;
                 return DropdownMenuItem<Map<String, dynamic>>(
                   value: tiMap,
-                  child: Text('${tiMap['invoiceNumber'] ?? 'Inv #${tiMap['id']}'}'),
+                  child: Text(
+                    '${tiMap['invoiceNumber'] ?? 'Inv #${tiMap['id']}'}',
+                  ),
                 );
               }).toList(),
               onChanged: (val) {
@@ -1133,13 +1803,23 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
     if (_selectedInvoice == null) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE2E8F0))),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _buildSummaryItem('Gross', _selectedInvoice!['grossAmount']),
           _buildSummaryItem('Paid', _alreadyPaid, color: Colors.green.shade700),
-          _buildSummaryItem('Outstanding', _outstanding, color: _outstanding > 0 ? Colors.red.shade700 : Colors.green.shade700),
+          _buildSummaryItem(
+            'Outstanding',
+            _outstanding,
+            color: _outstanding > 0
+                ? Colors.red.shade700
+                : Colors.green.shade700,
+          ),
         ],
       ),
     );
@@ -1149,10 +1829,307 @@ class _PaymentEntryDialogState extends State<PaymentEntryDialog> {
     double amount = (val ?? 0.0).toDouble();
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black54)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            color: Colors.black54,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text('₹${amount.toStringAsFixed(0)}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: color)),
+        Text(
+          '₹${amount.toStringAsFixed(0)}',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            color: color,
+          ),
+        ),
       ],
     );
+  }
+}
+
+class ReraFormDialog extends StatefulWidget {
+  final int projectId;
+  final VoidCallback onSuccess;
+
+  const ReraFormDialog({
+    Key? key,
+    required this.projectId,
+    required this.onSuccess,
+  }) : super(key: key);
+
+  @override
+  State<ReraFormDialog> createState() => _ReraFormDialogState();
+}
+
+class _ReraFormDialogState extends State<ReraFormDialog> {
+  final _numberController = TextEditingController();
+  DateTime _registrationDate = DateTime.now();
+  DateTime _expectedDate = DateTime.now().add(const Duration(days: 365 * 2));
+  bool _isActive = true;
+  bool _isSaving = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        width: 500,
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header
+            _buildHeader("Add RERA Registration"),
+            
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildField(
+                      "RERA NUMBER",
+                      _numberController,
+                      hint: "E.G. P52100012345",
+                    ),
+                    const SizedBox(height: 20),
+                    Column(
+                      children: [
+                        _buildDatePickerField(
+                          "REGISTRATION DATE",
+                          _registrationDate,
+                          (date) => setState(() => _registrationDate = date),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDatePickerField(
+                          "EXPECTED COMPLETION",
+                          _expectedDate,
+                          (date) => setState(() => _expectedDate = date),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildStatusSwitch(),
+                  ],
+                ),
+              ),
+            ),
+
+            // Footer
+            _buildFooter(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(String title) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: const BoxDecoration(
+        color: Color(0xFF1E293B),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildField(
+    String label,
+    TextEditingController controller, {
+    String hint = '',
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF64748B),
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: hint,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDatePickerField(String label, DateTime date, Function(DateTime) onSelected) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: date,
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2050),
+            );
+            if (picked != null) onSelected(picked);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  DateFormat('dd MMM yyyy').format(date),
+                  style: const TextStyle(fontSize: 14),
+                ),
+                const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF64748B)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusSwitch() {
+    return Row(
+      children: [
+        Switch(
+          value: _isActive,
+          activeThumbColor: Colors.green,
+          onChanged: (val) => setState(() => _isActive = val),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          _isActive ? "ACTIVE" : "INACTIVE",
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: _isActive ? Colors.green : Colors.red,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFooter() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text("Cancel"),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 2,
+            child: ElevatedButton(
+              onPressed: _isSaving ? null : _handleSave,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E293B),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: _isSaving
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text("Add RERA Registration", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleSave() async {
+    if (_numberController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("RERA Number is required")),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    final payload = {
+      "reraNumber": _numberController.text.trim(),
+      "registrationDate": DateFormat('yyyy-MM-dd').format(_registrationDate),
+      "expectedCompletionDate": DateFormat('yyyy-MM-dd').format(_expectedDate),
+      "active": _isActive,
+    };
+
+    final success = await ReraService.createReraProject(
+      projectId: widget.projectId,
+      data: payload,
+    );
+
+    if (mounted) {
+      setState(() => _isSaving = false);
+      if (success) {
+        widget.onSuccess();
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("RERA registration added successfully!")),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to save RERA registration.")),
+        );
+      }
+    }
   }
 }

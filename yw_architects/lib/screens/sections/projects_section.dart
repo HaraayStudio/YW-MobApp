@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../theme/app_theme.dart';
 import '../../models/app_models.dart';
 import '../../widgets/common_widgets.dart';
+import '../../utils/responsive.dart';
 import '../../services/client_service.dart';
 import '../../services/post_sales_service.dart';
 import '../../services/project_service.dart';
@@ -10,14 +12,7 @@ import '../../widgets/postsale_tabs/post_sale_detail_view.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../utils/base64_utils.dart';
-import '../../widgets/common_widgets.dart'
-    show
-        ProgressBar,
-        SectionHeader,
-        CardContainer,
-        GoldGradientButton,
-        StatusChip,
-        AvatarWidget;
+
 
 class ProjectsSection extends StatefulWidget {
   final AppUser user;
@@ -40,6 +35,8 @@ class ProjectsSection extends StatefulWidget {
 class _ProjectsSectionState extends State<ProjectsSection> {
   String _filter = 'All';
   int? _detailId;
+  int _currentPage = 0;
+  static const int _itemsPerPage = 10;
 
   List<Map<String, dynamic>> _projects = [];
   bool _isLoading = true;
@@ -502,7 +499,9 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           final clientId = client['id'];
           return clientId == userId;
         }).toList();
-        debugPrint("FILTERED POST-SALES COUNT FOR CLIENT #$userId: ${data.length}");
+        debugPrint(
+          "FILTERED POST-SALES COUNT FOR CLIENT #$userId: ${data.length}",
+        );
       }
 
       final mappedProjects = data.map((d) {
@@ -594,7 +593,6 @@ class _ProjectsSectionState extends State<ProjectsSection> {
               : 'N/A',
           'area': area,
           'code': code.isNotEmpty ? code : '—',
-          'type': 'Architectural',
           'pct': 0.0,
           'status': _normalizeStatus(
             (project['projectStatus'] ??
@@ -635,6 +633,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         setState(() {
           _projects = mappedProjects;
           _isLoading = false;
+          _currentPage = 0; // Reset to first page on new data fetch
         });
 
         // BACKGROUND SYNC: Fill in the "N/A" holes left by the shallow list API
@@ -727,11 +726,20 @@ class _ProjectsSectionState extends State<ProjectsSection> {
 
   bool get canCreate => _isManager;
 
-
-  List<Map<String, dynamic>> get _filtered {
+  List<Map<String, dynamic>> get _allFiltered {
     if (_filter == 'All') return _projects;
     return _projects.where((p) => p['status'] == _filter).toList();
   }
+
+  List<Map<String, dynamic>> get _filtered {
+    final all = _allFiltered;
+    final start = _currentPage * _itemsPerPage;
+    if (start >= all.length) return [];
+    final end = (start + _itemsPerPage).clamp(0, all.length);
+    return all.sublist(start, end);
+  }
+
+  int get _totalPages => (_allFiltered.length / _itemsPerPage).ceil();
 
   @override
   Widget build(BuildContext context) {
@@ -829,7 +837,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -874,7 +882,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          bottom: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
+          bottom: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
         ),
       ),
       child: Column(
@@ -961,7 +969,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          bottom: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
+          bottom: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
         ),
       ),
       child: ListView.builder(
@@ -1260,9 +1268,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                   color: AppColors.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: AppColors.primary.withOpacity(
-                      _pickedLogoBase64 != null ? 0.5 : 0.1,
-                    ),
+                    color: AppColors.primary.withValues(alpha: _pickedLogoBase64 != null ? 0.5 : 0.1,),
                     width: 2,
                   ),
                 ),
@@ -1406,7 +1412,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
+          top: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
         ),
       ),
       child: Row(
@@ -1414,7 +1420,11 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           Expanded(
             child: OutlinedButton(
               onPressed: () => setState(() => _isEditing = false),
-              child: Text(widget.user.role == UserRole.client ? "Back" : "Discard Changes"),
+              child: Text(
+                widget.user.role == UserRole.client
+                    ? "Back"
+                    : "Discard Changes",
+              ),
             ),
           ),
           if (widget.user.role != UserRole.client) ...[
@@ -1681,7 +1691,6 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   };
 
   Widget _buildList() {
-    final tabs = ['All', 'In Progress', 'Planning', 'Review', 'Completed'];
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -1694,53 +1703,58 @@ class _ProjectsSectionState extends State<ProjectsSection> {
             ),
             const SizedBox(height: 10),
             if (_isLoading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.only(top: 40),
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                ),
+              Column(
+                children: const [
+                  ProjectCardSkeleton(),
+                  ProjectCardSkeleton(),
+                  ProjectCardSkeleton(),
+                ],
               )
             else if (_filtered.isEmpty)
-              const Center(
+              Center(
                 child: Padding(
-                  padding: EdgeInsets.only(top: 40),
+                  padding: EdgeInsets.only(top: 40.h),
                   child: Text(
                     "No projects found",
-                    style: TextStyle(color: AppColors.onSurfaceVariant),
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 14.sp,
+                    ),
                   ),
                 ),
               )
             else
               ..._filtered.map(
                 (p) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: EdgeInsets.only(bottom: 16.h),
                   child: GestureDetector(
                     onTap: () {
                       setState(() => _detailId = p['id'] as int);
-                      // Fetch full data silently to replace "N/A" with real database data
                       _fetchFullProjectDetails(p['id'] as int, silent: true);
                     },
                     child: Container(
                       decoration: BoxDecoration(
                         color: AppColors.surfaceContainerLowest,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(16.w),
                         border: Border.all(
-                          color: AppColors.outlineVariant.withOpacity(0.15),
+                          color: AppColors.outlineVariant.withValues(
+                            alpha: 0.15,
+                          ),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 16.w,
+                            offset: Offset(0, 4.h),
                           ),
                         ],
                       ),
                       clipBehavior: Clip.hardEdge,
                       child: Column(
                         children: [
-                          ProgressBar(percent: p['pct'] as double, height: 5),
+                          ProgressBar(percent: p['pct'] as double, height: 5.h),
                           Padding(
-                            padding: const EdgeInsets.all(20),
+                            padding: EdgeInsets.all(20.w),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -1748,13 +1762,15 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Container(
-                                      width: 48,
-                                      height: 48,
+                                      width: 48.w,
+                                      height: 48.w,
                                       decoration: BoxDecoration(
                                         color: AppColors.surfaceContainerLow,
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(
+                                          12.w,
+                                        ),
                                       ),
-                                      margin: const EdgeInsets.only(right: 16),
+                                      margin: EdgeInsets.only(right: 16.w),
                                       clipBehavior: Clip.hardEdge,
                                       child: _buildLogoPreview(
                                         p['_raw']?['logoUrl'] ??
@@ -1776,32 +1792,6 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                                                     fontWeight: FontWeight.w700,
                                                     fontSize: 16,
                                                     color: AppColors.onSurface,
-                                                  ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 2,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.primary
-                                                      .withOpacity(0.1),
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        999,
-                                                      ),
-                                                ),
-                                                child: Text(
-                                                  p['type'] as String,
-                                                  style: const TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: AppColors.primary,
                                                   ),
                                                 ),
                                               ),
@@ -1841,32 +1831,34 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                                     StatusChip(status: p['status'] as String),
                                   ],
                                 ),
-                                const SizedBox(height: 14),
+                                SizedBox(height: 14.h),
                                 Row(
                                   children: [
                                     _infoBox(
                                       'Code',
                                       p['code'] as String? ?? '—',
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8.w),
                                     _infoBox(
                                       'Area',
                                       p['area'] as String? ?? 'N/A',
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8.w),
                                     _infoBox('Updates', '${p['updates']}'),
                                   ],
                                 ),
-                                const SizedBox(height: 14),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                SizedBox(height: 14.h),
+                                Wrap(
+                                  alignment: WrapAlignment.spaceBetween,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  runSpacing: 8,
                                   children: [
-                                    Row(
+                                    Wrap(
                                       children: (p['team'] as List<dynamic>)
                                           .map<Widget>(
                                             (m) => Padding(
                                               padding: const EdgeInsets.only(
+                                                bottom: 4,
                                                 right: 4,
                                               ),
                                               child: AvatarWidget(
@@ -1879,6 +1871,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                                           .toList(),
                                     ),
                                     Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         const Icon(
                                           Icons.schedule_rounded,
@@ -1907,13 +1900,178 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                   ),
                 ),
               ),
+            if (!_isLoading && _allFiltered.isNotEmpty)
+              _buildPagination(),
             if (canCreate)
-              GoldGradientButton(
-                text: 'Create New Project',
-                icon: Icons.add_rounded,
-                onTap: () => setState(() => _showCreateForm = true),
+              Padding(
+                padding: EdgeInsets.only(top: 8.h),
+                child: GoldGradientButton(
+                  text: 'Create New Project',
+                  icon: Icons.add_rounded,
+                  onTap: () => setState(() => _showCreateForm = true),
+                ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPagination() {
+    final total = _allFiltered.length;
+    final totalPages = _totalPages;
+    if (totalPages <= 1) return const SizedBox.shrink();
+
+    final startItem = (_currentPage * _itemsPerPage) + 1;
+    final endItem = (startItem + _filtered.length - 1).clamp(0, total);
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 24.h),
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20.w),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10.w,
+            offset: Offset(0, 4.h),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Showing $startItem-$endItem of $total",
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+              Text(
+                "Page ${_currentPage + 1} of $totalPages",
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _pageNavBtn(
+                icon: Icons.chevron_left_rounded,
+                enabled: _currentPage > 0,
+                onTap: () => setState(() => _currentPage--),
+              ),
+              SizedBox(width: 12.w),
+              // Simplified page dots/numbers for premium feel
+              ...List.generate(totalPages, (index) {
+                // Show at most 5 page numbers, or ellipses
+                if (totalPages > 5) {
+                  if (index != 0 &&
+                      index != totalPages - 1 &&
+                      (index < _currentPage - 1 || index > _currentPage + 1)) {
+                    if (index == 1 || index == totalPages - 2) {
+                      return Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4.w),
+                        child: Text(
+                          "...",
+                          style: TextStyle(color: AppColors.outline),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }
+                }
+
+                final isActive = index == _currentPage;
+                return GestureDetector(
+                  onTap: () => setState(() => _currentPage = index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    margin: EdgeInsets.symmetric(horizontal: 4.w),
+                    width: isActive ? 36.w : 32.w,
+                    height: isActive ? 36.w : 32.w,
+                    decoration: BoxDecoration(
+                      gradient: isActive ? goldGradient : null,
+                      color: isActive ? null : AppColors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(10.w),
+                      boxShadow: isActive
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF755B00).withValues(
+                                  alpha: 0.2,
+                                ),
+                                blurRadius: 8.w,
+                                offset: Offset(0, 4.h),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Center(
+                      child: Text(
+                        "${index + 1}",
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight:
+                              isActive ? FontWeight.w800 : FontWeight.w600,
+                          color: isActive ? Colors.white : AppColors.onSurface,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              SizedBox(width: 12.w),
+              _pageNavBtn(
+                icon: Icons.chevron_right_rounded,
+                enabled: _currentPage < totalPages - 1,
+                onTap: () => setState(() => _currentPage++),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pageNavBtn({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) {
+    return Opacity(
+      opacity: enabled ? 1.0 : 0.5,
+      child: GestureDetector(
+        onTap: enabled
+            ? () {
+                HapticFeedback.lightImpact();
+                onTap();
+              }
+            : null,
+        child: Container(
+          width: 36.w,
+          height: 36.w,
+          decoration: BoxDecoration(
+            color: enabled ? AppColors.primary : AppColors.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(10.w),
+          ),
+          child: Icon(
+            icon,
+            color: enabled ? Colors.white : AppColors.outline,
+            size: 20.w,
+          ),
         ),
       ),
     );
@@ -1952,23 +2110,28 @@ class _ProjectsSectionState extends State<ProjectsSection> {
   }
 
   Widget _buildCreateForm() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeroHeader(),
-          const SizedBox(height: 24),
-          _buildClientInfoSection(),
-          const SizedBox(height: 16),
-          _buildProjectDetailsSection(),
-          const SizedBox(height: 16),
-          _buildRemarkSection(),
-          const SizedBox(height: 16),
-          _buildInfoBox(),
-          const SizedBox(height: 24),
-          _buildFormActions(),
-        ],
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 800),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeroHeader(),
+              const SizedBox(height: 24),
+              _buildClientInfoSection(),
+              const SizedBox(height: 16),
+              _buildProjectDetailsSection(),
+              const SizedBox(height: 16),
+              _buildRemarkSection(),
+              const SizedBox(height: 16),
+              _buildInfoBox(),
+              const SizedBox(height: 24),
+              _buildFormActions(),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1979,10 +2142,10 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.15)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.onSurface.withOpacity(0.04),
+            color: AppColors.onSurface.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -1999,9 +2162,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                 color: AppColors.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppColors.primary.withOpacity(
-                    _createLogoBase64 != null ? 0.5 : 0.1,
-                  ),
+                  color: AppColors.primary.withValues(alpha: _createLogoBase64 != null ? 0.5 : 0.1,),
                   width: 1.5,
                 ),
               ),
@@ -2187,7 +2348,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
             boxShadow: active
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.08),
+                      color: AppColors.primary.withValues(alpha: 0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -2227,12 +2388,14 @@ class _ProjectsSectionState extends State<ProjectsSection> {
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
             AvatarWidget(
-              initials: _selectedClient!.name[0],
+              initials: _selectedClient!.name.isNotEmpty
+                  ? _selectedClient!.name[0].toUpperCase()
+                  : '?',
               size: 48,
               fontSize: 18,
             ),
@@ -2249,7 +2412,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                     ),
                   ),
                   Text(
-                    '${_selectedClient!.email ?? ''} · ${_selectedClient!.phone ?? ''}',
+                    '${_selectedClient!.email} · ${_selectedClient!.phone}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.onSurfaceVariant,
@@ -2291,7 +2454,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
               return c.name.toLowerCase().contains(
                     textEditingValue.text.toLowerCase(),
                   ) ||
-                  (c.phone?.contains(textEditingValue.text) ?? false);
+                  c.phone.contains(textEditingValue.text);
             });
           },
           onSelected: (c) => setState(() => _selectedClient = c),
@@ -2362,7 +2525,9 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                       final c = options.elementAt(i);
                       return ListTile(
                         leading: AvatarWidget(
-                          initials: c.name[0],
+                          initials: c.name.isNotEmpty
+                              ? c.name[0].toUpperCase()
+                              : '?',
                           size: 32,
                           fontSize: 12,
                         ),
@@ -2374,11 +2539,11 @@ class _ProjectsSectionState extends State<ProjectsSection> {
                           ),
                         ),
                         subtitle: Text(
-                          c.email ?? 'No Email',
+                          c.email,
                           style: const TextStyle(fontSize: 11),
                         ),
                         trailing: Text(
-                          c.phone ?? '',
+                          c.phone,
                           style: const TextStyle(
                             fontSize: 11,
                             color: AppColors.onSurfaceVariant,
@@ -2402,27 +2567,49 @@ class _ProjectsSectionState extends State<ProjectsSection> {
       children: [
         _formField('CLIENT NAME *', _clientNameController, 'Enter client name'),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _formField(
-                'EMAIL *',
-                _clientEmailController,
-                'Enter email address',
-                type: TextInputType.emailAddress,
+        MediaQuery.of(context).size.width < 800
+            ? Column(
+                children: [
+                  _formField(
+                    'EMAIL *',
+                    _clientEmailController,
+                    'Enter email address',
+                    type: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 16),
+                  _formField(
+                    'PHONE *',
+                    _clientPhoneController,
+                    'Enter phone number',
+                    type: TextInputType.phone,
+                    maxLength: 10,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: _formField(
+                      'EMAIL *',
+                      _clientEmailController,
+                      'Enter email address',
+                      type: TextInputType.emailAddress,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _formField(
+                      'PHONE *',
+                      _clientPhoneController,
+                      'Enter phone number',
+                      type: TextInputType.phone,
+                      maxLength: 10,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _formField(
-                'PHONE *',
-                _clientPhoneController,
-                'Enter phone number',
-                type: TextInputType.phone,
-              ),
-            ),
-          ],
-        ),
         const SizedBox(height: 16),
         _formField(
           'ADDRESS',
@@ -2448,6 +2635,8 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     TextInputType type = TextInputType.text,
     bool obscure = false,
     String? hint,
+    int? maxLength,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2466,8 +2655,11 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           controller: ctrl,
           keyboardType: type,
           obscureText: obscure,
+          maxLength: maxLength,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             hintText: placeholder,
+            counterText: '',
             hintStyle: const TextStyle(color: AppColors.outline),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
@@ -2625,7 +2817,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow.withOpacity(0.5),
+              color: AppColors.surfaceContainerLow.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -2878,167 +3070,7 @@ class _ProjectsSectionState extends State<ProjectsSection> {
     }
   }
 
-  Widget _buildDetail(int id) {
-    final p = _projects.firstWhere((x) => x['id'] == id);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton.icon(
-                onPressed: () => setState(() => _detailId = null),
-                icon: const Icon(
-                  Icons.arrow_back_rounded,
-                  color: AppColors.primary,
-                ),
-                label: const Text(
-                  'Back to Projects',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              if (_isManager)
-                IconButton.filled(
-                  onPressed: () {
-                    setState(() {
-                      _selectedProject = p;
-                      _initEditForm(p);
-                      _isEditing = true;
-                    });
-                  },
-                  icon: const Icon(Icons.edit_rounded, size: 18),
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          CardContainer(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            p['name'] as String,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.onSurface,
-                            ),
-                          ),
-                          Text(
-                            '${p['client']} · ${p['type']}',
-                            style: const TextStyle(
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on_rounded,
-                                size: 12,
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                p['location'] as String,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    StatusChip(status: p['status'] as String),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                ProgressBar(percent: p['pct'] as double, height: 8),
-                const SizedBox(height: 6),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    '${((p['pct'] as double) * 100).toInt()}% Complete',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 2.5,
-            children:
-                [
-                      ['Code', p['code'] as String? ?? '—'],
-                      ['Area', p['area'] as String? ?? 'N/A'],
-                      ['Start', p['start'] as String],
-                      ['Deadline', p['deadline'] as String],
-                      ['Address', p['address'] as String? ?? 'N/A'],
-                      ['Updates', '${p['updates']}'],
-                    ]
-                    .map(
-                      (item) => Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              item[0],
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                            ),
-                            Text(
-                              item[1],
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.onSurface,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                    .toList(),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _statusBadge(String status) {
     Color bg = const Color(0xFFE0F2FE);

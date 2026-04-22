@@ -109,7 +109,7 @@ class _SplashScreenState extends State<SplashScreen>
             child: RepaintBoundary(
               child: CustomPaint(
                 painter: _DotGridPainter(
-                  color: AppColors.outlineVariant.withOpacity(0.25),
+                  color: AppColors.outlineVariant.withValues(alpha: 0.25),
                   spacing: 28.0,
                   radius: 1.0,
                 ),
@@ -145,10 +145,10 @@ class _SplashScreenState extends State<SplashScreen>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppColors.primaryContainer.withOpacity(0),
+                    AppColors.primaryContainer.withValues(alpha: 0),
                     AppColors.primaryContainer,
                     AppColors.primary,
-                    AppColors.primaryContainer.withOpacity(0),
+                    AppColors.primaryContainer.withValues(alpha: 0),
                   ],
                   stops: const [0.0, 0.3, 0.7, 1.0],
                 ),
@@ -232,7 +232,7 @@ class _SplashScreenState extends State<SplashScreen>
                         Container(
                           height: 1,
                           width: 28,
-                          color: AppColors.outlineVariant.withOpacity(0.4),
+                          color: AppColors.outlineVariant.withValues(alpha: 0.4),
                         ),
                         const SizedBox(width: 12),
                         Text(
@@ -249,7 +249,7 @@ class _SplashScreenState extends State<SplashScreen>
                         Container(
                           height: 1,
                           width: 28,
-                          color: AppColors.outlineVariant.withOpacity(0.4),
+                          color: AppColors.outlineVariant.withValues(alpha: 0.4),
                         ),
                       ],
                     ),
@@ -304,7 +304,7 @@ class _SplashScreenState extends State<SplashScreen>
                         fontSize: 9,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 2.0,
-                        color: AppColors.outline.withOpacity(0.5),
+                        color: AppColors.outline.withValues(alpha: 0.5),
                         height: 1.0,
                       ),
                     ),

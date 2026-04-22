@@ -111,8 +111,8 @@ const List<String> managementSidebarNav = ['dashboard', 'clients', 'enquiry', 'p
 const List<String> managementBottomNav = ['dashboard', 'projects', 'clients', 'employees'];
 const List<String> employeeSidebarNav = ['dashboard', 'projects', 'site', 'attendance', 'profile'];
 const List<String> employeeBottomNav = ['dashboard', 'projects', 'site', 'attendance'];
-const List<String> clientSidebarNav = ['dashboard', 'projects', 'profile'];
-const List<String> clientBottomNav = ['dashboard', 'projects', 'profile'];
+const List<String> clientSidebarNav = ['dashboard', 'projects', 'site', 'profile'];
+const List<String> clientBottomNav = ['dashboard', 'projects', 'site', 'profile'];
 
 const List<String> fullNav = ['dashboard', 'projects', 'tasks', 'employees', 'attendance', 'leaves', 'site', 'materials', 'renders', 'reports', 'notifications', 'profile', 'enquiry'];
 const List<String> hrNav = ['dashboard', 'employees', 'attendance', 'leaves', 'notifications', 'profile'];

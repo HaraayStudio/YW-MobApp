@@ -10,6 +10,7 @@ class Site {
   final String city;
   final double builtUpArea;
   final int projectId;
+  final int? clientId; 
 
   // New aligned fields
   final String? projectCode;
@@ -41,6 +42,7 @@ class Site {
     required this.city,
     required this.builtUpArea,
     required this.projectId,
+    this.clientId,
     this.projectCode,
     this.permanentProjectId,
     this.projectDetails,
@@ -72,6 +74,7 @@ class Site {
       'city': city,
       'builtUpArea': builtUpArea,
       'projectId': projectId,
+      'clientId': clientId,
       'projectCode': projectCode,
       'permanentProjectId': permanentProjectId,
       'projectDetails': projectDetails,
@@ -145,6 +148,8 @@ class Site {
     }
 
     final rawId = fuzzyGet(['project_id', 'projectId', 'id']) ?? 0;
+    // Client ID might be directly in project, or nested in client object
+    final rawClientId = fuzzyGet(['client_id', 'clientId']) ?? (json['client'] is Map ? json['client']['id'] : json['client']);
 
     // Safely parse a dynamic value into a double
     double parseDoubleSafely(dynamic value) {
@@ -177,6 +182,7 @@ class Site {
         getField('totalBuiltUpArea', ['total_built_up_area', 'builtUpArea']),
       ),
       projectId: rawId is int ? rawId : (int.tryParse(rawId.toString()) ?? 0),
+      clientId: rawClientId == null ? null : (rawClientId is int ? rawClientId : int.tryParse(rawClientId.toString())),
       projectCode: getField('projectCode', [
         'project_code',
         'code',
@@ -329,6 +335,7 @@ class Site {
       city: city ?? this.city,
       builtUpArea: builtUpArea ?? this.builtUpArea,
       projectId: projectId ?? this.projectId,
+      clientId: clientId ?? this.clientId,
       projectCode: projectCode ?? this.projectCode,
       permanentProjectId: permanentProjectId ?? this.permanentProjectId,
       projectDetails: projectDetails ?? this.projectDetails,

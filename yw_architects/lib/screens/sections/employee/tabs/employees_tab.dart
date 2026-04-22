@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:yw_architects/theme/app_theme.dart';
 import 'package:yw_architects/widgets/common_widgets.dart';
+import 'package:yw_architects/utils/responsive.dart';
 import 'package:yw_architects/services/employee_service.dart';
 import 'package:yw_architects/screens/sections/employee/models/employee_models.dart';
 import 'package:yw_architects/screens/sections/employee/widgets/employee_widgets.dart';
 import 'package:yw_architects/services/attendance_service.dart';
-import 'package:yw_architects/services/project_service.dart';
-import 'package:yw_architects/services/site_service.dart';
 
 class EmployeesListTab extends StatefulWidget {
   final Function(String) onToast;
@@ -72,7 +71,17 @@ class _EmployeesListTabState extends State<EmployeesListTab> {
         _buildFilters(),
         Expanded(
           child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? GridView.builder(
+                  padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 500.w,
+                    mainAxisExtent: 130.h,
+                    crossAxisSpacing: 16.w,
+                    mainAxisSpacing: 16.h,
+                  ),
+                  itemCount: 6,
+                  itemBuilder: (context, i) => const EmployeeCardSkeleton(),
+                )
               : filteredEmployees.isEmpty
               ? _buildEmptyState()
               : _buildGrid(),
@@ -83,8 +92,9 @@ class _EmployeesListTabState extends State<EmployeesListTab> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 15),
+      padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 15.h),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: SectionHeader(
@@ -92,6 +102,7 @@ class _EmployeesListTabState extends State<EmployeesListTab> {
               subtitle: "Manage your studio team and roles",
             ),
           ),
+          SizedBox(width: 12.w),
           GoldGradientButton(
             text: "Add New",
             icon: Icons.add_rounded,
@@ -128,12 +139,12 @@ class _EmployeesListTabState extends State<EmployeesListTab> {
 
   Widget _buildGrid() {
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 500,
-        mainAxisExtent: 120,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+      padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 500.w,
+        mainAxisExtent: 130.h,
+        crossAxisSpacing: 16.w,
+        mainAxisSpacing: 16.h,
       ),
       itemCount: filteredEmployees.length,
       itemBuilder: (context, i) => EmployeeCard(
@@ -152,7 +163,7 @@ class _EmployeesListTabState extends State<EmployeesListTab> {
           Icon(
             Icons.group_off_rounded,
             size: 64,
-            color: AppColors.outlineVariant.withOpacity(0.5),
+            color: AppColors.outlineVariant.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
@@ -168,40 +179,7 @@ class _EmployeesListTabState extends State<EmployeesListTab> {
   }
 }
 
-class _DeptChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-  const _DeptChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.outline,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _EmployeeProfileView extends StatefulWidget {
   final EmployeeModel employee;
@@ -238,22 +216,25 @@ class _EmployeeProfileViewState extends State<_EmployeeProfileView> {
         now.month,
         now.year,
       );
-      
+
       // Filter for this specific user AND status 'PRESENT'
       final userRecords = attData.where((r) {
         // Attendance records often have nested user objects: r['user']['id']
         final userObj = r['user'] as Map<String, dynamic>?;
         final nestedId = userObj?['id']?.toString();
         final flatId = r['userId']?.toString();
-        
-        final userIdMatch = (nestedId == widget.employee.id.toString()) || 
-                           (flatId == widget.employee.id.toString());
-                           
+
+        final userIdMatch =
+            (nestedId == widget.employee.id.toString()) ||
+            (flatId == widget.employee.id.toString());
+
         final statusMatch = r['status']?.toString().toUpperCase() == 'PRESENT';
         return userIdMatch && statusMatch;
       }).toList();
 
-      debugPrint("[STATS DEBUG] ${widget.employee.name}: Attendance=${userRecords.length}");
+      debugPrint(
+        "[STATS DEBUG] ${widget.employee.name}: Attendance=${userRecords.length}",
+      );
 
       if (mounted) {
         setState(() {
@@ -420,7 +401,7 @@ class _ProfileHeroState extends State<_ProfileHero> {
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         children: [
@@ -480,7 +461,7 @@ class _ProfileHeroState extends State<_ProfileHero> {
               const SizedBox(width: 8),
               GoldChip(
                 text: 'Joined ${widget.e.since}',
-                bg: AppColors.primary.withOpacity(0.1),
+                bg: AppColors.primary.withValues(alpha: 0.1),
                 fg: AppColors.primary,
               ),
             ],
@@ -521,7 +502,7 @@ class _SmallIconButton extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: (color ?? AppColors.primary).withOpacity(0.1),
+              color: (color ?? AppColors.primary).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, size: 20, color: color ?? AppColors.primary),
@@ -557,7 +538,7 @@ class _StatBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -669,7 +650,7 @@ class _DetailRow extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, size: 18, color: AppColors.primary),

@@ -14,23 +14,12 @@ class EmployeeService {
     final client = http.Client();
     try {
       final request = http.Request('GET', url)..headers.addAll(headers)..followRedirects = false;
-      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 45));
       return await http.Response.fromStream(streamedResponse);
     } finally { client.close(); }
   }
 
-  static Future<http.Response> _resilientPost(Uri url, Map<String, String> headers, dynamic body) async {
-    final client = http.Client();
-    try {
-      final request = http.Request('POST', url)..headers.addAll(headers)..followRedirects = false;
-      if (body != null) {
-        if (body is String) { request.body = body; }
-        else { request.body = jsonEncode(body); }
-      }
-      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
-      return await http.Response.fromStream(streamedResponse);
-    } finally { client.close(); }
-  }
+
 
   static Future<http.Response> _resilientPut(Uri url, Map<String, String> headers, dynamic body) async {
     final client = http.Client();
@@ -40,7 +29,7 @@ class EmployeeService {
         if (body is String) { request.body = body; }
         else { request.body = jsonEncode(body); }
       }
-      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 15));
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 45));
       return await http.Response.fromStream(streamedResponse);
     } finally { client.close(); }
   }

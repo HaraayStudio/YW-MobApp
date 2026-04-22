@@ -10,6 +10,7 @@ import '../../services/attendance_service.dart';
 import '../../widgets/common_widgets.dart';
 import '../../widgets/dashboard_widgets.dart';
 import '../../theme/app_theme.dart';
+import '../../services/post_sales_service.dart';
 
 // ─────────────────────────────────────────────────────────────
 //  ManagementDashboardView (Admin, Co-Founder, HR)
@@ -39,7 +40,6 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
   Map<String, int> _statusDistribution = {};
   Map<String, double> _monthlyProjects = {};
 
-
   @override
   void initState() {
     super.initState();
@@ -50,8 +50,6 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
   void dispose() {
     super.dispose();
   }
-
-
 
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
@@ -64,11 +62,10 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
         InquiryService.getAllInquiries(),
       ]);
 
-      final projects = results[0] as List<dynamic>;
-      final clients = results[1] as List<dynamic>;
-      final emps = results[2] as List<dynamic>;
-      final leads = results[3] as List<dynamic>;
-
+      final projects = results[0];
+      final clients = results[1];
+      final emps = results[2];
+      final leads = results[3];
 
       // Calculate distributions
       final distro = <String, int>{};
@@ -115,14 +112,10 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
+      return const DashboardSkeleton();
     }
 
     return RefreshIndicator(
@@ -150,7 +143,7 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.25,
+              childAspectRatio: 1.0, // Square ratio to prevent vertical overflows
               children: [
                 DashboardStatCard(
                   label: 'Total Projects',
@@ -227,56 +220,69 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
 
 class _RecentProjectTile extends StatelessWidget {
   final dynamic project;
-  const _RecentProjectTile({required this.project});
+  final VoidCallback? onTap;
+  const _RecentProjectTile({required this.project, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final status =
-        project['projectStatus']?.toString().replaceAll('_', ' ') ?? 'UNKNOWN';
+    // Handle both flat Project objects and nested PostSale objects
+    final bool isPostSale = project is Map && project.containsKey('project');
+    final pData = isPostSale ? project['project'] : project;
+
+    final status = (pData['projectStatus'] ?? 'UNKNOWN').toString().replaceAll(
+      '_',
+      ' ',
+    );
+    final name = pData['projectName'] ?? 'Unnamed Project';
+    final code = pData['projectCode'] ?? '---';
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: CardContainer(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(12),
+      child: GestureDetector(
+        onTap: onTap,
+        child: CardContainer(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.architecture_rounded,
+                  color: AppColors.primary,
+                ),
               ),
-              child: const Icon(
-                Icons.architecture_rounded,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    project['projectName'] ?? 'Unnamed Project',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    project['projectCode'] ?? '---',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.onSurfaceVariant,
+                    Text(
+                      code,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            StatusChip(status: status),
-          ],
+              StatusChip(status: status),
+            ],
+          ),
         ),
       ),
     );
@@ -305,7 +311,6 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
   List<dynamic> _myProjects = [];
   Map<String, dynamic>? _todayAttendance;
   int _completedCount = 0;
-  int _onHoldCount = 0;
   double _completionRate = 0.0;
   Timer? _clockTimer;
   String _currentTimeString = "";
@@ -340,11 +345,14 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
     try {
       final results = await Future.wait([
         EmployeeService.getMyProjects(),
-        AttendanceService.getMyMonthlyAttendance(now.month, now.year), // Personalized for timing sync
+        AttendanceService.getMyMonthlyAttendance(
+          now.month,
+          now.year,
+        ), // Personalized for timing sync
       ]);
 
-      final projects = results[0] as List<dynamic>;
-      final attendanceList = results[1] as List<dynamic>;
+      final projects = results[0];
+      final attendanceList = results[1];
 
       // Match by today's date for 100% parity with Attendance section
       final todayStr = DateFormat('yyyy-MM-dd').format(now);
@@ -352,19 +360,15 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
         (a) => a['attendanceDate'] == todayStr,
         orElse: () => {},
       );
-
       int comp = 0;
-      int hold = 0;
       for (var p in projects) {
         if (p['projectStatus'] == 'COMPLETED') comp++;
-        if (p['projectStatus'] == 'ON_HOLD') hold++;
       }
 
       setState(() {
         _myProjects = projects.take(5).toList();
         _todayAttendance = myToday.isEmpty ? null : myToday;
         _completedCount = comp;
-        _onHoldCount = hold;
         _completionRate = projects.isEmpty ? 0 : (comp / projects.length);
         _isLoading = false;
       });
@@ -387,16 +391,19 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
     final date = DateFormat('yyyy-MM-dd').format(now);
     final time = DateFormat('HH:mm:ss').format(now);
     final success = await AttendanceService.recordMyCheckIn(date, time);
-    
+
     if (!mounted) return;
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Check-In Successful')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Check-In Successful')));
       _fetchData();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Check-In Failed'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Check-In Failed'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -405,7 +412,10 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
     // Check if check-in exists before checking out
     if (_todayAttendance == null || _todayAttendance!['checkIn'] == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please Check-In first!'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Please Check-In first!'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -429,13 +439,16 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
 
     if (!mounted) return;
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Check-Out Successful')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Check-Out Successful')));
       _fetchData();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Check-Out Failed'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Check-Out Failed'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -443,9 +456,7 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
+      return const DashboardSkeleton();
     }
 
     return RefreshIndicator(
@@ -515,7 +526,7 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.2,
+              childAspectRatio: 1.0, // Square ratio to prevent vertical overflows
               children: [
                 DashboardStatCard(
                   label: 'Assigned Projects',
@@ -600,19 +611,33 @@ class _ClientDashboardViewState extends State<ClientDashboardView> {
     _fetchData();
   }
 
+  @override
+  void didUpdateWidget(covariant ClientDashboardView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the parent screen late-resolves the user ID, we need to completely reset and refetch our data
+    if (widget.user.id != oldWidget.user.id && widget.user.id != 0) {
+      _fetchData();
+    }
+  }
+
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
+    final clientId = widget.user.id;
+
     try {
-      // Clients use inquiry and project service but usually filtered by their self.
-      // For this app, assume inquiry/project endpoints already respect client token filtering.
       final results = await Future.wait([
         InquiryService.getAllInquiries(),
-        ProjectService.getAllProjects(),
+        PostSalesService.getPostSalesByClient(clientId),
       ]);
 
+      final allInquiries = results[0];
+      final clientPostSales = results[1];
+
       setState(() {
-        _preSales = results[0] as List<dynamic>;
-        _postSales = results[1] as List<dynamic>;
+        _preSales = allInquiries
+            .where((i) => i['client']?['id'] == clientId)
+            .toList();
+        _postSales = clientPostSales;
         _isLoading = false;
       });
     } catch (e) {
@@ -621,12 +646,42 @@ class _ClientDashboardViewState extends State<ClientDashboardView> {
     }
   }
 
+  Map<String, int> _getStatusData() {
+    final Map<String, int> stats = {};
+    for (var p in _postSales) {
+      final status = (p['project']?['projectStatus'] ?? 'PLANNING')
+          .toString()
+          .replaceAll('_', ' ');
+      stats[status] = (stats[status] ?? 0) + 1;
+    }
+    return stats;
+  }
+
+  Map<String, double> _getProgressData() {
+    final Map<String, double> progress = {};
+    for (var p in _postSales) {
+      final name = (p['project']?['projectName'] ?? 'P-${p['id']}').toString();
+      // Calculate progress from stages if available, else use a placeholder or 0
+      double pct = 0.0;
+      if (p['project']?['stages'] != null) {
+        final stages = p['project']['stages'] as List;
+        if (stages.isNotEmpty) {
+          final sum = stages.fold(
+            0.0,
+            (s, e) => s + ((e['progressPercentage'] ?? 0.0) as num).toDouble(),
+          );
+          pct = sum / stages.length;
+        }
+      }
+      progress[name.length > 8 ? name.substring(0, 8) : name] = pct;
+    }
+    return progress;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
+      return const DashboardSkeleton();
     }
 
     return RefreshIndicator(
@@ -666,7 +721,27 @@ class _ClientDashboardViewState extends State<ClientDashboardView> {
                 ),
               ],
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
+
+            // Progress Charts
+            if (_postSales.isNotEmpty) ...[
+              DashboardDonutChart(
+                title: 'Project Status Distribution',
+                data: _getStatusData(),
+                colors: const [
+                  AppColors.primary,
+                  Colors.blue,
+                  Colors.green,
+                  Colors.orange,
+                ],
+              ),
+              const SizedBox(height: 24),
+              DashboardBarChart(
+                title: 'Project Completion %',
+                data: _getProgressData(),
+              ),
+              const SizedBox(height: 24),
+            ],
 
             // Info Card
             CardContainer(
@@ -709,7 +784,16 @@ class _ClientDashboardViewState extends State<ClientDashboardView> {
                 ),
               )
             else
-              ..._postSales.map((p) => _RecentProjectTile(project: p)).toList(),
+              ..._postSales
+                  .map(
+                    (p) => _RecentProjectTile(
+                      project: p,
+                      onTap: () => widget.onNavigate(
+                        'project_${p['project']?['projectId'] ?? p['id']}',
+                      ),
+                    ),
+                  )
+                  .toList(),
           ],
         ),
       ),

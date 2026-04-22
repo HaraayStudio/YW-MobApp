@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/site_model.dart';
+import '../../../utils/responsive.dart';
 import '../../../services/employee_service.dart';
 import '../../../services/post_sales_service.dart';
 import '../../../services/project_service.dart';
@@ -43,7 +44,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
   bool get _isManager => [
     UserRole.admin,
     UserRole.coFounder,
-    UserRole.hr
+    UserRole.hr,
   ].contains(widget.user.role);
 
   bool get _isClient => widget.user.role == UserRole.client;
@@ -148,7 +149,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         final meetingsRaw = await MeetingService.getMeetingsByProject(
           idToFetch,
         );
-        final reraRaw = await ReraService.getReraByProjectId(idToFetch);
+        await ReraService.getReraByProjectId(idToFetch);
         if (mounted && raw != null) {
           _rawProjectJson = raw.toString();
           debugPrint("✅ RAW PROJECT FETCHED — keys: ${raw.keys.toList()}");
@@ -290,207 +291,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     super.dispose();
   }
 
-  // Hierarchical Mock Data for 11 Stages
-  final List<Map<String, dynamic>> _mockStages = [
-    {
-      'id': 1,
-      'name': 'Concept Design',
-      'status': 'COMPLETED',
-      'subStages': [
-        'Concept Drawings',
-        'Massing Study',
-        'Basic Floor Plans',
-        'Client Approval on Concept',
-      ],
-    },
-    {
-      'id': 2,
-      'name': 'Final Drawings',
-      'status': 'COMPLETED',
-      'subStages': [
-        'Architectural Layouts',
-        'Sections & Elevations',
-        'Parking Layout',
-        'Area Statement',
-        '3D Views',
-      ],
-    },
-    {
-      'id': 3,
-      'name': 'Documentation Stage',
-      'status': 'IN_PROGRESS',
-      'subStages': [
-        'Final Architectural Drawings',
-        '7/12 Extract / Property Card',
-        'Latest Demarcation Copy',
-        'Power of Attorney',
-        'DP Opinion',
-      ],
-    },
-    {
-      'id': 4,
-      'name': 'Building Permission',
-      'status': 'NOT_STARTED',
-      'isGrouped': true,
-      'subStages': [
-        {
-          'group': 'Water NOC',
-          'items': [
-            'Application',
-            'Water Line Layout',
-            'Tank Capacity Calculation',
-            'Fire Water Requirement',
-          ],
-        },
-        {
-          'group': 'Drainage NOC',
-          'items': [
-            'Application',
-            'Architectural Drawing',
-            'Drainage Layout',
-            'Hamipatr',
-            'STP Calculation',
-            'Google Location Map',
-          ],
-        },
-        {
-          'group': 'Garden NOC',
-          'items': [
-            'Tree Marking Plan',
-            'Site Images',
-            'Plot Area as per 7/12',
-          ],
-        },
-        {
-          'group': 'Fire NOC',
-          'items': [
-            'Fire Layout Plan',
-            'Driveway Width Marking',
-            'Entry/Exit Gate Width',
-            'Ramp Details',
-            'Fire Water Calculations',
-          ],
-        },
-        {
-          'group': 'Elevation / Height NOC',
-          'items': [
-            'Elevation Drawing',
-            'Section with Building Height',
-            'Crane Height Marking',
-            'Monarch Report',
-          ],
-        },
-        {
-          'group': 'C & D Waste NOC',
-          'items': ['C&D Waste Calculation', 'Disposal Plan'],
-        },
-      ],
-    },
-    {
-      'id': 5,
-      'name': 'Survey Land Records',
-      'status': 'NOT_STARTED',
-      'subStages': [
-        'Demarcation Nakal',
-        'Demarcation K-Prat',
-        'Tree Survey',
-        'DP Abhipray',
-      ],
-    },
-    {
-      'id': 6,
-      'name': 'Building Permission Scrutiny',
-      'status': 'NOT_STARTED',
-      'subStages': [
-        'Inward Submission at CFC',
-        'Online Inward Entry',
-        'Site Visits (JE / DE / EE)',
-        'Pre-DCR Drawing Run',
-        'Drawing Scrutiny',
-        'Challan Calculation & Payment',
-        'Demand Sheet Entry',
-        'Sanction Number Generation',
-        'Sanction Copy Collection',
-      ],
-    },
-    {
-      'id': 7,
-      'name': 'Setback Approval',
-      'status': 'NOT_STARTED',
-      'subStages': [
-        'Application',
-        'Sanctioned Plan Copy',
-        'Commencement Certificate',
-        'Total Station Survey',
-      ],
-    },
-    {
-      'id': 8,
-      'name': 'Plinth Checking',
-      'status': 'NOT_STARTED',
-      'subStages': [
-        'Application',
-        'Structural Stability Certificate',
-        'NA Order',
-        'Water & Drainage NOCs',
-        'Condition Compliance',
-      ],
-    },
-    {
-      'id': 9,
-      'name': 'TDR FSI Stage',
-      'status': 'NOT_STARTED',
-      'isGrouped': true,
-      'subStages': [
-        {
-          'group': 'TDR Generation',
-          'items': [
-            'Search & Title Report',
-            'Ownership Documents',
-            'Prapatra A & B',
-          ],
-        },
-        {
-          'group': 'TDR Utilization',
-          'items': [
-            'TDR Undertaking',
-            'Development Agreement',
-            'Sanctioned Plan',
-          ],
-        },
-      ],
-    },
-    {
-      'id': 10,
-      'name': 'Construction Execution',
-      'status': 'NOT_STARTED',
-      'subStages': [
-        'Excavation',
-        'Foundation Work',
-        'Superstructure',
-        'Services Installation',
-        'Finishing Work',
-      ],
-    },
-    {
-      'id': 11,
-      'name': 'Completion Process',
-      'status': 'NOT_STARTED',
-      'subStages': [
-        'Application for Completion',
-        'Site Inspections (JE / DE / EE)',
-        'Structural Stability Certificate',
-        'Final NOCs',
-        'Solar Certificate',
-        'Rainwater Harvesting Certificate',
-        'Lift NOC',
-        'STP Certificate',
-        'Consent to Operate / Establish',
-        'Completion Certificate Approval',
-        'Final Outward & Certificate Collection',
-      ],
-    },
-  ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -501,34 +302,34 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
 
         // Tab Bar
         Container(
-          height: 50,
+          height: 50.h,
           color: Colors.white,
           child: TabBar(
             controller: _tabController,
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             indicatorColor: AppColors.primary,
-            indicatorWeight: 3,
+            indicatorWeight: 3.h,
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.outline,
             labelStyle: GoogleFonts.plusJakartaSans(
               fontWeight: FontWeight.w800,
-              fontSize: 13,
+              fontSize: 13.sp,
             ),
             unselectedLabelStyle: GoogleFonts.plusJakartaSans(
               fontWeight: FontWeight.w600,
-              fontSize: 13,
+              fontSize: 13.sp,
             ),
             tabs: _tabs
                 .map(
                   (tab) => Tab(
                     child: Row(
                       children: [
-                        Icon(tab['icon'], size: 16),
-                        const SizedBox(width: 8),
+                        Icon(tab['icon'], size: 16.w),
+                        SizedBox(width: 8.w),
                         Text(tab['label']),
                         if (tab['count'] != null) ...[
-                          const SizedBox(width: 6),
+                          SizedBox(width: 6.w),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -566,7 +367,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               _buildTeamTab(),
               _buildSiteVisitsTab(),
               StructuresTabView(
-                projectId: _detailedSite.projectId > 0 ? _detailedSite.projectId : _detailedSite.id,
+                projectId: _detailedSite.projectId > 0
+                    ? _detailedSite.projectId
+                    : _detailedSite.id,
                 structures: _detailedSite.structures,
                 user: widget.user,
                 onRefresh: _fetchFullDetails,
@@ -582,11 +385,13 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
 
   Widget _buildIntegratedHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 24.h),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          bottom: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
+          bottom: BorderSide(
+            color: AppColors.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
       ),
       child: Column(
@@ -598,18 +403,18 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               // Back Button
               IconButton(
                 onPressed: widget.onBack,
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                icon: Icon(Icons.arrow_back_ios_new_rounded, size: 20.w),
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: 4.w),
               // Logo
               Container(
-                width: 60,
-                height: 60,
+                width: 60.w,
+                height: 60.w,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16.w),
                   border: Border.all(
-                    color: AppColors.outlineVariant.withOpacity(0.5),
+                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
                   ),
                 ),
                 child: _detailedSite.logoUrl != null
@@ -622,16 +427,18 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                       )
                     : Center(
                         child: Text(
-                          _detailedSite.siteName[0].toUpperCase(),
+                          _detailedSite.siteName.isNotEmpty
+                              ? _detailedSite.siteName[0].toUpperCase()
+                              : '?',
                           style: GoogleFonts.plusJakartaSans(
-                            fontSize: 22,
+                            fontSize: 22.sp,
                             fontWeight: FontWeight.w800,
                             color: AppColors.primary,
                           ),
                         ),
                       ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16.w),
               // Name
               Expanded(
                 child: Column(
@@ -640,7 +447,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                     Text(
                       _detailedSite.siteName,
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 22,
+                        fontSize: 22.sp,
                         fontWeight: FontWeight.w800,
                         color: AppColors.onSurface,
                         height: 1.2,
@@ -659,28 +466,31 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _SmallChip(
-                    text: _detailedSite.city.isNotEmpty
-                        ? _detailedSite.city.toUpperCase()
-                        : "LOCATION",
-                    icon: Icons.location_on_rounded,
-                    color: Colors.pink.shade50,
-                    textColor: Colors.pink.shade700,
-                  ),
-                  if (_detailedSite.priority != null &&
-                      _detailedSite.priority!.isNotEmpty)
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
                     _SmallChip(
-                      text: "${_detailedSite.priority!.toUpperCase()} PRIORITY",
-                      icon: null,
-                      color: Colors.orange.shade50,
-                      textColor: Colors.orange.shade800,
+                      text: _detailedSite.city.isNotEmpty
+                          ? _detailedSite.city.toUpperCase()
+                          : "LOCATION",
+                      icon: Icons.location_on_rounded,
+                      color: Colors.pink.shade50,
+                      textColor: Colors.pink.shade700,
                     ),
-                ],
+                    if (_detailedSite.priority != null &&
+                        _detailedSite.priority!.isNotEmpty)
+                      _SmallChip(
+                        text: "${_detailedSite.priority!.toUpperCase()} PRIORITY",
+                        icon: null,
+                        color: Colors.orange.shade50,
+                        textColor: Colors.orange.shade800,
+                      ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 16),
               // Action Stack: [Edit] -> [Status] -> [Date]
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -689,11 +499,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   if (_isManager)
                     _EditSiteButton(
                       onPressed: () => widget.onEditProject(
-                      _detailedSite.projectId > 0
-                          ? _detailedSite.projectId
-                          : _detailedSite.id,
+                        _detailedSite.projectId > 0
+                            ? _detailedSite.projectId
+                            : _detailedSite.id,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 12),
                   _StatusBadge(status: _detailedSite.status),
                   const SizedBox(height: 8),
@@ -703,7 +513,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                       Icon(
                         Icons.calendar_today_rounded,
                         size: 10,
-                        color: AppColors.onSurfaceVariant.withOpacity(0.5),
+                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -806,6 +616,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             stage: stage,
             index: idx + 1,
             onRefresh: _fetchFullDetails,
+            isClient: _isClient,
           );
         }).toList(),
         const SizedBox(height: 40),
@@ -829,7 +640,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -903,7 +714,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -944,11 +755,17 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     return _buildCard(
       title: "PROJECT IDENTITY",
       icon: Icons.business_center_rounded,
-      trailing: IconButton(
-        icon: const Icon(Icons.bug_report, color: Colors.blueAccent, size: 18),
-        tooltip: "Inspect Raw Data",
-        onPressed: () => _showRawDataDialog(),
-      ),
+      trailing: _isClient
+          ? null
+          : IconButton(
+              icon: const Icon(
+                Icons.bug_report,
+                color: Colors.blueAccent,
+                size: 18,
+              ),
+              tooltip: "Inspect Raw Data",
+              onPressed: () => _showRawDataDialog(),
+            ),
       children: [
         _infoRow("Project ID", _detailedSite.projectId.toString(), mono: true),
         _infoRow("Project Code", _detailedSite.projectCode ?? "—", mono: true),
@@ -1127,7 +944,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1316,9 +1133,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          bottom: BorderSide(color: AppColors.outlineVariant.withOpacity(0.3)),
-          left: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
-          right: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
+          bottom: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+          left: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+          right: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
         ),
       ),
       child: Row(
@@ -1331,7 +1148,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                 Icon(
                   _getFileIcon(type),
                   size: 16,
-                  color: AppColors.primary.withOpacity(0.7),
+                  color: AppColors.primary.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -1382,7 +1199,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.05),
+                  color: AppColors.primary.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -1405,7 +1222,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -1474,7 +1291,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
@@ -1518,9 +1335,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
         border: Border(
-          bottom: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
-          left: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
-          right: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
+          bottom: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+          left: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+          right: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
         ),
       ),
       child: Column(
@@ -1529,13 +1346,13 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.05),
+              color: AppColors.primary.withValues(alpha: 0.05),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.folder_open_outlined,
               size: 48,
-              color: AppColors.primary.withOpacity(0.5),
+              color: AppColors.primary.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 20),
@@ -1654,7 +1471,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Center(
         child: Column(
@@ -1662,7 +1479,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             Icon(
               Icons.people_outline_rounded,
               size: 48,
-              color: AppColors.outline.withOpacity(0.5),
+              color: AppColors.outline.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 12),
             Text(
@@ -1707,12 +1524,12 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -1861,11 +1678,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                           return ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: CircleAvatar(
-                              backgroundColor: AppColors.primary.withOpacity(
-                                0.1,
-                              ),
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.1,),
                               child: Text(
-                                name[0].toUpperCase(),
+                                (name.trim().isNotEmpty)
+                                    ? name.trim()[0].toUpperCase()
+                                    : '?',
                                 style: const TextStyle(
                                   color: AppColors.primary,
                                 ),
@@ -2031,7 +1848,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Center(
         child: Column(
@@ -2039,7 +1856,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             Icon(
               Icons.location_on_outlined,
               size: 48,
-              color: AppColors.outline.withOpacity(0.5),
+              color: AppColors.outline.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 12),
             Text(
@@ -2063,10 +1880,10 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -2096,7 +1913,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                        if (_isManager)
+                  if (_isManager)
                     GestureDetector(
                       onTap: () => _showEditSiteVisitDialog(visit),
                       child: Container(
@@ -2105,7 +1922,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.05),
+                          color: AppColors.primary.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -2143,7 +1960,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: AppColors.onSurface.withOpacity(0.7),
+                color: AppColors.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),
@@ -2274,14 +2091,14 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       ),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: AppColors.onSurface.withOpacity(0.7)),
+          Icon(icon, size: 14, color: AppColors.onSurface.withValues(alpha: 0.7)),
           const SizedBox(width: 6),
           Text(
             label,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: AppColors.onSurface.withOpacity(0.7),
+              color: AppColors.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -2317,7 +2134,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.outline.withOpacity(0.8),
+                    color: AppColors.outline.withValues(alpha: 0.8),
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -2347,13 +2164,13 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
                     borderSide: BorderSide(
-                      color: AppColors.outlineVariant.withOpacity(0.5),
+                      color: AppColors.outlineVariant.withValues(alpha: 0.5),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
                     borderSide: BorderSide(
-                      color: AppColors.outlineVariant.withOpacity(0.5),
+                      color: AppColors.outlineVariant.withValues(alpha: 0.5),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -2401,7 +2218,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                   child: Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: Colors.grey.withOpacity(0.1),
+                                      color: Colors.grey.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
@@ -2420,9 +2237,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                             decoration: BoxDecoration(
                               border: Border(
                                 bottom: BorderSide(
-                                  color: AppColors.outlineVariant.withOpacity(
-                                    0.3,
-                                  ),
+                                  color: AppColors.outlineVariant.withValues(alpha: 0.3,),
                                 ),
                               ),
                             ),
@@ -2456,9 +2271,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                             size: 14,
                                             color: activeTabIndex == 0
                                                 ? const Color(0xFF705C00)
-                                                : AppColors.outline.withOpacity(
-                                                    0.4,
-                                                  ),
+                                                : AppColors.outline.withValues(alpha: 0.4,),
                                           ),
                                           const SizedBox(width: 8),
                                           Text(
@@ -2469,7 +2282,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                               color: activeTabIndex == 0
                                                   ? const Color(0xFF705C00)
                                                   : AppColors.outline
-                                                        .withOpacity(0.6),
+                                                        .withValues(alpha: 0.6),
                                             ),
                                           ),
                                         ],
@@ -2516,7 +2329,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                               color: activeTabIndex == 1
                                                   ? const Color(0xFF705C00)
                                                   : AppColors.outline
-                                                        .withOpacity(0.6),
+                                                        .withValues(alpha: 0.6),
                                             ),
                                           ),
                                           if (visit.photos.length +
@@ -2618,7 +2431,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                           color: const Color(0xFFFBFBF9),
                                           border: Border.all(
                                             color: AppColors.outlineVariant
-                                                .withOpacity(0.5),
+                                                .withValues(alpha: 0.5),
                                           ),
                                           borderRadius: BorderRadius.circular(
                                             8,
@@ -2790,7 +2603,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                                   border: Border.all(
                                                     color: AppColors
                                                         .outlineVariant
-                                                        .withOpacity(0.5),
+                                                        .withValues(alpha: 0.5),
                                                   ),
                                                   borderRadius:
                                                       BorderRadius.circular(30),
@@ -2832,7 +2645,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                           color: const Color(0xFFFBFBF9),
                                           border: Border.all(
                                             color: AppColors.outlineVariant
-                                                .withOpacity(0.5),
+                                                .withValues(alpha: 0.5),
                                           ),
                                           borderRadius: BorderRadius.circular(
                                             8,
@@ -2856,7 +2669,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                                   border: Border.all(
                                                     color: AppColors
                                                         .outlineVariant
-                                                        .withOpacity(0.4),
+                                                        .withValues(alpha: 0.4),
                                                   ),
                                                   borderRadius:
                                                       BorderRadius.circular(6),
@@ -2901,9 +2714,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                                         decoration:
                                                             BoxDecoration(
                                                               color: Colors.grey
-                                                                  .withOpacity(
-                                                                    0.1,
-                                                                  ),
+                                                                  .withValues(alpha: 0.1,),
                                                               shape: BoxShape
                                                                   .circle,
                                                             ),
@@ -2933,7 +2744,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                                   border: Border.all(
                                                     color: AppColors
                                                         .outlineVariant
-                                                        .withOpacity(0.4),
+                                                        .withValues(alpha: 0.4),
                                                   ),
                                                   borderRadius:
                                                       BorderRadius.circular(6),
@@ -2974,9 +2785,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                                         decoration:
                                                             BoxDecoration(
                                                               color: Colors.grey
-                                                                  .withOpacity(
-                                                                    0.1,
-                                                                  ),
+                                                                  .withValues(alpha: 0.1,),
                                                               shape: BoxShape
                                                                   .circle,
                                                             ),
@@ -3016,7 +2825,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                                   border: Border.all(
                                                     color: AppColors
                                                         .outlineVariant
-                                                        .withOpacity(0.5),
+                                                        .withValues(alpha: 0.5),
                                                   ),
                                                   borderRadius:
                                                       BorderRadius.circular(30),
@@ -3060,9 +2869,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                               color: Colors.white,
                               border: Border(
                                 top: BorderSide(
-                                  color: AppColors.outlineVariant.withOpacity(
-                                    0.3,
-                                  ),
+                                  color: AppColors.outlineVariant.withValues(alpha: 0.3,),
                                 ),
                               ),
                             ),
@@ -3075,7 +2882,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                     backgroundColor: Colors.white,
                                     side: BorderSide(
                                       color: AppColors.outlineVariant
-                                          .withOpacity(0.5),
+                                          .withValues(alpha: 0.5),
                                     ),
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 24,
@@ -3475,11 +3282,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                     visitDateTime: selectedDate,
                                     photoPaths: pickedPhotos
                                         .map((f) => f.path!)
-                                        .where((p) => p != null)
                                         .toList(),
                                     documentPaths: pickedDocs
                                         .map((f) => f.path!)
-                                        .where((p) => p != null)
                                         .toList(),
                                   );
 
@@ -3545,14 +3350,14 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
   TextStyle get _modalLabelStyle => GoogleFonts.plusJakartaSans(
     fontSize: 13,
     fontWeight: FontWeight.w700,
-    color: AppColors.onSurface.withOpacity(0.8),
+    color: AppColors.onSurface.withValues(alpha: 0.8),
   );
 
   InputDecoration _modalInputDecoration(String hint) => InputDecoration(
     hintText: hint,
     hintStyle: GoogleFonts.plusJakartaSans(
       fontSize: 13,
-      color: AppColors.outline.withOpacity(0.5),
+      color: AppColors.outline.withValues(alpha: 0.5),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
     border: OutlineInputBorder(
@@ -3584,9 +3389,9 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AppColors.outline.withOpacity(0.2)),
+                border: Border.all(color: AppColors.outline.withValues(alpha: 0.2)),
               ),
               child: Text(
                 label,
@@ -3648,7 +3453,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -3662,34 +3467,35 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   ),
                 ],
               ),
-              ElevatedButton.icon(
-                onPressed: _showScheduleMeetingDialog,
-                icon: const Icon(
-                  Icons.add_rounded,
-                  size: 18,
-                  color: Colors.white,
-                ),
-                label: Text(
-                  "Schedule Meeting",
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+              if (!_isClient)
+                ElevatedButton.icon(
+                  onPressed: _showScheduleMeetingDialog,
+                  icon: const Icon(
+                    Icons.add_rounded,
+                    size: 18,
                     color: Colors.white,
                   ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF705C00),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+                  label: Text(
+                    "Schedule Meeting",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF705C00),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -3758,7 +3564,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -3768,7 +3574,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             style: GoogleFonts.plusJakartaSans(
               fontSize: 20,
               fontWeight: FontWeight.w800,
-              color: color.withOpacity(0.8),
+              color: color.withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 2),
@@ -3794,7 +3600,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3920,7 +3726,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         children: [
@@ -4038,29 +3844,31 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () =>
-                          _handleDeleteMeeting(meeting.id, meeting.title),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                    if (!_isClient) ...[
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () =>
+                            _handleDeleteMeeting(meeting.id, meeting.title),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          backgroundColor: Colors.red.withValues(alpha: 0.05),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                        backgroundColor: Colors.red.withOpacity(0.05),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        child: Text(
+                          "Delete",
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                      child: Text(
-                        "Delete",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
+                    ],
                   ],
                 ),
               ],
@@ -4134,7 +3942,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     showDialog(
       context: context,
       builder: (context) {
-        final statusCfg = _getStatusColor(meeting.status);
+
         return Dialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -4287,7 +4095,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: _getStatusColor(status).withOpacity(0.1),
+        color: _getStatusColor(status).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -4410,7 +4218,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Center(
         child: Column(
@@ -4418,7 +4226,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             Icon(
               Icons.handshake_outlined,
               size: 56,
-              color: AppColors.outline.withOpacity(0.3),
+              color: AppColors.outline.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
@@ -4459,73 +4267,76 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Premium Header
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 20,
-                        ),
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF705C00), Color(0xFF2E3228)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.handshake_rounded,
-                                color: Color(0xFFFCDE6C),
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Schedule New Meeting",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  Text(
-                                    _detailedSite.siteName,
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 12,
-                                      color: Colors.white.withOpacity(0.7),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () => Navigator.pop(context),
-                              icon: const Icon(
-                                Icons.close_rounded,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Fixed Premium Header
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 20,
+                      ),
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF705C00), Color(0xFF2E3228)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
                       ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.handshake_rounded,
+                              color: Color(0xFFFCDE6C),
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Schedule New Meeting",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  _detailedSite.siteName,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12,
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
-                      Padding(
+                    // Scrollable Form Body
+                    Expanded(
+                      child: SingleChildScrollView(
                         padding: const EdgeInsets.all(24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -4698,9 +4509,11 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                _buildModalSectionHeader(
-                                  "MINUTES OF MEETING (MOM)",
-                                  Icons.history_edu_outlined,
+                                Expanded(
+                                  child: _buildModalSectionHeader(
+                                    "MINUTES OF MEETING (MOM)",
+                                    Icons.history_edu_outlined,
+                                  ),
                                 ),
                                 TextButton.icon(
                                   onPressed: () =>
@@ -4745,180 +4558,214 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                 "Type minutes of meeting here, or click '⚡ Use Template' above to auto-fill a structured format...",
                               ),
                             ),
-
-                            const SizedBox(height: 32),
-                            // Actions
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 24,
-                                      vertical: 14,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    "Cancel",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    if (titleController.text.trim().isEmpty) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text("Title is required"),
-                                        ),
-                                      );
-                                      return;
-                                    }
-
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (_) => const Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                    );
-
-                                    // Map UI concepts to Backend Enums
-                                    final String mappedType = selectedType
-                                        .toUpperCase()
-                                        .replaceAll(' ', '_');
-                                    final String mappedStatus = selectedStatus
-                                        .toUpperCase();
-
-                                    final meetingData = {
-                                      "title": titleController.text.trim(),
-                                      if (agendaController.text.isNotEmpty)
-                                        "agenda": agendaController.text.trim(),
-                                      "meetingType": mappedType,
-                                      "status": mappedStatus,
-                                      "scheduledAt": scheduledAt
-                                          .toIso8601String(),
-                                      if (startedAt != null)
-                                        "startedAt": startedAt!
-                                            .toIso8601String(),
-                                      if (endedAt != null)
-                                        "endedAt": endedAt!.toIso8601String(),
-                                      if (linkController.text.isNotEmpty)
-                                        "meetingLink": linkController.text
-                                            .trim(),
-                                      if (momController.text.isNotEmpty)
-                                        "mom": momController.text.trim(),
-                                    };
-
-                                    int idToFetch = _detailedSite.projectId > 0
-                                        ? _detailedSite.projectId
-                                        : _detailedSite.id;
-                                    final success =
-                                        await MeetingService.createMeeting(
-                                          projectId: idToFetch,
-                                          createdBy:
-                                              1, // Fallback administrator ID
-                                          meetingData: meetingData,
-                                        );
-
-                                    if (mounted)
-                                      Navigator.pop(
-                                        context,
-                                      ); // Close loading spinner
-
-                                    if (success) {
-                                      if (mounted)
-                                        Navigator.pop(context); // Close modal
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            "Meeting scheduled successfully",
-                                          ),
-                                          behavior: SnackBarBehavior.floating,
-                                          backgroundColor: AppColors.primary,
-                                        ),
-                                      );
-                                      _fetchFullDetails(); // Reload data from backend
-                                    } else {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            "Failed to schedule meeting",
-                                          ),
-                                          behavior: SnackBarBehavior.floating,
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF705C00),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 32,
-                                      vertical: 14,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.check_rounded,
-                                        color: Colors.white,
-                                        size: 18,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        "Save Meeting",
-                                        style: GoogleFonts.plusJakartaSans(
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                    // Fixed Action Bar
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, -5),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Flexible(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                "Cancel",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Flexible(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                if (titleController.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(
+                                    context,
+                                  ).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Title is required"),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (_) => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+
+                                // Map UI concepts to Backend Enums
+                                final String mappedType = selectedType
+                                    .toUpperCase()
+                                    .replaceAll(' ', '_');
+                                final String mappedStatus =
+                                    selectedStatus.toUpperCase();
+
+                                final meetingData = {
+                                  "title": titleController.text.trim(),
+                                  if (agendaController.text.isNotEmpty)
+                                    "agenda": agendaController.text.trim(),
+                                  "meetingType": mappedType,
+                                  "status": mappedStatus,
+                                  "scheduledAt": scheduledAt.toIso8601String(),
+                                  if (startedAt != null)
+                                    "startedAt": startedAt!.toIso8601String(),
+                                  if (endedAt != null)
+                                    "endedAt": endedAt!.toIso8601String(),
+                                  if (linkController.text.isNotEmpty)
+                                    "meetingLink": linkController.text.trim(),
+                                  if (momController.text.isNotEmpty)
+                                    "mom": momController.text.trim(),
+                                };
+
+                                int idToFetch = _detailedSite.projectId > 0
+                                    ? _detailedSite.projectId
+                                    : _detailedSite.id;
+                                final success =
+                                    await MeetingService.createMeeting(
+                                  projectId: idToFetch,
+                                  createdBy: 1, // Fallback administrator ID
+                                  meetingData: meetingData,
+                                );
+
+                                if (context.mounted) Navigator.pop(context);
+
+                                if (success) {
+                                  if (context.mounted) Navigator.pop(context);
+                                  ScaffoldMessenger.of(
+                                    context,
+                                  ).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "Meeting scheduled successfully",
+                                      ),
+                                      behavior: SnackBarBehavior.floating,
+                                      backgroundColor: AppColors.primary,
+                                    ),
+                                  );
+                                  _fetchFullDetails();
+                                } else {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(
+                                      context,
+                                    ).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Failed to schedule meeting",
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF705C00),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.check_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      "Save Meeting",
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );
-          },
-        );
-      },
-    );
-  }
+                },
+              );
+            },
+          );
+        }
 
   Widget _buildModalSectionHeader(String title, IconData icon) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: AppColors.outline),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            color: AppColors.outline,
-            letterSpacing: 0.5,
+        Row(
+          children: [
+            Icon(icon, size: 16, color: const Color(0xFF705C00).withValues(alpha: 0.7)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF705C00).withValues(alpha: 0.7),
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 1,
+          width: 40,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [const Color(0xFF705C00).withValues(alpha: 0.3), Colors.transparent],
+            ),
           ),
         ),
       ],
@@ -4927,13 +4774,17 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
 
   Widget _buildModalLabel(String label, {bool required = false}) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            color: AppColors.onSurface.withOpacity(0.8),
+        Flexible(
+          child: Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: AppColors.onSurface.withValues(alpha: 0.6),
+              letterSpacing: 0.2,
+            ),
           ),
         ),
         if (required)
@@ -4957,7 +4808,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FBEC).withOpacity(0.5),
+        color: const Color(0xFFF9FBEC).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.outlineVariant),
       ),
@@ -4986,6 +4837,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     DateTime dt,
     Function(DateTime) onSelect, {
     bool isNull = false,
+    bool dateOnly = false,
   }) {
     return InkWell(
       onTap: () async {
@@ -4996,40 +4848,48 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           lastDate: DateTime(2100),
         );
         if (d != null) {
-          final t = await showTimePicker(
-            context: context,
-            initialTime: TimeOfDay.fromDateTime(dt),
-          );
-          if (t != null) {
-            onSelect(DateTime(d.year, d.month, d.day, t.hour, t.minute));
+          if (dateOnly) {
+            onSelect(DateTime(d.year, d.month, d.day));
+          } else {
+            final t = await showTimePicker(
+              context: context,
+              initialTime: TimeOfDay.fromDateTime(dt),
+            );
+            if (t != null) {
+              onSelect(DateTime(d.year, d.month, d.day, t.hour, t.minute));
+            }
           }
         }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFF9FBEC).withOpacity(0.5),
+          color: const Color(0xFFF9FBEC).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.outlineVariant),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              isNull
-                  ? "dd-mm-yyyy --:--"
-                  : DateFormat('dd-MM-yyyy HH:mm').format(dt),
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
-                color: isNull
-                    ? AppColors.outline.withOpacity(0.5)
-                    : AppColors.onSurface,
+            Expanded(
+              child: Text(
+                isNull
+                    ? (dateOnly ? "dd-mm-yyyy" : "dd-mm-yyyy --:--")
+                    : DateFormat(dateOnly ? 'dd-MM-yyyy' : 'dd-MM-yyyy HH:mm')
+                        .format(dt),
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isNull
+                      ? AppColors.outline.withValues(alpha: 0.4)
+                      : AppColors.onSurface,
+                ),
               ),
             ),
             Icon(
               Icons.calendar_month_rounded,
               size: 18,
-              color: AppColors.outline.withOpacity(0.8),
+              color: const Color(0xFF705C00).withValues(alpha: 0.6),
             ),
           ],
         ),
@@ -5046,13 +4906,17 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
@@ -5069,41 +4933,44 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   ],
                 ),
                 const SizedBox(height: 20),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _buildTemplateOption(
-                      "Standard MOM",
-                      Icons.assignment_outlined,
-                      "Basic minutes with agenda & decisions",
-                      _getStandardMomTemplate(),
-                      onPick,
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        _buildTemplateOption(
+                          "Standard MOM",
+                          Icons.assignment_outlined,
+                          "Basic minutes with agenda & decisions",
+                          _getStandardMomTemplate(),
+                          onPick,
+                        ),
+                        _buildTemplateOption(
+                          "Site Review MOM",
+                          Icons.construction_outlined,
+                          "For on-site progress review meetings",
+                          _getSiteReviewMomTemplate(),
+                          onPick,
+                        ),
+                        _buildTemplateOption(
+                          "Client Call Summary",
+                          Icons.phone_in_talk_outlined,
+                          "Quick summary for client calls",
+                          _getClientCallTemplate(),
+                          onPick,
+                        ),
+                        _buildTemplateOption(
+                          "Design Review MOM",
+                          Icons.design_services_outlined,
+                          "For design presentation sessions",
+                          _getDesignReviewTemplate(),
+                          onPick,
+                        ),
+                      ],
                     ),
-                    _buildTemplateOption(
-                      "Site Review MOM",
-                      Icons.construction_outlined,
-                      "For on-site progress review meetings",
-                      _getSiteReviewMomTemplate(),
-                      onPick,
-                    ),
-                    _buildTemplateOption(
-                      "Client Call Summary",
-                      Icons.phone_in_talk_outlined,
-                      "Quick summary for client calls",
-                      _getClientCallTemplate(),
-                      onPick,
-                    ),
-                    _buildTemplateOption(
-                      "Design Review MOM",
-                      Icons.design_services_outlined,
-                      "For design presentation sessions",
-                      _getDesignReviewTemplate(),
-                      onPick,
-                    ),
-                  ],
+                  ),
                 ),
               ],
+            ),
             ),
           ),
         );
@@ -5124,34 +4991,57 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         Navigator.pop(context);
       },
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.4,
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.outlineVariant),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.outline.withValues(alpha: 0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: const Color(0xFF705C00), size: 24),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF9DB),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: const Color(0xFF705C00), size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             Text(
-              title,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
               subtitle,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 11,
-                color: AppColors.outline,
-              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                color: AppColors.onSurface.withValues(alpha: 0.5),
+                height: 1.4,
+              ),
             ),
           ],
         ),
@@ -5434,7 +5324,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Center(
         child: Column(
@@ -5442,7 +5332,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
             Icon(
               Icons.assignment_outlined,
               size: 56,
-              color: AppColors.outline.withOpacity(0.3),
+              color: AppColors.outline.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
@@ -5465,7 +5355,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.4)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.4)),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
@@ -5534,24 +5424,25 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                   const SizedBox(width: 12),
                   _buildCompactReraStatus(rera.status),
                   const SizedBox(width: 8),
-                  InkWell(
-                    onTap: () => _handleDeleteRera(rera.id, rera.reraNumber),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: Colors.red.withValues(alpha: 0.2),
+                  if (!_isClient)
+                    InkWell(
+                      onTap: () => _handleDeleteRera(rera.id, rera.reraNumber),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.red.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        padding: const EdgeInsets.all(6),
+                        child: const Icon(
+                          Icons.delete_outline,
+                          size: 14,
+                          color: Colors.red,
                         ),
                       ),
-                      padding: const EdgeInsets.all(6),
-                      child: const Icon(
-                        Icons.delete_outline,
-                        size: 14,
-                        color: Colors.red,
-                      ),
                     ),
-                  ),
                 ],
               ),
               children: [
@@ -5640,37 +5531,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
     );
   }
 
-  Widget _buildReraStatusBadge(String status) {
-    bool isActive = status.toUpperCase() == 'ACTIVE';
-    Color color = isActive ? Colors.green : Colors.red;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            status.toUpperCase(),
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildReraSmallInfo(IconData icon, String text) {
     return Row(
@@ -5720,7 +5581,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
           style: GoogleFonts.plusJakartaSans(
             fontSize: 10,
             fontWeight: FontWeight.w600,
-            color: AppColors.outline.withOpacity(0.7),
+            color: AppColors.outline.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 4),
@@ -5744,14 +5605,14 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
         color: const Color(0xFFFBFBF9),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.outlineVariant.withOpacity(0.3),
+          color: AppColors.outlineVariant.withValues(alpha: 0.3),
           style: BorderStyle.none,
         ),
       ),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.2)),
+          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
         ),
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -5759,14 +5620,14 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
             Icon(
               Icons.description_outlined,
               size: 24,
-              color: AppColors.outline.withOpacity(0.2),
+              color: AppColors.outline.withValues(alpha: 0.2),
             ),
             const SizedBox(height: 12),
             Text(
               text,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
-                color: AppColors.outline.withOpacity(0.5),
+                color: AppColors.outline.withValues(alpha: 0.5),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -5783,7 +5644,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -5868,7 +5729,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -5936,7 +5797,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
+                                color: Colors.white.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
@@ -6023,44 +5884,42 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                                     ),
                                   ),
                                   const SizedBox(height: 24),
-                                  Row(
+                                  Column(
                                     children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            _buildModalLabel(
-                                              "REGISTRATION DATE",
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          _buildModalLabel(
+                                            "REGISTRATION DATE",
+                                          ),
+                                          const SizedBox(height: 10),
+                                          _buildDateTimePicker(
+                                            registrationDate,
+                                            (dt) => setDialogState(
+                                              () => registrationDate = dt,
                                             ),
-                                            const SizedBox(height: 10),
-                                            _buildDateTimePicker(
-                                              registrationDate,
-                                              (dt) => setDialogState(
-                                                () => registrationDate = dt,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                            dateOnly: true,
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            _buildModalLabel(
-                                              "EXPECTED COMPLETION DATE",
+                                      const SizedBox(height: 20),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          _buildModalLabel(
+                                            "EXPECTED COMPLETION DATE",
+                                          ),
+                                          const SizedBox(height: 10),
+                                          _buildDateTimePicker(
+                                            expectedDate,
+                                            (dt) => setDialogState(
+                                              () => expectedDate = dt,
                                             ),
-                                            const SizedBox(height: 10),
-                                            _buildDateTimePicker(
-                                              expectedDate,
-                                              (dt) => setDialogState(
-                                                () => expectedDate = dt,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                            dateOnly: true,
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -6097,121 +5956,126 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                OutlinedButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 40,
-                                      vertical: 16,
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
                                     ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    "Cancel",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FontWeight.w700,
+                                    child: Text(
+                                      "Cancel",
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 16),
-                                ElevatedButton.icon(
-                                  onPressed: () async {
-                                    if (numberController.text.trim().isEmpty) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            "RERA Number is required",
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () async {
+                                      if (numberController.text.trim().isEmpty) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "RERA Number is required",
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                      return;
-                                    }
-
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (_) => const Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                    );
-
-                                    final payload = {
-                                      "reraNumber": numberController.text
-                                          .trim(),
-                                      "registrationDate": DateFormat(
-                                        'yyyy-MM-dd',
-                                      ).format(registrationDate),
-                                      "expectedCompletionDate": DateFormat(
-                                        'yyyy-MM-dd',
-                                      ).format(expectedDate),
-                                      "active": isActive,
-                                    };
-
-                                    int idToFetch = _detailedSite.projectId > 0
-                                        ? _detailedSite.projectId
-                                        : _detailedSite.id;
-                                    final success =
-                                        await ReraService.createReraProject(
-                                          projectId: idToFetch,
-                                          data: payload,
                                         );
+                                        return;
+                                      }
 
-                                    if (mounted)
-                                      Navigator.pop(
-                                        context,
-                                      ); // Close loading spinner
+                                      showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (_) => const Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      );
 
-                                    if (success) {
+                                      final payload = {
+                                        "reraNumber": numberController.text
+                                            .trim(),
+                                        "registrationDate": DateFormat(
+                                          'yyyy-MM-dd',
+                                        ).format(registrationDate),
+                                        "expectedCompletionDate": DateFormat(
+                                          'yyyy-MM-dd',
+                                        ).format(expectedDate),
+                                        "active": isActive,
+                                      };
+
+                                      int idToFetch = _detailedSite.projectId > 0
+                                          ? _detailedSite.projectId
+                                          : _detailedSite.id;
+                                      final success =
+                                          await ReraService.createReraProject(
+                                            projectId: idToFetch,
+                                            data: payload,
+                                          );
+
                                       if (mounted)
-                                        Navigator.pop(context); // Close modal
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            "RERA registration added successfully",
+                                        Navigator.pop(
+                                          context,
+                                        ); // Close loading spinner
+
+                                      if (success) {
+                                        if (mounted)
+                                          Navigator.pop(context); // Close modal
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "RERA registration added successfully",
+                                            ),
+                                            behavior: SnackBarBehavior.floating,
+                                            backgroundColor: AppColors.primary,
                                           ),
-                                          behavior: SnackBarBehavior.floating,
-                                          backgroundColor: AppColors.primary,
-                                        ),
-                                      );
-                                      _fetchFullDetails(); // Force refresh directly from API
-                                    } else {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            "Failed to add RERA registration",
+                                        );
+                                        _fetchFullDetails(); // Force refresh directly from API
+                                      } else {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "Failed to add RERA registration",
+                                            ),
+                                            behavior: SnackBarBehavior.floating,
+                                            backgroundColor: Colors.red,
                                           ),
-                                          behavior: SnackBarBehavior.floating,
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  icon: const Icon(
-                                    Icons.account_balance_rounded,
-                                    size: 18,
-                                  ),
-                                  label: const Text("Add RERA"),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(
-                                      0xFF705C00,
-                                    ).withValues(alpha: 0.6),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 40,
-                                      vertical: 16,
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(
+                                      Icons.account_balance_rounded,
+                                      size: 18,
                                     ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
+                                    label: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: const Text("Add RERA"),
                                     ),
-                                    elevation: 0,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(
+                                        0xFF705C00,
+                                      ).withValues(alpha: 0.6),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      elevation: 0,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -6236,9 +6100,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
       decoration: BoxDecoration(
         color: const Color(0xFFFBFBF9),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
       ),
       child: child,
     );
@@ -6337,9 +6199,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
     );
   }
 
-  Widget _buildPlaceholderTab(String title) {
-    return const SizedBox(height: 100);
-  }
+
 }
 
 class _SmallChip extends StatelessWidget {
@@ -6401,7 +6261,7 @@ class _EditSiteButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.brown.withOpacity(0.3),
+              color: Colors.brown.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -6439,9 +6299,9 @@ class _PriorityPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         priority,
@@ -6566,7 +6426,7 @@ class _SummaryItem extends StatelessWidget {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.outline.withOpacity(0.8),
+                  color: AppColors.outline.withValues(alpha: 0.8),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -6582,11 +6442,13 @@ class _StageTile extends StatelessWidget {
   final SiteStage stage;
   final int index; // sequential index (1 to 11)
   final VoidCallback onRefresh;
+  final bool isClient;
 
   const _StageTile({
     required this.stage,
     required this.index,
     required this.onRefresh,
+    required this.isClient,
   });
 
   @override
@@ -6598,7 +6460,7 @@ class _StageTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -6640,11 +6502,12 @@ class _StageTile extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               // Non-functional icon for parent titles
-              const Icon(
-                Icons.add_circle_outline_rounded,
-                size: 20,
-                color: AppColors.chipDoneFg,
-              ),
+              if (!isClient)
+                const Icon(
+                  Icons.add_circle_outline_rounded,
+                  size: 20,
+                  color: AppColors.chipDoneFg,
+                ),
               const SizedBox(width: 4),
               const Icon(Icons.expand_more_rounded, size: 20),
             ],
@@ -6652,8 +6515,12 @@ class _StageTile extends StatelessWidget {
           children: [
             const Divider(height: 1, indent: 16, endIndent: 16),
             ...subStages.map(
-              (sub) =>
-                  _SubStageTile(stage: sub, onRefresh: onRefresh, depth: 1),
+              (sub) => _SubStageTile(
+                stage: sub,
+                onRefresh: onRefresh,
+                depth: 1,
+                isClient: isClient,
+              ),
             ),
             const SizedBox(height: 8),
           ],
@@ -6669,10 +6536,12 @@ class _SubStageTile extends StatelessWidget {
   final SiteStage stage;
   final VoidCallback onRefresh;
   final int depth;
+  final bool isClient;
 
   const _SubStageTile({
     required this.stage,
     required this.onRefresh,
+    required this.isClient,
     this.depth = 1,
   });
 
@@ -6690,7 +6559,7 @@ class _SubStageTile extends StatelessWidget {
                 width: 6,
                 height: 6,
                 decoration: BoxDecoration(
-                  color: AppColors.outline.withOpacity(0.4),
+                  color: AppColors.outline.withValues(alpha: 0.4),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -6729,7 +6598,8 @@ class _SubStageTile extends StatelessWidget {
                 hasDocuments: stage.documents.isNotEmpty,
               ),
               const SizedBox(width: 4),
-              _AddDocButton(stage: stage, onSuccess: onRefresh),
+              if (stage.documents.isNotEmpty) _ViewDocsButton(stage: stage),
+              if (!isClient) _AddDocButton(stage: stage, onSuccess: onRefresh),
             ],
           ),
         ),
@@ -6739,6 +6609,7 @@ class _SubStageTile extends StatelessWidget {
               stage: child,
               onRefresh: onRefresh,
               depth: depth + 1,
+              isClient: isClient,
             ),
           ),
       ],
@@ -6815,6 +6686,414 @@ class _AddDocButton extends StatelessWidget {
   }
 }
 
+class _ViewDocsButton extends StatelessWidget {
+  final SiteStage stage;
+
+  const _ViewDocsButton({required this.stage});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          onPressed: () => _showDocumentsSheet(context, stage),
+          icon: const Icon(Icons.visibility_rounded, size: 19),
+          color: Colors.blueAccent,
+          tooltip: "View Documents",
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        ),
+        Positioned(
+          top: -2,
+          right: -2,
+          child: Container(
+            padding: const EdgeInsets.all(3),
+            decoration: const BoxDecoration(
+              color: Colors.blueAccent,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              stage.documents.length.toString(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 8,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+void _showDocumentsSheet(BuildContext context, SiteStage stage) {
+  final docs = stage.documents;
+  final stageName = _formatStageName(stage.customStageName ?? stage.stageName);
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    backgroundColor: Colors.white,
+    builder: (context) => DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.5,
+      minChildSize: 0.3,
+      maxChildSize: 0.85,
+      builder: (context, scrollController) => Column(
+        children: [
+          // Drag handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(99),
+            ),
+          ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.folder_open_rounded,
+                  color: Colors.blueAccent,
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    stageName,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.onSurface,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blueAccent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    "${docs.length} file${docs.length != 1 ? 's' : ''}",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.blueAccent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // Document list
+          Expanded(
+            child: ListView.separated(
+              controller: scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              itemCount: docs.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, i) {
+                final doc = docs[i];
+                final typeLabel = (doc.documentType ?? 'OTHER').replaceAll(
+                  '_',
+                  ' ',
+                );
+                final dateStr = doc.uploadedAt != null
+                    ? DateFormat('dd MMM yyyy').format(doc.uploadedAt!)
+                    : '—';
+
+                // Icon per document type
+                IconData typeIcon;
+                Color typeColor;
+                switch (doc.documentType?.toUpperCase()) {
+                  case 'DRAWING':
+                    typeIcon = Icons.architecture_rounded;
+                    typeColor = Colors.deepPurple;
+                    break;
+                  case 'NOC':
+                    typeIcon = Icons.verified_rounded;
+                    typeColor = Colors.teal;
+                    break;
+                  case 'CERTIFICATE':
+                    typeIcon = Icons.workspace_premium_rounded;
+                    typeColor = Colors.amber.shade700;
+                    break;
+                  case 'LEGAL_DOCUMENT':
+                    typeIcon = Icons.gavel_rounded;
+                    typeColor = Colors.brown;
+                    break;
+                  case 'REPORT':
+                    typeIcon = Icons.summarize_rounded;
+                    typeColor = Colors.indigo;
+                    break;
+                  case 'APPLICATION':
+                    typeIcon = Icons.description_rounded;
+                    typeColor = Colors.blue;
+                    break;
+                  case 'CLEARANCE':
+                    typeIcon = Icons.check_circle_outline_rounded;
+                    typeColor = Colors.green;
+                    break;
+                  case 'RECEIPT':
+                    typeIcon = Icons.receipt_long_rounded;
+                    typeColor = Colors.orange;
+                    break;
+                  default:
+                    typeIcon = Icons.insert_drive_file_rounded;
+                    typeColor = Colors.blueGrey;
+                }
+
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      // Type icon
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: typeColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(typeIcon, size: 20, color: typeColor),
+                      ),
+                      const SizedBox(width: 12),
+                      // File info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              doc.fileName ?? 'Unnamed Document',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurface,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: typeColor.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    typeLabel,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w700,
+                                      color: typeColor,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 10,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  dateStr,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Open / Preview button
+                      if (doc.filePath != null && doc.filePath!.isNotEmpty)
+                        IconButton(
+                          onPressed: () async {
+                            final path = doc.filePath!.toLowerCase();
+                            final type = doc.documentType?.toUpperCase() ?? '';
+
+                            // Detect images via extension OR metadata (DRAWING/RECEIPT/etc are often images)
+                            final isImage =
+                                path.endsWith('.png') ||
+                                path.endsWith('.jpg') ||
+                                path.endsWith('.jpeg') ||
+                                path.endsWith('.webp') ||
+                                path.endsWith('.gif') ||
+                                path.endsWith('.bmp') ||
+                                type == 'DRAWING' ||
+                                type == 'RECEIPT';
+
+                            if (isImage) {
+                              _showImagePreview(
+                                context,
+                                doc.filePath!,
+                                doc.fileName ?? 'Image',
+                              );
+                            } else {
+                              // Non-image: open externally
+                              final uri = Uri.tryParse(doc.filePath!);
+                              if (uri != null) {
+                                try {
+                                  final launched = await launchUrl(
+                                    uri,
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                  if (!launched) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Could not open this file type. Please install a viewer.",
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("Error opening file: $e"),
+                                      ),
+                                    );
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.open_in_new_rounded,
+                            size: 18,
+                            color: Colors.blueAccent,
+                          ),
+                          tooltip: "Preview File",
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+void _showImagePreview(BuildContext context, String imageUrl, String title) {
+  showDialog(
+    context: context,
+    barrierColor: Colors.black87,
+    builder: (context) => Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: Colors.black54,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          title,
+          style: GoogleFonts.plusJakartaSans(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.open_in_new_rounded,
+              color: Colors.white70,
+              size: 20,
+            ),
+            tooltip: "Open in Browser",
+            onPressed: () {
+              final uri = Uri.tryParse(imageUrl);
+              if (uri != null) {
+                launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
+          ),
+        ],
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 4.0,
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.contain,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                      : null,
+                  color: Colors.white,
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.broken_image_rounded,
+                  size: 64,
+                  color: Colors.white38,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "Failed to load image",
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white54,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 void _showAddDocumentDialog(
   BuildContext context,
   SiteStage stage,
@@ -6876,7 +7155,7 @@ void _showAddDocumentDialog(
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface.withOpacity(0.7),
+                  color: AppColors.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(height: 16),
@@ -6894,7 +7173,7 @@ void _showAddDocumentDialog(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AppColors.outlineVariant.withOpacity(0.5),
+                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
                   ),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -6942,7 +7221,7 @@ void _showAddDocumentDialog(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AppColors.outlineVariant.withOpacity(0.5),
+                      color: AppColors.outlineVariant.withValues(alpha: 0.5),
                     ),
                   ),
                   child: Row(
@@ -6953,7 +7232,7 @@ void _showAddDocumentDialog(
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.outlineVariant.withOpacity(0.3),
+                          color: AppColors.outlineVariant.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(color: AppColors.outline),
                         ),
@@ -7093,7 +7372,7 @@ class _FormLabel extends StatelessWidget {
         style: GoogleFonts.plusJakartaSans(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: AppColors.onSurface.withOpacity(0.8),
+          color: AppColors.onSurface.withValues(alpha: 0.8),
         ),
       ),
     );
@@ -7121,20 +7400,20 @@ class _FormInput extends StatelessWidget {
         hintText: hint,
         hintStyle: GoogleFonts.plusJakartaSans(
           fontSize: 14,
-          color: AppColors.outline.withOpacity(0.5),
+          color: AppColors.outline.withValues(alpha: 0.5),
         ),
         isDense: true,
         contentPadding: const EdgeInsets.all(12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: AppColors.outlineVariant.withOpacity(0.5),
+            color: AppColors.outlineVariant.withValues(alpha: 0.5),
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: AppColors.outlineVariant.withOpacity(0.5),
+            color: AppColors.outlineVariant.withValues(alpha: 0.5),
           ),
         ),
       ),

@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
 import '../../services/project_service.dart';
 import '../../services/post_sales_service.dart';
 import '../../widgets/common_widgets.dart';
+import '../../utils/base64_utils.dart';
 
 import 'overview_tab_view.dart';
 import 'client_tab_view.dart';
@@ -93,12 +95,7 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView>
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Column(
-        children: [
-          SizedBox(height: 100),
-          Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        ],
-      );
+      return const ProjectDetailSkeleton();
     }
 
     if (_project == null) {
@@ -113,7 +110,7 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView>
 
     // Determine derived identities
     final projectNode = _project!['project'] ?? {};
-    final clientNode = _project!['client'] ?? {};
+
 
     final pName =
         projectNode['projectName'] ??
@@ -121,10 +118,7 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView>
         'Unknown Project';
     final pCode =
         projectNode['projectCode'] ?? projectNode['project_code'] ?? '—';
-    final clientId = clientNode['id']?.toString() ?? 'N/A';
-    final date =
-        projectNode['projectCreatedDateTime']?.toString().split('T').first ??
-        '';
+
 
     final status = projectNode['projectStatus']?.toString() ?? 'IN_PROGRESS';
 
@@ -175,23 +169,20 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Fake Logo
                     Container(
-                      width: 50,
-                      height: 50,
+                      width: 54,
+                      height: 54,
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppColors.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: AppColors.outlineVariant.withValues(alpha: 0.5),
                         ),
                       ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.apartment_rounded,
-                          color: AppColors.primary,
-                          size: 28,
-                        ),
+                      clipBehavior: Clip.hardEdge,
+                      child: _buildLogoPreview(
+                        projectNode['logoUrl'] ?? projectNode['logo_url'],
+                        name: pName.toString(),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -256,10 +247,10 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView>
                                     color: isNotified
                                         ? const Color(
                                             0xFF16A34A,
-                                          ).withOpacity(0.3)
+                                          ).withValues(alpha: 0.3)
                                         : const Color(
                                             0xFFD97706,
-                                          ).withOpacity(0.3),
+                                          ).withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: Row(
@@ -309,7 +300,7 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView>
               color: AppColors.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: AppColors.outlineVariant.withOpacity(0.3),
+                color: AppColors.outlineVariant.withValues(alpha: 0.3),
               ),
             ),
             child: TabBar(
@@ -381,6 +372,45 @@ class _PostSaleDetailViewState extends State<PostSaleDetailView>
           ),
         ],
       ),
+    );
+  }
+  Widget _buildLogoPreview(dynamic logo, {String? name}) {
+    if (logo == null || logo.toString().isEmpty) {
+      return _initialsFallback(name);
+    }
+
+    if (Base64Utils.isBase64(logo.toString())) {
+      try {
+        final base64String = logo.toString().split(',').last;
+        return Image.memory(
+          base64Decode(base64String),
+          fit: BoxFit.cover,
+          errorBuilder: (ctx, err, stack) => _initialsFallback(name),
+        );
+      } catch (e) {
+        return _initialsFallback(name);
+      }
+    }
+
+    return Image.network(
+      logo.toString(),
+      fit: BoxFit.cover,
+      errorBuilder: (ctx, err, stack) => _initialsFallback(name),
+    );
+  }
+
+  Widget _initialsFallback(String? name) {
+    return AvatarWidget(
+      initials: name != null && name.isNotEmpty
+          ? name
+              .split(' ')
+              .map((s) => s.isNotEmpty ? s[0] : '')
+              .take(2)
+              .join()
+              .toUpperCase()
+          : '?',
+      size: 54,
+      fontSize: 14,
     );
   }
 }

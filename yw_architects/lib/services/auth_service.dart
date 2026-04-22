@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Platform, SocketException;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show SocketException;
 import 'package:http/http.dart' as http;
 import '../api/constants.dart';
 import '../models/app_models.dart';
@@ -16,13 +16,12 @@ class AuthService {
   static int get _port => 8080;
 
   // ─── Build Uri with @RequestParam query params ─────────────────────────────
-  // Using Uri.http() causes Dart to percent-encode special chars automatically,
-  // so passwords containing @, +, #, & etc. never break the URL.
   static Uri _buildUri(String path, Map<String, String> params) {
+    final isProd = ApiConstants.isProduction;
     return Uri(
-      scheme: 'http',
+      scheme: ApiConstants.scheme,
       host: _resolvedHost,
-      port: _port,
+      port: isProd ? null : ApiConstants.port,
       path: path,
       queryParameters: params,
     );
@@ -91,8 +90,9 @@ class AuthService {
     final fName = payload['firstName'] as String? ?? '';
     final lName = payload['lastName'] as String? ?? '';
     final email = (payload['sub'] as String?) ?? fallbackEmail;
-    final phone = payload['phone']?.toString() ?? payload['mobile']?.toString() ?? '';
-    final empId = payload['employeeId']?.toString() ?? id.toString();
+    final phone =
+        payload['phone']?.toString() ?? payload['mobile']?.toString() ?? '';
+
     final joinDate = payload['joinDate']?.toString() ?? '';
 
     return AppUser(
@@ -103,7 +103,9 @@ class AuthService {
         name: '$fName $lName'.trim(),
         firstName: fName,
         lastName: lName,
-        initials: (fName.isNotEmpty ? fName[0] : '') + (lName.isNotEmpty ? lName[0] : ''),
+        initials:
+            (fName.isNotEmpty ? fName[0] : '') +
+            (lName.isNotEmpty ? lName[0] : ''),
         email: email,
         label: baseInfo.label,
         nav: baseInfo.nav,
@@ -121,23 +123,35 @@ class AuthService {
   // Final URL example:
   //   http://localhost:8080/api/auth/login?email=admin%40yw.com&password=admin123
 
+  // ─── Post with Timeout & Retry ─────────────────────────────────────────────
+  static Future<http.Response> _postWithRetry(Uri uri) async {
+    int attempts = 0;
+    while (attempts < 2) {
+      try {
+        return await http
+            .post(uri)
+            .timeout(const Duration(seconds: 60));
+      } catch (e) {
+        if (e is TimeoutException) {
+          throw Exception('Connection timed out. Please check if the server is running or if your IP/Host is correct.');
+        }
+        attempts++;
+        if (attempts >= 2) rethrow; // Final failure
+        // Fast retry: stay responsive
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+    }
+    throw Exception('Unknown connection error');
+  }
+
   static Future<AppUser> loginEmployee(String email, String password) async {
-    print("This is trying to login");
     try {
       final uri = _buildUri('/api/auth/login', {
         'email': email,
         'password': password,
       });
-      print("This is trying to login" + uri.toString());
-      // Debug: print the exact URL being hit
-      assert(() {
-        print('[AuthService] POST $uri');
-        return true;
-      }());
 
-      final response = await http
-          .post(uri)
-          .timeout(const Duration(seconds: 15));
+      final response = await _postWithRetry(uri);
       print("response" + response.body);
       assert(() {
         print(
@@ -207,14 +221,7 @@ class AuthService {
         'password': password,
       });
 
-      assert(() {
-        print('[AuthService] POST $uri');
-        return true;
-      }());
-
-      final response = await http
-          .post(uri)
-          .timeout(const Duration(seconds: 15));
+      final response = await _postWithRetry(uri);
 
       assert(() {
         print(
@@ -237,9 +244,16 @@ class AuthService {
         final tokenEmail = (payload['sub'] as String?) ?? email;
 
         // Try to find the ID in the response body first, then fallback to JWT, then default to 0
-        final id = data['id'] as int? ?? data['clientId'] as int? ?? payload['id'] as int? ?? 0;
+        final id =
+            data['id'] as int? ??
+            data['clientId'] as int? ??
+            payload['id'] as int? ??
+            0;
 
-        final fullName = payload['name']?.toString() ?? payload['fullName']?.toString() ?? '';
+        final fullName =
+            payload['name']?.toString() ??
+            payload['fullName']?.toString() ??
+            '';
         String fName = payload['firstName'] as String? ?? '';
         String lName = payload['lastName'] as String? ?? '';
 
@@ -259,13 +273,21 @@ class AuthService {
             name: '$fName $lName'.trim(),
             firstName: fName,
             lastName: lName,
-            initials: (fName.isNotEmpty ? fName[0] : 'C') + (lName.isNotEmpty ? lName[0] : 'L'),
+            initials:
+                (fName.isNotEmpty ? fName[0] : 'C') +
+                (lName.isNotEmpty ? lName[0] : 'L'),
             email: tokenEmail,
             label: 'CLIENT',
             nav: clientSidebarNav,
             profileImage: payload['profileImage'] as String?,
-            phone: payload['phone']?.toString() ?? payload['mobile']?.toString() ?? '',
-            address: payload['address']?.toString() ?? payload['address']?.toString() ?? '',
+            phone:
+                payload['phone']?.toString() ??
+                payload['mobile']?.toString() ??
+                '',
+            address:
+                payload['address']?.toString() ??
+                payload['address']?.toString() ??
+                '',
             gstCertificate: payload['gstcertificate']?.toString() ?? '',
             pan: payload['pan']?.toString() ?? '',
           ),
@@ -320,7 +342,10 @@ class AuthService {
       final id = payload['id'] as int? ?? 0;
 
       if (roleStr.trim().toUpperCase() == 'CLIENT') {
-        final fullName = payload['name']?.toString() ?? payload['fullName']?.toString() ?? '';
+        final fullName =
+            payload['name']?.toString() ??
+            payload['fullName']?.toString() ??
+            '';
         String fName = payload['firstName'] as String? ?? '';
         String lName = payload['lastName'] as String? ?? '';
 
@@ -340,12 +365,17 @@ class AuthService {
             name: '$fName $lName'.trim(),
             firstName: fName,
             lastName: lName,
-            initials: (fName.isNotEmpty ? fName[0] : 'C') + (lName.isNotEmpty ? lName[0] : 'L'),
+            initials:
+                (fName.isNotEmpty ? fName[0] : 'C') +
+                (lName.isNotEmpty ? lName[0] : 'L'),
             email: emailStr,
             label: 'CLIENT',
             nav: clientSidebarNav,
             profileImage: payload['profileImage'] as String?,
-            phone: payload['phone']?.toString() ?? payload['mobile']?.toString() ?? '',
+            phone:
+                payload['phone']?.toString() ??
+                payload['mobile']?.toString() ??
+                '',
             address: payload['address']?.toString() ?? '',
             gstCertificate: payload['gstcertificate']?.toString() ?? '',
             pan: payload['pan']?.toString() ?? '',

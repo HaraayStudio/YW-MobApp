@@ -33,14 +33,18 @@ class _DailyAttendanceTabState extends State<DailyAttendanceTab> {
     try {
       final empsData = await EmployeeService.getAllEmployees();
       final todayData = await AttendanceService.getTodayAttendance();
-      
+
       final emps = empsData.map((e) => EmployeeModel.fromJson(e)).toList();
       final Map<int, Map<String, dynamic>> map = {};
-      
+
       for (var e in emps) {
-        final existing = todayData.firstWhere((r) => r['user']?['id'] == e.id, orElse: () => null);
+        final existing = todayData.firstWhere(
+          (r) => r['user']?['id'] == e.id,
+          orElse: () => null,
+        );
         map[e.id] = {
-          'status': (existing?['status']?.toString() ?? 'UNMARKED').toUpperCase(),
+          'status': (existing?['status']?.toString() ?? 'UNMARKED')
+              .toUpperCase(),
           'checkIn': existing?['checkIn']?.toString() ?? '',
           'checkOut': existing?['checkOut'] ?? '',
           'remarks': existing?['remarks'] ?? '',
@@ -96,7 +100,7 @@ class _DailyAttendanceTabState extends State<DailyAttendanceTab> {
       final currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
       for (var id in _attendanceMap.keys) {
         _attendanceMap[id]!['status'] = status;
-        // The user wants time captured for both Present, Absent, and potentially Late. 
+        // The user wants time captured for both Present, Absent, and potentially Late.
         _attendanceMap[id]!['checkIn'] = currentTime;
       }
     });
@@ -105,9 +109,12 @@ class _DailyAttendanceTabState extends State<DailyAttendanceTab> {
   Map<String, int> get _summary {
     int present = 0, absent = 0, unmarked = 0;
     _attendanceMap.values.forEach((v) {
-      if (v['status'] == 'PRESENT') present++;
-      else if (v['status'] == 'ABSENT') absent++;
-      else unmarked++;
+      if (v['status'] == 'PRESENT')
+        present++;
+      else if (v['status'] == 'ABSENT')
+        absent++;
+      else
+        unmarked++;
     });
     return {'PRESENT': present, 'ABSENT': absent, 'UNMARKED': unmarked};
   }
@@ -119,7 +126,9 @@ class _DailyAttendanceTabState extends State<DailyAttendanceTab> {
         _buildHeader(),
         _buildSummaryRow(),
         Expanded(
-          child: _isLoading ? const Center(child: CircularProgressIndicator()) : _buildTable(),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _buildTable(),
         ),
         _buildBottomBar(),
       ],
@@ -133,16 +142,37 @@ class _DailyAttendanceTabState extends State<DailyAttendanceTab> {
         children: [
           Row(
             children: [
-              Text(DateFormat('EEEE, MMM dd, yyyy').format(_selectedDate),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary)),
+              Expanded(
+                child: Text(
+                  DateFormat('EEEE, MMM dd, yyyy').format(_selectedDate),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
               const Spacer(),
-              _MarkButton(label: 'All Present', color: const Color(0xff22c55e), onTap: () => _markAll('PRESENT')),
+              _MarkButton(
+                label: 'All Present',
+                color: const Color(0xff22c55e),
+                onTap: () => _markAll('PRESENT'),
+              ),
               const SizedBox(width: 8),
-              _MarkButton(label: 'All Absent', color: const Color(0xffef4444), onTap: () => _markAll('ABSENT')),
+              _MarkButton(
+                label: 'All Absent',
+                color: const Color(0xffef4444),
+                onTap: () => _markAll('ABSENT'),
+              ),
             ],
           ),
           const SizedBox(height: 15),
-          SearchField(hint: 'Filter team...', onChanged: (v) => setState(() => _searchQuery = v)),
+          SearchField(
+            hint: 'Filter team...',
+            onChanged: (v) => setState(() => _searchQuery = v),
+          ),
         ],
       ),
     );
@@ -156,11 +186,29 @@ class _DailyAttendanceTabState extends State<DailyAttendanceTab> {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            AttendanceSummaryCard(label: 'Present', value: '${s['PRESENT']}', icon: Icons.check_circle_rounded, color: const Color(0xff14532d), bg: const Color(0xffdcfce7)),
+            AttendanceSummaryCard(
+              label: 'Present',
+              value: '${s['PRESENT']}',
+              icon: Icons.check_circle_rounded,
+              color: const Color(0xff14532d),
+              bg: const Color(0xffdcfce7),
+            ),
             const SizedBox(width: 12),
-            AttendanceSummaryCard(label: 'Absent', value: '${s['ABSENT']}', icon: Icons.cancel_rounded, color: const Color(0xff991b1b), bg: const Color(0xfffee2e2)),
+            AttendanceSummaryCard(
+              label: 'Absent',
+              value: '${s['ABSENT']}',
+              icon: Icons.cancel_rounded,
+              color: const Color(0xff991b1b),
+              bg: const Color(0xfffee2e2),
+            ),
             const SizedBox(width: 12),
-            AttendanceSummaryCard(label: 'Unmarked', value: '${s['UNMARKED']}', icon: Icons.help_rounded, color: AppColors.onSurfaceVariant, bg: AppColors.surfaceContainerHigh),
+            AttendanceSummaryCard(
+              label: 'Unmarked',
+              value: '${s['UNMARKED']}',
+              icon: Icons.help_rounded,
+              color: AppColors.onSurfaceVariant,
+              bg: AppColors.surfaceContainerHigh,
+            ),
           ],
         ),
       ),
@@ -168,19 +216,67 @@ class _DailyAttendanceTabState extends State<DailyAttendanceTab> {
   }
 
   Widget _buildTable() {
-    final filtered = _employees.where((e) => e.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    final filtered = _employees
+        .where((e) => e.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(12),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: const BoxDecoration(color: AppColors.surfaceContainerHigh, borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-            child: const Row(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceContainerHigh,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Row(
               children: [
-                Expanded(flex: 3, child: Text('EMPLOYEE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.onSurfaceVariant))),
-                Expanded(flex: 2, child: Text('STATUS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.onSurfaceVariant))),
-                Expanded(flex: 2, child: Text('TIME', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.onSurfaceVariant))),
+                Expanded(
+                  flex: 32,
+                  child: Text(
+                    'EMPLOYEE',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 24,
+                  child: Text(
+                    'STATUS',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 22,
+                  child: Text(
+                    'IN',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  flex: 22,
+                  child: Text(
+                    'OUT',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ],
             ),
           ),
@@ -190,7 +286,8 @@ class _DailyAttendanceTabState extends State<DailyAttendanceTab> {
               itemBuilder: (context, i) => _AttendanceRow(
                 employee: filtered[i],
                 record: _attendanceMap[filtered[i].id]!,
-                onChanged: (map) => setState(() => _attendanceMap[filtered[i].id] = map),
+                onChanged: (map) =>
+                    setState(() => _attendanceMap[filtered[i].id] = map),
                 isLast: i == filtered.length - 1,
               ),
             ),
@@ -204,11 +301,35 @@ class _DailyAttendanceTabState extends State<DailyAttendanceTab> {
     final s = _summary;
     return Container(
       padding: const EdgeInsets.all(20).copyWith(bottom: 30),
-      decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))]),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
       child: Row(
         children: [
-          Expanded(child: Text(s['UNMARKED']! > 0 ? '${s['UNMARKED']} employees unmarked' : 'All marked', style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant))),
-          GoldGradientButton(text: 'Save Attendance', icon: Icons.save_rounded, width: 180, onTap: _saveAttendance),
+          Expanded(
+            child: Text(
+              s['UNMARKED']! > 0
+                  ? '${s['UNMARKED']} employees unmarked'
+                  : 'All marked',
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+          GoldGradientButton(
+            text: 'Save Attendance',
+            icon: Icons.save_rounded,
+            width: 180,
+            onTap: _saveAttendance,
+          ),
         ],
       ),
     );
@@ -219,7 +340,11 @@ class _MarkButton extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
-  const _MarkButton({required this.label, required this.color, required this.onTap});
+  const _MarkButton({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -227,8 +352,18 @@ class _MarkButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(border: Border.all(color: color.withOpacity(0.5)), borderRadius: BorderRadius.circular(8)),
-        child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+        decoration: BoxDecoration(
+          border: Border.all(color: color.withValues(alpha: 0.5)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }
@@ -240,58 +375,119 @@ class _AttendanceRow extends StatelessWidget {
   final Function(Map<String, dynamic>) onChanged;
   final bool isLast;
 
-  const _AttendanceRow({required this.employee, required this.record, required this.onChanged, required this.isLast});
+  const _AttendanceRow({
+    required this.employee,
+    required this.record,
+    required this.onChanged,
+    required this.isLast,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: isLast ? Colors.transparent : AppColors.outlineVariant.withOpacity(0.5)),
-          left: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
-          right: BorderSide(color: AppColors.outlineVariant.withOpacity(0.5)),
+          bottom: BorderSide(
+            color: isLast
+                ? Colors.transparent
+                : AppColors.outlineVariant.withValues(alpha: 0.5),
+          ),
+          left: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+          right: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
         ),
       ),
       child: Row(
         children: [
           Expanded(
-            flex: 3,
+            flex: 32,
             child: Row(
               children: [
-                AvatarWidget(initials: employee.initials, size: 32, fontSize: 12),
-                const SizedBox(width: 10),
-                Expanded(child: Text(employee.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+                AvatarWidget(
+                  initials: employee.initials,
+                  size: 24,
+                  fontSize: 9,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    employee.name,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
           ),
           Expanded(
-            flex: 2,
-            child: DropdownButton<String>(
-              value: record['status'],
-              underline: const SizedBox(),
-              items: ['UNMARKED', 'PRESENT', 'ABSENT', 'HALF_DAY', 'LATE', 'ON_LEAVE']
-                  .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 11))))
-                  .toList(),
-              onChanged: (v) {
-                if (v == null) return;
-                
-                // Automatic time Consideration: If status becomes PRESENT, LATE, or ABSENT, consider current time.
-                final newRecord = {...record, 'status': v};
-                if (v == 'PRESENT' || v == 'LATE' || v == 'ABSENT') {
-                  newRecord['checkIn'] = DateFormat('HH:mm:ss').format(DateTime.now());
-                }
-                
-                onChanged(newRecord);
-              },
+            flex: 24,
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: record['status'],
+                isDense: true,
+                iconSize: 16,
+                items:
+                    [
+                          'UNMARKED',
+                          'PRESENT',
+                          'ABSENT',
+                          'HALF_DAY',
+                          'LATE',
+                          'ON_LEAVE',
+                        ]
+                        .map(
+                          (s) => DropdownMenuItem(
+                            value: s,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                s,
+                                style: const TextStyle(fontSize: 9),
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (v) {
+                  if (v == null) return;
+                  final newRecord = {...record, 'status': v};
+                  if (v == 'PRESENT' || v == 'LATE' || v == 'ABSENT' || v == 'HALF_DAY') {
+                    newRecord['checkIn'] = DateFormat(
+                      'HH:mm:ss',
+                    ).format(DateTime.now());
+                  }
+                  onChanged(newRecord);
+                },
+              ),
             ),
           ),
           Expanded(
-            flex: 2,
+            flex: 22,
             child: _TimePicker(
               time: record['checkIn'],
-              onSelected: (t) => onChanged({...record, 'checkIn': t}),
-              isEnabled: record['status'] == 'PRESENT' || record['status'] == 'LATE' || record['status'] == 'ABSENT',
+              onSelected: (t) {
+                final newRec = {...record, 'checkIn': t};
+                if (newRec['status'] == 'UNMARKED') newRec['status'] = 'PRESENT';
+                onChanged(newRec);
+              },
+              isEnabled: record['status'] != 'ON_LEAVE',
+              emptyLabel: 'IN',
+            ),
+          ),
+          Expanded(
+            flex: 22,
+            child: _TimePicker(
+              time: record['checkOut'],
+              onSelected: (t) {
+                final newRec = {...record, 'checkOut': t};
+                if (newRec['status'] == 'UNMARKED') newRec['status'] = 'PRESENT';
+                onChanged(newRec);
+              },
+              isEnabled: record['status'] != 'ON_LEAVE',
+              emptyLabel: 'OUT',
             ),
           ),
         ],
@@ -304,33 +500,63 @@ class _TimePicker extends StatelessWidget {
   final String time;
   final Function(String) onSelected;
   final bool isEnabled;
-  const _TimePicker({required this.time, required this.onSelected, required this.isEnabled});
+  final String emptyLabel;
+  const _TimePicker({
+    required this.time,
+    required this.onSelected,
+    required this.isEnabled,
+    this.emptyLabel = '--',
+  });
 
   @override
   Widget build(BuildContext context) {
     final noTime = !isEnabled;
     return GestureDetector(
-      onTap: isEnabled ? () async {
-        final picked = await showTimePicker(
-          context: context, 
-          initialTime: TimeOfDay.now(),
-          builder: (context, child) {
-            return MediaQuery(
-              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-              child: child!,
-            );
-          },
-        );
-        if (picked != null) {
-          final hour = picked.hour.toString().padLeft(2, '0');
-          final minute = picked.minute.toString().padLeft(2, '0');
-          onSelected('$hour:$minute:00');
-        }
-      } : null,
+      onTap: isEnabled
+          ? () async {
+              final picked = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay.now(),
+                builder: (context, child) {
+                  return MediaQuery(
+                    data: MediaQuery.of(
+                      context,
+                    ).copyWith(alwaysUse24HourFormat: true),
+                    child: child!,
+                  );
+                },
+              );
+              if (picked != null) {
+                final hour = picked.hour.toString().padLeft(2, '0');
+                final minute = picked.minute.toString().padLeft(2, '0');
+                onSelected('$hour:$minute:00');
+              }
+            }
+          : null,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-        decoration: BoxDecoration(color: noTime ? Colors.grey.withOpacity(0.1) : AppColors.primary.withOpacity(0.05), borderRadius: BorderRadius.circular(4)),
-        child: Text(noTime ? '--' : (time == '' ? 'IN' : time), style: TextStyle(fontSize: 11, color: noTime ? Colors.grey : AppColors.primary, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        decoration: BoxDecoration(
+          color: noTime
+              ? Colors.grey.withValues(alpha: 0.1)
+              : AppColors.primary.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            noTime
+                ? '--'
+                : (time == ''
+                    ? emptyLabel
+                    : (time.length > 5 ? time.substring(0, 5) : time)),
+            style: TextStyle(
+              fontSize: 10,
+              color: noTime ? Colors.grey : AppColors.primary,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }

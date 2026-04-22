@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:yw_architects/theme/app_theme.dart';
 import 'package:yw_architects/widgets/common_widgets.dart';
+import 'package:yw_architects/utils/responsive.dart';
 import 'package:yw_architects/models/app_models.dart';
 import 'package:yw_architects/services/employee_service.dart';
 import 'package:yw_architects/screens/sections/employee/models/employee_models.dart';
@@ -22,11 +24,11 @@ class EmployeeCard extends StatelessWidget {
     final e = employee;
     return CardContainer(
       onTap: onTap,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.w),
       child: Row(
         children: [
-          AvatarWidget(initials: e.initials, size: 48, fontSize: 15),
-          const SizedBox(width: 16),
+          AvatarWidget(initials: e.initials, size: 48.w, fontSize: 15.sp),
+          SizedBox(width: 16.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,26 +37,29 @@ class EmployeeCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                        child: Text(e.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.onSurface), overflow: TextOverflow.ellipsis)),
+                        child: Text(e.name, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.sp, color: AppColors.onSurface), overflow: TextOverflow.ellipsis)),
                     GoldChip(
                         text: e.status, 
                         bg: e.status.toLowerCase() == 'active' ? AppColors.chipDoneBg : AppColors.chipHoldBg, 
                         fg: e.status.toLowerCase() == 'active' ? AppColors.chipDoneFg : AppColors.chipHoldFg),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(e.roleLabel, style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant), overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.folder_open_rounded, size: 12, color: AppColors.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Text('${e.projects} projects', style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant)),
-                    const SizedBox(width: 12),
-                    const Icon(Icons.calendar_today_rounded, size: 12, color: AppColors.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Text('Since ${e.since}', style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant)),
-                  ],
+                SizedBox(height: 2.h),
+                Text(e.roleLabel, style: TextStyle(fontSize: 12.sp, color: AppColors.onSurfaceVariant), overflow: TextOverflow.ellipsis),
+                SizedBox(height: 8.h),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      Icon(Icons.folder_open_rounded, size: 12.w, color: AppColors.onSurfaceVariant),
+                      SizedBox(width: 4.w),
+                      Text('${e.projects} projects', style: TextStyle(fontSize: 11.sp, color: AppColors.onSurfaceVariant)),
+                      SizedBox(width: 12.w),
+                      Icon(Icons.calendar_today_rounded, size: 12.w, color: AppColors.onSurfaceVariant),
+                      SizedBox(width: 4.w),
+                      Text('Since ${e.since}', style: TextStyle(fontSize: 11.sp, color: AppColors.onSurfaceVariant)),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -122,8 +127,8 @@ class _AddEmployeeModalState extends State<AddEmployeeModal> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(left: 24, right: 24, top: 12, bottom: MediaQuery.of(context).viewInsets.bottom + 24),
-      decoration: const BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      padding: EdgeInsets.only(left: 24.w, right: 24.w, top: 12.h, bottom: MediaQuery.of(context).viewInsets.bottom + 24.h),
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(28.w))),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -131,31 +136,31 @@ class _AddEmployeeModalState extends State<AddEmployeeModal> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.outlineVariant, borderRadius: BorderRadius.circular(10)))),
-              const SizedBox(height: 20),
+              Center(child: Container(width: 40.w, height: 4.h, decoration: BoxDecoration(color: AppColors.outlineVariant, borderRadius: BorderRadius.circular(10.w)))),
+              SizedBox(height: 20.h),
               const _ModalHeader(title: 'Register New Employee'),
-              const SizedBox(height: 24),
+              SizedBox(height: 24.h),
               Row(
                 children: [
                   Expanded(child: _EmpFormField(label: 'FIRST NAME', controller: _fNameCtrl)),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16.w),
                   Expanded(child: _EmpFormField(label: 'LAST NAME', controller: _lNameCtrl)),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               _EmpFormField(label: 'EMAIL ADDRESS', controller: _emailCtrl, keyboardType: TextInputType.emailAddress),
-              const SizedBox(height: 16),
-              _EmpFormField(label: 'PHONE NUMBER', controller: _phoneCtrl, keyboardType: TextInputType.phone),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
+              _EmpFormField(label: 'PHONE NUMBER', controller: _phoneCtrl, keyboardType: TextInputType.phone, maxLength: 10, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
+              SizedBox(height: 16.h),
               _PasswordInputField(controller: _passCtrl, visible: _passVisible, onToggle: () => setState(() => _passVisible = !_passVisible)),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               _EmpDropdown<UserRole>(
                 label: 'OFFICIAL ROLE',
                 value: _selectedRole,
-                items: roleMap.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value.name))).toList(),
+                items: roleMap.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value.name, style: TextStyle(fontSize: 14.sp)))).toList(),
                 onChanged: (v) => setState(() => _selectedRole = v!),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32.h),
               _isLoading ? const Center(child: CircularProgressIndicator()) : GoldGradientButton(text: 'Add Employee', onTap: _submit),
             ],
           ),
@@ -281,7 +286,7 @@ class _EditEmployeeModalState extends State<EditEmployeeModal> {
               const SizedBox(height: 16),
               _EmpFormField(label: 'EMAIL ADDRESS', controller: _emailCtrl, keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 16),
-              _EmpFormField(label: 'PHONE NUMBER', controller: _phoneCtrl, keyboardType: TextInputType.phone),
+              _EmpFormField(label: 'PHONE NUMBER', controller: _phoneCtrl, keyboardType: TextInputType.phone, maxLength: 10, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
               const SizedBox(height: 16),
               _EmpDropdown<UserRole>(
                 label: 'OFFICIAL ROLE',
@@ -301,23 +306,7 @@ class _EditEmployeeModalState extends State<EditEmployeeModal> {
   }
 }
 
-class _SmallIconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _SmallIconBtn({required this.icon, required this.onTap});
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: AppColors.surfaceContainerLow, borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, size: 16, color: AppColors.primary),
-      ),
-    );
-  }
-}
+
 
 class _ModalHeader extends StatelessWidget {
   final String title;
@@ -332,7 +321,9 @@ class _EmpFormField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final TextInputType keyboardType;
-  const _EmpFormField({required this.label, required this.controller, this.keyboardType = TextInputType.text});
+  final int? maxLength;
+  final List<TextInputFormatter>? inputFormatters;
+  const _EmpFormField({required this.label, required this.controller, this.keyboardType = TextInputType.text, this.maxLength, this.inputFormatters});
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -340,7 +331,9 @@ class _EmpFormField extends StatelessWidget {
       const SizedBox(height: 4),
       TextFormField(
         controller: controller, keyboardType: keyboardType,
-        decoration: AppTheme.inputDecoration('Enter $label'),
+        maxLength: maxLength,
+        inputFormatters: inputFormatters,
+        decoration: AppTheme.inputDecoration('Enter $label').copyWith(counterText: ''),
         validator: (v) => v == null || v.isEmpty ? 'Required' : null,
       ),
     ]);

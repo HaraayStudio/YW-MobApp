@@ -11,7 +11,11 @@ class AttendanceSection extends StatefulWidget {
   final AppUser user;
   final Function(String) onToast;
 
-  const AttendanceSection({super.key, required this.user, required this.onToast});
+  const AttendanceSection({
+    super.key,
+    required this.user,
+    required this.onToast,
+  });
 
   @override
   State<AttendanceSection> createState() => _AttendanceSectionState();
@@ -82,11 +86,21 @@ class _AttendanceSectionState extends State<AttendanceSection> {
     bool success = false;
     if (!_hasCheckedIn) {
       success = await AttendanceService.recordMyCheckIn(dateStr, timeStr);
-      if (success) widget.onToast("Check-in recorded at ${DateFormat('hh:mm a').format(now)}");
+      if (success)
+        widget.onToast(
+          "Check-in recorded at ${DateFormat('hh:mm a').format(now)}",
+        );
     } else if (!_hasCheckedOut) {
       // Default to PRESENT for checkout
-      success = await AttendanceService.recordMyCheckOut(dateStr, timeStr, "PRESENT");
-      if (success) widget.onToast("Check-out recorded at ${DateFormat('hh:mm a').format(now)}");
+      success = await AttendanceService.recordMyCheckOut(
+        dateStr,
+        timeStr,
+        "PRESENT",
+      );
+      if (success)
+        widget.onToast(
+          "Check-out recorded at ${DateFormat('hh:mm a').format(now)}",
+        );
     }
 
     if (success) {
@@ -98,7 +112,11 @@ class _AttendanceSectionState extends State<AttendanceSection> {
 
   void _changeMonth(int delta) {
     setState(() {
-      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + delta, 1);
+      _currentMonth = DateTime(
+        _currentMonth.year,
+        _currentMonth.month + delta,
+        1,
+      );
     });
     _fetchData();
   }
@@ -106,7 +124,9 @@ class _AttendanceSectionState extends State<AttendanceSection> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading && _monthlyRecords.isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
     }
 
     final today = DateTime.now();
@@ -130,11 +150,17 @@ class _AttendanceSectionState extends State<AttendanceSection> {
             action: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.chevron_left_rounded, color: AppColors.primary),
+                  icon: const Icon(
+                    Icons.chevron_left_rounded,
+                    color: AppColors.primary,
+                  ),
                   onPressed: () => _changeMonth(-1),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.chevron_right_rounded, color: AppColors.primary),
+                  icon: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.primary,
+                  ),
                   onPressed: () => _changeMonth(1),
                 ),
               ],
@@ -155,7 +181,14 @@ class _AttendanceSectionState extends State<AttendanceSection> {
           const SizedBox(height: 24),
 
           // Recent Activity Log
-          const Text('Daily Logs', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.onSurface)),
+          const Text(
+            'Daily Logs',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurface,
+            ),
+          ),
           const SizedBox(height: 12),
           _buildLogsList(),
         ],
@@ -165,8 +198,12 @@ class _AttendanceSectionState extends State<AttendanceSection> {
 
   Widget _buildCheckActionCard(String todayFormatted) {
     final rec = _todayRecord;
-    final inTime = rec?['checkIn'] != null ? _formatTime(rec!['checkIn']) : '--:--';
-    final outTime = rec?['checkOut'] != null ? _formatTime(rec!['checkOut']) : '--:--';
+    final inTime = rec?['checkIn'] != null
+        ? _formatTime(rec!['checkIn'])
+        : '--:--';
+    final outTime = rec?['checkOut'] != null
+        ? _formatTime(rec!['checkOut'])
+        : '--:--';
 
     return CardContainer(
       child: Column(
@@ -175,18 +212,51 @@ class _AttendanceSectionState extends State<AttendanceSection> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('TODAY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant, letterSpacing: 1)),
-                  Text(todayFormatted, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.onSurface)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'TODAY',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurfaceVariant,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    Text(
+                      todayFormatted,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(_currentTimeString, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                  const Text('Live Time', style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant)),
+                  Text(
+                    _currentTimeString,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const Text(
+                    'Live Time',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -194,9 +264,23 @@ class _AttendanceSectionState extends State<AttendanceSection> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: _timeBox('Check In', inTime, _hasCheckedIn ? 'Success' : 'Pending', _hasCheckedIn)),
+              Expanded(
+                child: _timeBox(
+                  'Check In',
+                  inTime,
+                  _hasCheckedIn ? 'Success' : 'Pending',
+                  _hasCheckedIn,
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: _timeBox('Check Out', outTime, _hasCheckedOut ? 'Success' : 'Working...', _hasCheckedOut)),
+              Expanded(
+                child: _timeBox(
+                  'Check Out',
+                  outTime,
+                  _hasCheckedOut ? 'Success' : 'Working...',
+                  _hasCheckedOut,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -216,7 +300,9 @@ class _AttendanceSectionState extends State<AttendanceSection> {
                   text: _hasCheckedOut ? 'Checked Out' : 'Check Out',
                   icon: Icons.logout_rounded,
                   verticalPadding: 12,
-                  onTap: (!_hasCheckedIn || _hasCheckedOut) ? null : _handleAction,
+                  onTap: (!_hasCheckedIn || _hasCheckedOut)
+                      ? null
+                      : _handleAction,
                 ),
               ),
             ],
@@ -230,16 +316,42 @@ class _AttendanceSectionState extends State<AttendanceSection> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: active ? AppColors.primary.withOpacity(0.05) : AppColors.surfaceContainerLow,
+        color: active
+            ? AppColors.primary.withValues(alpha: 0.05)
+            : AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        border: active ? Border.all(color: AppColors.primary.withOpacity(0.2)) : null,
+        border: active
+            ? Border.all(color: AppColors.primary.withValues(alpha: 0.2))
+            : null,
       ),
       child: Column(
         children: [
-          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(time, style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: active ? AppColors.primary : AppColors.onSurfaceVariant)),
-          Text(sub, style: TextStyle(fontSize: 10, color: active ? AppColors.primary : AppColors.onSurfaceVariant.withOpacity(0.7))),
+          Text(
+            time,
+            style: TextStyle(
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+              color: active ? AppColors.primary : AppColors.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            sub,
+            style: TextStyle(
+              fontSize: 10,
+              color: active
+                  ? AppColors.primary
+                  : AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+            ),
+          ),
         ],
       ),
     );
@@ -255,15 +367,42 @@ class _AttendanceSectionState extends State<AttendanceSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Month Overview', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.onSurface, fontSize: 15)),
+          const Text(
+            'Month Overview',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurface,
+              fontSize: 15,
+            ),
+          ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _statItem(p.toString(), 'Present', AppColors.chipDoneFg, AppColors.chipDoneBg),
-              _statItem(l.toString(), 'Late', const Color(0xFFB45309), const Color(0xFFFEF3C7)),
-              _statItem(a.toString(), 'Absent', AppColors.error, const Color(0xFFFEE2E2)),
-              _statItem(le.toString(), 'Leave', const Color(0xFF4338CA), const Color(0xFFE0E7FF)),
+              _statItem(
+                p.toString(),
+                'Present',
+                AppColors.chipDoneFg,
+                AppColors.chipDoneBg,
+              ),
+              _statItem(
+                l.toString(),
+                'Late',
+                const Color(0xFFB45309),
+                const Color(0xFFFEF3C7),
+              ),
+              _statItem(
+                a.toString(),
+                'Absent',
+                AppColors.error,
+                const Color(0xFFFEE2E2),
+              ),
+              _statItem(
+                le.toString(),
+                'Leave',
+                const Color(0xFF4338CA),
+                const Color(0xFFE0E7FF),
+              ),
             ],
           ),
         ],
@@ -277,22 +416,52 @@ class _AttendanceSectionState extends State<AttendanceSection> {
         Container(
           width: 44,
           height: 44,
-          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
-          child: Center(child: Text(val, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: fg))),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Text(
+              val,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: fg,
+              ),
+            ),
+          ),
         ),
         const SizedBox(height: 6),
-        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppColors.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildAttendanceGrid() {
-    final totalDays = DateTime(_currentMonth.year, _currentMonth.month + 1, 0).getDate();
-    
+    final totalDays = DateTime(
+      _currentMonth.year,
+      _currentMonth.month + 1,
+      0,
+    ).getDate();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Attendance Grid', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.onSurface)),
+        const Text(
+          'Attendance Grid',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: AppColors.onSurface,
+          ),
+        ),
         const SizedBox(height: 12),
         CardContainer(
           padding: const EdgeInsets.all(16),
@@ -307,33 +476,53 @@ class _AttendanceSectionState extends State<AttendanceSection> {
             itemCount: totalDays,
             itemBuilder: (context, index) {
               final dayNum = index + 1;
-              final dateStr = DateFormat('yyyy-MM-dd').format(DateTime(_currentMonth.year, _currentMonth.month, dayNum));
+              final dateStr = DateFormat('yyyy-MM-dd').format(
+                DateTime(_currentMonth.year, _currentMonth.month, dayNum),
+              );
               Map<String, dynamic>? record;
               try {
-                record = _monthlyRecords.firstWhere((r) => r['attendanceDate'] == dateStr);
+                record = _monthlyRecords.firstWhere(
+                  (r) => r['attendanceDate'] == dateStr,
+                );
               } catch (_) {}
 
               Color color = AppColors.surfaceContainerHigh;
               if (record != null) {
                 switch (record['status']) {
-                  case 'PRESENT': color = AppColors.chipDoneFg; break;
-                  case 'ABSENT':  color = AppColors.error; break;
-                  case 'LATE':    color = const Color(0xFFF59E0B); break;
-                  case 'ON_LEAVE': color = const Color(0xFF6366F1); break;
-                  case 'WORK_FROM_HOME': color = const Color(0xFF10B981); break;
+                  case 'PRESENT':
+                    color = AppColors.chipDoneFg;
+                    break;
+                  case 'ABSENT':
+                    color = AppColors.error;
+                    break;
+                  case 'LATE':
+                    color = const Color(0xFFF59E0B);
+                    break;
+                  case 'ON_LEAVE':
+                    color = const Color(0xFF6366F1);
+                    break;
+                  case 'WORK_FROM_HOME':
+                    color = const Color(0xFF10B981);
+                    break;
                 }
               }
 
               return Container(
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
+                  color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color.withOpacity(0.3)),
+                  border: Border.all(color: color.withValues(alpha: 0.3)),
                 ),
                 child: Center(
                   child: Text(
                     dayNum.toString(),
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color == AppColors.surfaceContainerHigh ? AppColors.onSurfaceVariant : color),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: color == AppColors.surfaceContainerHigh
+                          ? AppColors.onSurfaceVariant
+                          : color,
+                    ),
                   ),
                 ),
               );
@@ -351,9 +540,16 @@ class _AttendanceSectionState extends State<AttendanceSection> {
           padding: const EdgeInsets.all(32.0),
           child: Column(
             children: [
-              Icon(Icons.calendar_today_outlined, size: 48, color: AppColors.onSurfaceVariant.withOpacity(0.3)),
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 48,
+                color: AppColors.onSurfaceVariant.withValues(alpha: 0.3),
+              ),
               const SizedBox(height: 12),
-              const Text('No dynamic records for this month', style: TextStyle(color: AppColors.onSurfaceVariant)),
+              const Text(
+                'No dynamic records for this month',
+                style: TextStyle(color: AppColors.onSurfaceVariant),
+              ),
             ],
           ),
         ),
@@ -361,23 +557,28 @@ class _AttendanceSectionState extends State<AttendanceSection> {
     }
 
     // Sort by date descending
-    final sorted = List.from(_monthlyRecords)..sort((a, b) => b['attendanceDate'].compareTo(a['attendanceDate']));
+    final sorted = List.from(_monthlyRecords)
+      ..sort((a, b) => b['attendanceDate'].compareTo(a['attendanceDate']));
     final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final yesterdayStr = DateFormat('yyyy-MM-dd').format(DateTime.now().subtract(const Duration(days: 1)));
+    final yesterdayStr = DateFormat(
+      'yyyy-MM-dd',
+    ).format(DateTime.now().subtract(const Duration(days: 1)));
 
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: sorted.length.clamp(0, 15), 
+      itemCount: sorted.length.clamp(0, 15),
       itemBuilder: (context, index) {
         final r = sorted[index];
         final date = DateTime.parse(r['attendanceDate']);
         final dayStr = DateFormat('dd').format(date);
         final dowStr = DateFormat('EEE').format(date);
-        
+
         String specialLabel = "";
-        if (r['attendanceDate'] == todayStr) specialLabel = "(Today)";
-        else if (r['attendanceDate'] == yesterdayStr) specialLabel = "(Yesterday)";
+        if (r['attendanceDate'] == todayStr)
+          specialLabel = "(Today)";
+        else if (r['attendanceDate'] == yesterdayStr)
+          specialLabel = "(Yesterday)";
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: CardContainer(
@@ -388,8 +589,22 @@ class _AttendanceSectionState extends State<AttendanceSection> {
                   width: 40,
                   child: Column(
                     children: [
-                      Text(dayStr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.onSurface)),
-                      Text(dowStr, style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500)),
+                      Text(
+                        dayStr,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                      Text(
+                        dowStr,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -399,10 +614,22 @@ class _AttendanceSectionState extends State<AttendanceSection> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        r['checkIn'] != null ? '${_formatTime(r['checkIn'])} → ${r['checkOut'] != null ? _formatTime(r['checkOut']) : 'Working'}' : 'Not Logged',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onSurface),
+                        r['checkIn'] != null
+                            ? '${_formatTime(r['checkIn'])} → ${r['checkOut'] != null ? _formatTime(r['checkOut']) : 'Working'}'
+                            : 'Not Logged',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.onSurface,
+                        ),
                       ),
-                      Text('${r['status'] ?? '—'} $specialLabel', style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                      Text(
+                        '${r['status'] ?? '—'} $specialLabel',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 ),

@@ -26,26 +26,36 @@ class _AttendanceCalendarTabState extends State<AttendanceCalendarTab> {
   Future<void> _fetchMonthlyData() async {
     setState(() => _isLoading = true);
     try {
-      final data = await AttendanceService.getAllEmployeesMonthlyAttendance(_viewDate.month, _viewDate.year);
+      final data = await AttendanceService.getAllEmployeesMonthlyAttendance(
+        _viewDate.month,
+        _viewDate.year,
+      );
       final Map<int, List<dynamic>> grouped = {};
       for (var record in data) {
         // Support common date keys: 'date', 'attendanceDate', 'checkInDate'
-        final dateObj = record['date'] ?? record['attendanceDate'] ?? record['checkInDate'];
+        final dateObj =
+            record['date'] ?? record['attendanceDate'] ?? record['checkInDate'];
         if (dateObj == null) continue;
-        
-        final dateStr = dateObj.toString().split(' ')[0]; // Handle 'YYYY-MM-DD 10:00:00'
-        if (dateStr.length < 8) continue; 
-        
+
+        final dateStr = dateObj.toString().split(
+          ' ',
+        )[0]; // Handle 'YYYY-MM-DD 10:00:00'
+        if (dateStr.length < 8) continue;
+
         try {
           // Flexible separator parsing: yyyy-MM-dd or dd-MM-yyyy or yyyy/MM/dd
-          final parts = dateStr.contains('-') ? dateStr.split('-') : dateStr.split('/');
+          final parts = dateStr.contains('-')
+              ? dateStr.split('-')
+              : dateStr.split('/');
           // Try to find the day (usually the last or first part depending on format)
           int? day;
           if (parts.length >= 3) {
-            if (parts[0].length == 4) day = int.parse(parts[2]); // yyyy-MM-dd
-            else day = int.parse(parts[0]); // dd-MM-yyyy
+            if (parts[0].length == 4)
+              day = int.parse(parts[2]); // yyyy-MM-dd
+            else
+              day = int.parse(parts[0]); // dd-MM-yyyy
           }
-          
+
           if (day != null) {
             grouped.putIfAbsent(day, () => []).add(record);
           }
@@ -79,7 +89,9 @@ class _AttendanceCalendarTabState extends State<AttendanceCalendarTab> {
         _buildHeader(),
         _buildDaysHeader(),
         Expanded(
-          child: _isLoading ? const Center(child: CircularProgressIndicator()) : _buildCalendarGrid(),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _buildCalendarGrid(),
         ),
         _buildLegend(),
       ],
@@ -94,15 +106,33 @@ class _AttendanceCalendarTabState extends State<AttendanceCalendarTab> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(DateFormat('MMMM yyyy').format(_viewDate),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
-              Text('Monthly team activity', style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant)),
+              Text(
+                DateFormat('MMMM yyyy').format(_viewDate),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              Text(
+                'Monthly team activity',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
           const Spacer(),
-          _MonthBtn(icon: Icons.chevron_left_rounded, onTap: () => _changeMonth(-1)),
+          _MonthBtn(
+            icon: Icons.chevron_left_rounded,
+            onTap: () => _changeMonth(-1),
+          ),
           const SizedBox(width: 8),
-          _MonthBtn(icon: Icons.chevron_right_rounded, onTap: () => _changeMonth(1)),
+          _MonthBtn(
+            icon: Icons.chevron_right_rounded,
+            onTap: () => _changeMonth(1),
+          ),
         ],
       ),
     );
@@ -113,7 +143,22 @@ class _AttendanceCalendarTabState extends State<AttendanceCalendarTab> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Row(
-        children: days.map((d) => Expanded(child: Center(child: Text(d, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.onSurfaceVariant))))).toList(),
+        children: days
+            .map(
+              (d) => Expanded(
+                child: Center(
+                  child: Text(
+                    d,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -127,7 +172,8 @@ class _AttendanceCalendarTabState extends State<AttendanceCalendarTab> {
       padding: const EdgeInsets.all(10),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        childAspectRatio: 0.7, // Taller cells to prevent overflow
+        childAspectRatio:
+            0.6, // Increased height to prevent overflow between day num and indicators
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
       ),
@@ -161,7 +207,14 @@ class _AttendanceCalendarTabState extends State<AttendanceCalendarTab> {
   Widget _buildLegend() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      decoration: BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AppColors.outlineVariant.withOpacity(0.3)))),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.outlineVariant.withValues(alpha: 0.3),
+          ),
+        ),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -185,7 +238,9 @@ class _MonthBtn extends StatelessWidget {
     return IconButton.filledTonal(
       onPressed: onTap,
       icon: Icon(icon, size: 20),
-      style: IconButton.styleFrom(backgroundColor: AppColors.surfaceContainerHigh),
+      style: IconButton.styleFrom(
+        backgroundColor: AppColors.surfaceContainerHigh,
+      ),
     );
   }
 }
@@ -196,13 +251,20 @@ class _CalendarDayCell extends StatelessWidget {
   final List<dynamic> records;
   final VoidCallback onTap;
 
-  const _CalendarDayCell({required this.dayNum, required this.date, required this.records, required this.onTap});
+  const _CalendarDayCell({
+    required this.dayNum,
+    required this.date,
+    required this.records,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isToday = DateFormat('yyyy-MM-dd').format(date) == DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final isToday =
+        DateFormat('yyyy-MM-dd').format(date) ==
+        DateFormat('yyyy-MM-dd').format(DateTime.now());
     final isSunday = date.weekday == DateTime.sunday;
-    
+
     // Background Color Logic:
     // Sunday -> Off (Grey)
     // Has Late -> Warning (Yellow)
@@ -210,11 +272,15 @@ class _CalendarDayCell extends StatelessWidget {
     // Else -> None (White)
     Color bgColor = Colors.white;
     if (isSunday) {
-      bgColor = AppColors.surfaceContainerLow.withOpacity(0.7);
+      bgColor = AppColors.surfaceContainerLow.withValues(alpha: 0.7);
     } else if (records.isNotEmpty) {
-      final hasLate = records.any((r) => r['status']?.toString().toUpperCase() == 'LATE');
-      final hasPresent = records.any((r) => r['status']?.toString().toUpperCase() == 'PRESENT');
-      
+      final hasLate = records.any(
+        (r) => r['status']?.toString().toUpperCase() == 'LATE',
+      );
+      final hasPresent = records.any(
+        (r) => r['status']?.toString().toUpperCase() == 'PRESENT',
+      );
+
       if (hasLate) {
         bgColor = const Color(0xfffff7ed); // Light Orange/Yellow
       } else if (hasPresent) {
@@ -229,30 +295,54 @@ class _CalendarDayCell extends StatelessWidget {
           color: bgColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isToday ? AppColors.primary : AppColors.outlineVariant.withOpacity(0.2), 
-            width: isToday ? 1.5 : 0.5
+            color: isToday
+                ? AppColors.primary
+                : AppColors.outlineVariant.withValues(alpha: 0.2),
+            width: isToday ? 1.5 : 0.5,
           ),
-          boxShadow: isToday ? [BoxShadow(color: AppColors.primary.withOpacity(0.1), blurRadius: 4)] : null,
+          boxShadow: isToday
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           children: [
             const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.all(3),
-              decoration: isToday ? const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle) : null,
+              decoration: isToday
+                  ? const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    )
+                  : null,
               child: Text(
-                '$dayNum', 
+                '$dayNum',
                 style: TextStyle(
-                  fontSize: 12, 
-                  fontWeight: isToday ? FontWeight.bold : FontWeight.w600, 
-                  color: isToday ? Colors.white : (isSunday ? AppColors.outline : AppColors.onSurface)
-                )
+                  fontSize: 12,
+                  fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
+                  color: isToday
+                      ? Colors.white
+                      : (isSunday ? AppColors.outline : AppColors.onSurface),
+                ),
               ),
             ),
             const Spacer(),
             DayIndicator(records: records),
             const SizedBox(height: 6),
-            if (isSunday) const Text('OFF', style: TextStyle(fontSize: 8, color: AppColors.outline, fontWeight: FontWeight.bold)),
+            if (isSunday)
+              const Text(
+                'OFF',
+                style: TextStyle(
+                  fontSize: 8,
+                  color: AppColors.outline,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             const SizedBox(height: 2),
           ],
         ),
@@ -269,9 +359,20 @@ class _LegendItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.onSurfaceVariant)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }

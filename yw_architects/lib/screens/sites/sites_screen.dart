@@ -5,6 +5,7 @@ import '../../services/site_service.dart';
 import '../sections/sites/site_list_section.dart';
 import '../sections/sites/site_details_section.dart';
 import '../sections/sites/site_form_section.dart';
+import '../../services/post_sales_service.dart';
 
 class SitesScreen extends StatefulWidget {
   final AppUser user;
@@ -39,10 +40,28 @@ class _SitesScreenState extends State<SitesScreen> {
 
   Future<void> _fetchSites() async {
     setState(() => _isLoading = true);
-    final data = await SiteService.getSites();
+
+    List<Site> _fetchedSites = [];
+    
+    if (widget.user.role == UserRole.client) {
+      // For clients, use the specific postsales client endpoint
+      final postSales = await PostSalesService.getPostSalesByClient(widget.user.id);
+      
+      _fetchedSites = postSales.map((ps) {
+        // The backend returns PostSales objects, each containing a nested 'project' and 'client'
+        final projectData = Map<String, dynamic>.from(ps['project'] ?? {});
+        projectData['postSalesId'] = ps['id'];
+        projectData['client'] = ps['client']; // inject client metadata if Site model needs it
+        return Site.fromJson(projectData);
+      }).toList();
+    } else {
+      // For employees/admins, use the global projects API
+      _fetchedSites = await SiteService.getSites();
+    }
+
     if (mounted) {
       setState(() {
-        _sites = data;
+        _sites = _fetchedSites;
         _isLoading = false;
       });
       // If a specific project was requested, auto-open its site
@@ -66,8 +85,11 @@ class _SitesScreenState extends State<SitesScreen> {
   ].contains(widget.user.role);
 
   List<Site> get _filteredSites {
-    if (_activeFilter == 'All') return _sites;
-    return _sites
+    List<Site> filtered = _sites;
+    
+
+    if (_activeFilter == 'All') return filtered;
+    return filtered
         .where((s) => s.status.toUpperCase() == _activeFilter)
         .toList();
   }

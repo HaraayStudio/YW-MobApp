@@ -209,45 +209,13 @@ class _PaymentsTabViewState extends State<PaymentsTabView> {
     );
   }
 
-  Widget _buildDetailRow(String label, dynamic value, {bool isGreen = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 60,
-            child: Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500)),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              value?.toString() ?? '--',
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: isGreen ? Colors.green : const Color(0xFF1E293B),
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   void _handleRecordPayment() {
     // If multiple invoices exist, the dialog could be updated to allow selection.
     // In the web app, a selection is available. For now, we use the latest unpaid/active invoice
     // to ensure the button works immediately.
-    Map<String, dynamic>? selectedInvoice;
-    if (_taxInvoices.length == 1) {
-      selectedInvoice = _taxInvoices.first;
-    } else {
-      // Find the first one with outstanding balance, or just the latest one
-      selectedInvoice = _taxInvoices.first; 
-    }
+
 
     showDialog(
       context: context,

@@ -1,8 +1,6 @@
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
-import 'package:intl/intl.dart';
 
 class InvoicePdfHelper {
   static Future<Uint8List> generateInvoice({

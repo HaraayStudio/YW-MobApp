@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/app_models.dart';
 import '../widgets/common_widgets.dart';
+import '../utils/responsive.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -82,6 +83,7 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     final bool isClient = _tabIndex == 1;
@@ -121,42 +123,38 @@ class _LoginScreenState extends State<LoginScreen>
                             Align(
                               alignment: Alignment.centerLeft,
                               child: Container(
-                                width: 64,
-                                height: 64,
+                                width: 64.w,
+                                height: 64.w,
                                 decoration: BoxDecoration(
                                   color: AppColors.surfaceContainerLowest,
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(16.w),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black.withValues(
                                         alpha: 0.06,
                                       ),
-                                      blurRadius: 12,
+                                      blurRadius: 12.w,
                                     ),
                                   ],
                                 ),
-                                child: const Center(
-                                  child: Text(
-                                    'YW',
-                                    style: TextStyle(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 22,
-                                      letterSpacing: -1,
-                                    ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16.w),
+                                  child: Image.asset(
+                                    'assets/icon/yw_logo_final.png',
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 32),
-                            const Text(
+                            SizedBox(height: 32.h),
+                            Text(
                               'Sign in to your workspace',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 14.sp,
                                 color: AppColors.onSurfaceVariant,
                               ),
                             ),
-                            const SizedBox(height: 32),
+                            SizedBox(height: 32.h),
 
                             // Segmented UI Control
                             _SegmentedToggle(
@@ -168,10 +166,10 @@ class _LoginScreenState extends State<LoginScreen>
                             // Dynamic Forms Container
                             Container(
                               clipBehavior: Clip.none,
-                              padding: const EdgeInsets.all(28),
+                              padding: EdgeInsets.all(28.w),
                               decoration: BoxDecoration(
                                 color: AppColors.surfaceContainerLowest,
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(20.w),
                                 border: Border.all(
                                   color: AppColors.outlineVariant.withValues(
                                     alpha: 0.15,
@@ -182,9 +180,9 @@ class _LoginScreenState extends State<LoginScreen>
                                     color: AppColors.onSurface.withValues(
                                       alpha: 0.08,
                                     ),
-                                    blurRadius: 64,
-                                    offset: const Offset(0, 32),
-                                    spreadRadius: -12,
+                                    blurRadius: 64.w,
+                                    offset: Offset(0, 32.h),
+                                    spreadRadius: -12.w,
                                   ),
                                 ],
                               ),
@@ -356,10 +354,10 @@ class _SegmentedToggleState extends State<_SegmentedToggle> {
             }
           },
           child: Container(
-            height: 48,
+            height: 48.h,
             decoration: BoxDecoration(
               color: AppColors.surfaceContainerLow.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(14.w),
               border: Border.all(
                 color: AppColors.outlineVariant.withValues(alpha: 0.2),
               ),
@@ -367,27 +365,27 @@ class _SegmentedToggleState extends State<_SegmentedToggle> {
             child: Stack(
               children: [
                 // Animated active pill
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  top: 4,
-                  bottom: 4,
-                  left: widget.selectedIndex == 0 ? 4 : tabWidth + 4,
-                  width: tabWidth,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    top: 4.h,
+                    bottom: 4.h,
+                    left: widget.selectedIndex == 0 ? 4.w : tabWidth + 4.w,
+                    width: tabWidth,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10.w),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 8.w,
+                            offset: Offset(0, 2.h),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
                 // Text layers
                 Row(
                   children: [_buildTab(0, 'Employee'), _buildTab(1, 'Client')],
@@ -410,7 +408,7 @@ class _SegmentedToggleState extends State<_SegmentedToggle> {
           child: AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 250),
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 14.sp,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               color: isSelected
                   ? AppColors.primary
@@ -459,18 +457,18 @@ class _EmployeeLoginFormState extends State<_EmployeeLoginForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Welcome back',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 20.sp,
             fontWeight: FontWeight.w700,
             color: AppColors.onSurface,
           ),
         ),
-        const SizedBox(height: 4),
-        const Text(
+        SizedBox(height: 4.h),
+        Text(
           'Enter your credentials to sign in',
-          style: TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+          style: TextStyle(fontSize: 13.sp, color: AppColors.onSurfaceVariant),
         ),
         const SizedBox(height: 28),
         const _FieldLabel('Email'),
@@ -550,18 +548,18 @@ class _ClientLoginFormState extends State<_ClientLoginForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Client Portal',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 20.sp,
             fontWeight: FontWeight.w700,
             color: AppColors.onSurface,
           ),
         ),
-        const SizedBox(height: 4),
-        const Text(
+        SizedBox(height: 4.h),
+        Text(
           'Track your project progress in real-time',
-          style: TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+          style: TextStyle(fontSize: 13.sp, color: AppColors.onSurfaceVariant),
         ),
         const SizedBox(height: 28),
         const _FieldLabel('Client Email / ID'),
@@ -680,11 +678,11 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text.toUpperCase(),
-      style: const TextStyle(
-        fontSize: 11,
+      style: TextStyle(
+        fontSize: 11.sp,
         fontWeight: FontWeight.w700,
         color: AppColors.onSurfaceVariant,
-        letterSpacing: 1,
+        letterSpacing: 1.w,
       ),
     );
   }
@@ -734,13 +732,13 @@ class _InputFieldState extends State<_InputField> {
       // Elevate slightly when focused
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.w),
         boxShadow: _isFocused
             ? [
                 BoxShadow(
                   color: AppColors.primaryContainer.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  spreadRadius: 1,
+                  blurRadius: 12.w,
+                  spreadRadius: 1.w,
                 ),
               ]
             : [],
@@ -750,8 +748,8 @@ class _InputFieldState extends State<_InputField> {
         controller: widget.controller,
         obscureText: widget.obscureText,
         keyboardType: widget.keyboardType,
-        style: const TextStyle(
-          fontSize: 14,
+        style: TextStyle(
+          fontSize: 14.sp,
           color: AppColors.onSurface,
           fontWeight: FontWeight.w500,
         ),
@@ -759,21 +757,22 @@ class _InputFieldState extends State<_InputField> {
           hintText: widget.hint,
           hintStyle: TextStyle(
             color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
+            fontSize: 14.sp,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.w),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.w),
             borderSide: const BorderSide(
               color: AppColors.primaryContainer,
               width: 2,
             ),
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 14.h,
           ),
           suffixIcon: widget.suffix,
           filled: true,

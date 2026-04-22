@@ -120,7 +120,7 @@ class DashboardSharedLayout extends StatelessWidget {
 
             // ── Stats (horizontal scroll) ────────────────────────────────────
             SizedBox(
-              height: 118,
+              height: 130,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: stats.length,
@@ -231,10 +231,10 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.15)),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -338,7 +338,7 @@ class _ProjectCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: pct,
               minHeight: 3,
-              backgroundColor: AppColors.primaryFixed.withOpacity(0.4),
+              backgroundColor: AppColors.primaryFixed.withValues(alpha: 0.4),
               valueColor: const AlwaysStoppedAnimation(
                 AppColors.primaryContainer,
               ),
@@ -434,7 +434,7 @@ class _TaskRow extends StatelessWidget {
         border: Border(left: BorderSide(color: priorityColor, width: 3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -504,7 +504,7 @@ class _QuickActionTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.12)),
+          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.12)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -7,19 +7,28 @@ import 'package:yw_architects/screens/sections/employee/tabs/attendance_calendar
 class EmployeesSection extends StatefulWidget {
   final Function(String) onToast;
   final int initialTabIndex;
-  const EmployeesSection({super.key, required this.onToast, this.initialTabIndex = 0});
+  const EmployeesSection({
+    super.key,
+    required this.onToast,
+    this.initialTabIndex = 0,
+  });
 
   @override
   State<EmployeesSection> createState() => _EmployeesSectionState();
 }
 
-class _EmployeesSectionState extends State<EmployeesSection> with SingleTickerProviderStateMixin {
+class _EmployeesSectionState extends State<EmployeesSection>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this, initialIndex: widget.initialTabIndex);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
+    );
   }
 
   @override
@@ -39,7 +48,7 @@ class _EmployeesSectionState extends State<EmployeesSection> with SingleTickerPr
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -52,7 +61,10 @@ class _EmployeesSectionState extends State<EmployeesSection> with SingleTickerPr
             indicatorColor: AppColors.primary,
             indicatorSize: TabBarIndicatorSize.label,
             dividerColor: Colors.transparent,
-            labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            labelStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
             tabs: const [
               Tab(text: 'Directory'),
               Tab(text: 'Daily Attendance'),

@@ -87,7 +87,9 @@ class ClientService {
     );
 
     print("DELETE CLIENT STATUS: ${response.statusCode}");
-    return response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204;
+    return response.statusCode == 200 ||
+        response.statusCode == 201 ||
+        response.statusCode == 204;
   }
 
   /// NEW: Resolves a client ID by matching their email in the database.

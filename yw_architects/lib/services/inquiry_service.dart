@@ -49,7 +49,7 @@ class InquiryService {
 
   // GET /api/presales/getall
   static Future<List<dynamic>> getAllInquiries() async {
-    final token = TokenService.accessToken;
+
     try {
       final response = await _resilientGet(
         Uri.parse("$baseUrl/getall"),
@@ -113,16 +113,12 @@ class InquiryService {
   }
 
   // PUT /api/presales/updateStatus/{srNumber}/{status}
-  // Note: Based on web logic, it might take srNumber and status
   static Future<bool> updateStatus(int srNumber, String status) async {
-    final token = TokenService.accessToken;
     try {
-      final response = await http.put(
+      final response = await _resilientPut(
         Uri.parse("$baseUrl/updateStatus/$srNumber/$status"),
-        headers: {
-          "Authorization": "Bearer $token",
-          "Content-Type": "application/json",
-        },
+        _jsonHeaders,
+        null,
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -133,11 +129,11 @@ class InquiryService {
 
   // POST /api/postsales/converttopostSales?preSalesId={id}
   static Future<bool> convertToProject(int preSalesId) async {
-    final token = TokenService.accessToken;
     try {
-      final response = await http.post(
+      final response = await _resilientPost(
         Uri.parse("${ApiConstants.baseUrl}/postsales/converttopostSales?preSalesId=$preSalesId"),
-        headers: {"Authorization": "Bearer $token"},
+        _authHeaders,
+        null,
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
@@ -145,4 +141,5 @@ class InquiryService {
       return false;
     }
   }
+
 }

@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -35,18 +34,23 @@ class DashboardStatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 20),
               ),
               if (subtext != null)
-                Text(
-                  subtext!,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: color.withOpacity(0.8),
+                Flexible(
+                  child: Text(
+                    subtext!,
+                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: color.withValues(alpha: 0.8),
+                    ),
                   ),
                 ),
             ],
@@ -95,8 +99,10 @@ class DashboardBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxVal = data.values.isEmpty ? 1.0 : data.values.reduce((v, e) => v > e ? v : e);
-    
+    final maxVal = data.values.isEmpty
+        ? 1.0
+        : data.values.reduce((v, e) => v > e ? v : e);
+
     return CardContainer(
       title: title,
       child: SizedBox(
@@ -132,7 +138,7 @@ class DashboardBarChart extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.2),
+                                  color: AppColors.primary.withValues(alpha: 0.2),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -190,7 +196,10 @@ class DashboardDonutChart extends StatelessWidget {
             width: 120,
             height: 120,
             child: CustomPaint(
-              painter: _DonutPainter(data: data.values.toList(), colors: colors),
+              painter: _DonutPainter(
+                data: data.values.toList(),
+                colors: colors,
+              ),
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -287,7 +296,7 @@ class _DonutPainter extends CustomPainter {
     for (int i = 0; i < data.length; i++) {
       final sweepAngle = (data[i] / total) * 2 * 3.14159;
       paint.color = colors[i % colors.length];
-      
+
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
         startAngle + 0.05, // Small gap
@@ -342,7 +351,7 @@ class DashboardAttendanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasCheckedIn = checkIn != null;
     final hasCheckedOut = checkOut != null;
-    
+
     final inTime = hasCheckedIn ? _formatTime(checkIn!) : '--:--';
     final outTime = hasCheckedOut ? _formatTime(checkOut!) : '--:--';
 
@@ -354,28 +363,33 @@ class DashboardAttendanceCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'TODAY',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onSurfaceVariant,
-                      letterSpacing: 1,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'TODAY',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurfaceVariant,
+                        letterSpacing: 1,
+                      ),
                     ),
-                  ),
-                  Text(
-                    todayDate,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onSurface,
+                    Text(
+                      todayDate,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurface,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -389,7 +403,10 @@ class DashboardAttendanceCard extends StatelessWidget {
                   ),
                   const Text(
                     'Live Time',
-                    style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -434,7 +451,9 @@ class DashboardAttendanceCard extends StatelessWidget {
                   text: hasCheckedOut ? 'Checked Out' : 'Check Out',
                   icon: Icons.logout_rounded,
                   verticalPadding: 12,
-                  onTap: (!hasCheckedIn || hasCheckedOut || isLoading) ? null : onCheckOut,
+                  onTap: (!hasCheckedIn || hasCheckedOut || isLoading)
+                      ? null
+                      : onCheckOut,
                 ),
               ),
             ],
@@ -448,9 +467,13 @@ class DashboardAttendanceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: active ? AppColors.primary.withOpacity(0.05) : AppColors.surfaceContainerLow,
+        color: active
+            ? AppColors.primary.withValues(alpha: 0.05)
+            : AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        border: active ? Border.all(color: AppColors.primary.withOpacity(0.2)) : null,
+        border: active
+            ? Border.all(color: AppColors.primary.withValues(alpha: 0.2))
+            : null,
       ),
       child: Column(
         children: [
@@ -475,7 +498,9 @@ class DashboardAttendanceCard extends StatelessWidget {
             sub,
             style: TextStyle(
               fontSize: 10,
-              color: active ? AppColors.primary : AppColors.onSurfaceVariant.withOpacity(0.7),
+              color: active
+                  ? AppColors.primary
+                  : AppColors.onSurfaceVariant.withValues(alpha: 0.7),
             ),
           ),
         ],

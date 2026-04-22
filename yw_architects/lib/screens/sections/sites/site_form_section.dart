@@ -160,7 +160,7 @@ class _SiteFormSectionState extends State<SiteFormSection> {
       style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.outline.withOpacity(0.5)),
+        hintStyle: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.outline.withValues(alpha: 0.5)),
         filled: true,
         fillColor: AppColors.surfaceContainerLow,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),

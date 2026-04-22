@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../models/site_model.dart';
 import '../../../models/app_models.dart';
+import 'package:yw_architects/utils/responsive.dart';
 import '../../../theme/app_theme.dart';
 import '../../../services/structure_service.dart';
 import '../../../widgets/postsale_tabs/structures_tab_view.dart';
@@ -161,7 +162,7 @@ class _AddStructureScreenState extends State<AddStructureScreen>
           style: GoogleFonts.plusJakartaSans(
             color: Colors.black87,
             fontWeight: FontWeight.w700,
-            fontSize: 18,
+            fontSize: 18.sp,
           ),
         ),
         actions: [
@@ -201,9 +202,9 @@ class _AddStructureScreenState extends State<AddStructureScreen>
               indicatorColor: AppColors.primary,
               indicatorWeight: 3,
               labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
-              tabs: const [
-                Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.info_outline, size: 18), SizedBox(width: 8), Text("Structure Info")])),
-                Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.layers_outlined, size: 18), SizedBox(width: 8), Text("Add Level")])),
+              tabs: [
+                Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.info_outline, size: 18.w), SizedBox(width: 8.w), Text("Info", style: TextStyle(fontSize: 13.sp))])),
+                Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.layers_outlined, size: 18.w), SizedBox(width: 8.w), Text("Levels", style: TextStyle(fontSize: 13.sp))])),
               ],
             ),
           ),
@@ -224,35 +225,35 @@ class _AddStructureScreenState extends State<AddStructureScreen>
 
   Widget _buildHeroHeader() {
     return Container(
-      padding: const EdgeInsets.all(24),
-      margin: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(24.w),
+      margin: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+        borderRadius: BorderRadius.circular(16.w),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10.w)],
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: Row(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 56.w,
+            height: 56.w,
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.w),
             ),
             child: Center(
               child: Text(
                 _structureName.isNotEmpty ? _structureName[0].toUpperCase() : "S",
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 24,
+                  fontSize: 24.sp,
                   fontWeight: FontWeight.w800,
                   color: AppColors.primary,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,22 +261,22 @@ class _AddStructureScreenState extends State<AddStructureScreen>
                 Text(
                   _structureName.isNotEmpty ? _structureName : "New Structure",
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 20,
+                    fontSize: 20.sp,
                     fontWeight: FontWeight.w800,
                     color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                   decoration: BoxDecoration(
                     color: Colors.amber[50],
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(4.w),
                   ),
                   child: Text(
                     "${_addedLevels.length} Levels Added",
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w700,
                       color: Colors.amber[800],
                     ),
@@ -306,28 +307,49 @@ class _AddStructureScreenState extends State<AddStructureScreen>
                     placeholder: "e.g. Wing A, Tower 1",
                     onChanged: (val) => setState(() => _structureName = val),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildDropdown(
-                          label: "STRUCTURE TYPE",
-                          value: _structureType.isEmpty ? null : _structureType,
-                          items: _structureTypes,
-                          onChanged: (val) => setState(() => _structureType = val!),
+                  SizedBox(height: 16.h),
+                  LayoutBuilder(builder: (context, constraints) {
+                    if (constraints.maxWidth < 400) {
+                      return Column(
+                        children: [
+                          _buildDropdown(
+                            label: "STRUCTURE TYPE",
+                            value: _structureType.isEmpty ? null : _structureType,
+                            items: _structureTypes,
+                            onChanged: (val) => setState(() => _structureType = val!),
+                          ),
+                          SizedBox(height: 16.h),
+                          _buildDropdown(
+                            label: "USAGE TYPE",
+                            value: _usageType.isEmpty ? null : _usageType,
+                            items: _usageTypes,
+                            onChanged: (val) => setState(() => _usageType = val!),
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: _buildDropdown(
+                            label: "STRUCTURE TYPE",
+                            value: _structureType.isEmpty ? null : _structureType,
+                            items: _structureTypes,
+                            onChanged: (val) => setState(() => _structureType = val!),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildDropdown(
-                          label: "USAGE TYPE",
-                          value: _usageType.isEmpty ? null : _usageType,
-                          items: _usageTypes,
-                          onChanged: (val) => setState(() => _usageType = val!),
+                        SizedBox(width: 16.w),
+                        Expanded(
+                          child: _buildDropdown(
+                            label: "USAGE TYPE",
+                            value: _usageType.isEmpty ? null : _usageType,
+                            items: _usageTypes,
+                            onChanged: (val) => setState(() => _usageType = val!),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    );
+                  }),
                   const SizedBox(height: 16),
                   _buildTextField(
                     label: "BUILT-UP AREA (SQ.FT)",
@@ -400,42 +422,69 @@ class _AddStructureScreenState extends State<AddStructureScreen>
                     key: _levelFormKey,
                     child: Column(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(child: _buildTextField(label: "LEVEL LABEL", placeholder: "e.g. B1, Ground", onChanged: (v) => _levelLabel = v)),
-                            const SizedBox(width: 12),
-                            Expanded(child: _buildTextField(label: "LEVEL NUMBER", placeholder: "0, 1, 2...", keyboardType: TextInputType.number, onChanged: (v) => _levelNumber = int.tryParse(v) ?? 0)),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(child: _buildDropdown(label: "LEVEL TYPE", value: _levelType.isEmpty ? null : _levelType, items: _levelTypes, onChanged: (v) => setState(() => _levelType = v!))),
-                            const SizedBox(width: 12),
-                            Expanded(child: _buildDropdown(label: "USAGE TYPE", value: _levelUsageType, items: _usageTypes, onChanged: (v) => _levelUsageType = v!)),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(child: _buildTextField(label: "BUILT-UP AREA", placeholder: "0.00", keyboardType: TextInputType.number, onChanged: (v) => _levelBuiltUpArea = double.tryParse(v))),
-                            const SizedBox(width: 12),
-                            Expanded(child: _buildTextField(label: "CARPET AREA", placeholder: "0.00", keyboardType: TextInputType.number, onChanged: (v) => _levelCarpetArea = double.tryParse(v))),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(child: _buildTextField(label: "FLOOR HEIGHT (M)", placeholder: "3.00", keyboardType: TextInputType.number, onChanged: (v) => _levelHeight = double.tryParse(v))),
-                            const SizedBox(width: 12),
-                            Expanded(child: _buildTextField(label: "STATUS", placeholder: "In Progress", onChanged: (v) => _constructionStatus = v)),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
+                        LayoutBuilder(builder: (context, constraints) {
+                          if (constraints.maxWidth < 400) {
+                            return Column(
+                              children: [
+                                _buildTextField(label: "LEVEL LABEL", placeholder: "e.g. B1, Ground", onChanged: (v) => _levelLabel = v),
+                                SizedBox(height: 12.h),
+                                _buildTextField(label: "LEVEL NUMBER", placeholder: "0, 1, 2...", keyboardType: TextInputType.number, onChanged: (v) => _levelNumber = int.tryParse(v) ?? 0),
+                                SizedBox(height: 12.h),
+                                _buildDropdown(label: "LEVEL TYPE", value: _levelType.isEmpty ? null : _levelType, items: _levelTypes, onChanged: (v) => setState(() => _levelType = v!)),
+                                SizedBox(height: 12.h),
+                                _buildDropdown(label: "USAGE TYPE", value: _levelUsageType, items: _usageTypes, onChanged: (v) => _levelUsageType = v!),
+                                SizedBox(height: 12.h),
+                                _buildTextField(label: "BUILT-UP AREA", placeholder: "0.00", keyboardType: TextInputType.number, onChanged: (v) => _levelBuiltUpArea = double.tryParse(v)),
+                                SizedBox(height: 12.h),
+                                _buildTextField(label: "CARPET AREA", placeholder: "0.00", keyboardType: TextInputType.number, onChanged: (v) => _levelCarpetArea = double.tryParse(v)),
+                                SizedBox(height: 12.h),
+                                _buildTextField(label: "FLOOR HEIGHT (M)", placeholder: "3.00", keyboardType: TextInputType.number, onChanged: (v) => _levelHeight = double.tryParse(v)),
+                                SizedBox(height: 12.h),
+                                _buildTextField(label: "STATUS", placeholder: "In Progress", onChanged: (v) => _constructionStatus = v),
+                              ],
+                            );
+                          }
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(child: _buildTextField(label: "LEVEL LABEL", placeholder: "e.g. B1, Ground", onChanged: (v) => _levelLabel = v)),
+                                  SizedBox(width: 12.w),
+                                  Expanded(child: _buildTextField(label: "LEVEL NUMBER", placeholder: "0, 1, 2...", keyboardType: TextInputType.number, onChanged: (v) => _levelNumber = int.tryParse(v) ?? 0)),
+                                ],
+                              ),
+                              SizedBox(height: 12.h),
+                              Row(
+                                children: [
+                                  Expanded(child: _buildDropdown(label: "LEVEL TYPE", value: _levelType.isEmpty ? null : _levelType, items: _levelTypes, onChanged: (v) => setState(() => _levelType = v!))),
+                                  SizedBox(width: 12.w),
+                                  Expanded(child: _buildDropdown(label: "USAGE TYPE", value: _levelUsageType, items: _usageTypes, onChanged: (v) => _levelUsageType = v!)),
+                                ],
+                              ),
+                              SizedBox(height: 12.h),
+                              Row(
+                                children: [
+                                  Expanded(child: _buildTextField(label: "BUILT-UP AREA", placeholder: "0.00", keyboardType: TextInputType.number, onChanged: (v) => _levelBuiltUpArea = double.tryParse(v))),
+                                  SizedBox(width: 12.w),
+                                  Expanded(child: _buildTextField(label: "CARPET AREA", placeholder: "0.00", keyboardType: TextInputType.number, onChanged: (v) => _levelCarpetArea = double.tryParse(v))),
+                                ],
+                              ),
+                              SizedBox(height: 12.h),
+                              Row(
+                                children: [
+                                  Expanded(child: _buildTextField(label: "FLOOR HEIGHT (M)", placeholder: "3.00", keyboardType: TextInputType.number, onChanged: (v) => _levelHeight = double.tryParse(v))),
+                                  SizedBox(width: 12.w),
+                                  Expanded(child: _buildTextField(label: "STATUS", placeholder: "In Progress", onChanged: (v) => _constructionStatus = v)),
+                                ],
+                              ),
+                            ],
+                          );
+                        }),
+                        SizedBox(height: 12.h),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("PROGRESS — ${_progressPercentage.toInt()}%", style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey[600])),
+                            Text("PROGRESS — ${_progressPercentage.toInt()}%", style: GoogleFonts.plusJakartaSans(fontSize: 10.sp, fontWeight: FontWeight.w800, color: Colors.grey[600])),
                             Slider(
                               value: _progressPercentage,
                               min: 0,
@@ -446,11 +495,11 @@ class _AddStructureScreenState extends State<AddStructureScreen>
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16.h),
                         ElevatedButton(
                           onPressed: _addLevel,
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, minimumSize: const Size(double.infinity, 44), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                          child: const Text("+ Add Level to Building", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, minimumSize: Size(double.infinity, 44.h), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.w))),
+                          child: Text("+ Add Level", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.sp)),
                         ),
                       ],
                     ),
@@ -464,10 +513,10 @@ class _AddStructureScreenState extends State<AddStructureScreen>
                     child: Column(
                       children: _addedLevels.reversed.map((lv) => ListTile(
                         contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(backgroundColor: AppColors.primary.withValues(alpha: 0.1), child: Text(lv.levelLabel[0], style: TextStyle(fontSize: 12, color: AppColors.primary))),
-                        title: Text(lv.levelLabel, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                        subtitle: Text(lv.levelType),
-                        trailing: IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () => setState(() => _addedLevels.remove(lv))),
+                        leading: CircleAvatar(backgroundColor: AppColors.primary.withValues(alpha: 0.1), radius: 18.w, child: Text(lv.levelLabel.isNotEmpty ? lv.levelLabel[0] : "?", style: TextStyle(fontSize: 12.sp, color: AppColors.primary))),
+                        title: Text(lv.levelLabel, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+                        subtitle: Text(lv.levelType, style: TextStyle(fontSize: 12.sp)),
+                        trailing: IconButton(icon: Icon(Icons.delete_outline, color: Colors.red, size: 20.w), onPressed: () => setState(() => _addedLevels.remove(lv))),
                       )).toList(),
                     ),
                   ),
@@ -514,10 +563,10 @@ class _AddStructureScreenState extends State<AddStructureScreen>
   Widget _buildCard({required String title, required IconData icon, required Widget child}) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.w),
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
@@ -525,19 +574,19 @@ class _AddStructureScreenState extends State<AddStructureScreen>
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: AppColors.primary),
-              const SizedBox(width: 8),
+              Icon(icon, size: 18.w, color: AppColors.primary),
+              SizedBox(width: 8.w),
               Text(
                 title,
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w800,
                   color: Colors.black87,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           child,
         ],
       ),
@@ -551,25 +600,25 @@ class _AddStructureScreenState extends State<AddStructureScreen>
         Text(
           label,
           style: GoogleFonts.plusJakartaSans(
-            fontSize: 10,
+            fontSize: 10.sp,
             fontWeight: FontWeight.w800,
             color: Colors.grey[500],
-            letterSpacing: 0.5,
+            letterSpacing: 0.5.w,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         TextFormField(
-          style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600),
+          style: GoogleFonts.plusJakartaSans(fontSize: 14.sp, fontWeight: FontWeight.w600),
           keyboardType: keyboardType,
           onChanged: onChanged,
           decoration: InputDecoration(
             hintText: placeholder,
-            hintStyle: TextStyle(color: Colors.grey[300], fontSize: 13),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            hintStyle: TextStyle(color: Colors.grey[300], fontSize: 13.sp),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
             filled: true,
             fillColor: Colors.grey[50],
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[200]!)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[200]!)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.w), borderSide: BorderSide(color: Colors.grey[200]!)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8.w), borderSide: BorderSide(color: Colors.grey[200]!)),
           ),
         ),
       ],
@@ -583,26 +632,26 @@ class _AddStructureScreenState extends State<AddStructureScreen>
         Text(
           label,
           style: GoogleFonts.plusJakartaSans(
-            fontSize: 10,
+            fontSize: 10.sp,
             fontWeight: FontWeight.w800,
             color: Colors.grey[500],
-            letterSpacing: 0.5,
+            letterSpacing: 0.5.w,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: EdgeInsets.symmetric(horizontal: 12.w),
           decoration: BoxDecoration(
             color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(8.w),
             border: Border.all(color: Colors.grey[200]!),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: value,
-              hint: Text("Select", style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+              hint: Text("Select", style: TextStyle(color: Colors.grey[400], fontSize: 13.sp)),
               isExpanded: true,
-              style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87),
+              style: GoogleFonts.plusJakartaSans(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.black87),
               onChanged: onChanged,
               items: items.map((String val) {
                 return DropdownMenuItem<String>(

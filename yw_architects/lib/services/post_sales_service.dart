@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'token_service.dart';
-import 'package:http_parser/http_parser.dart';
 import '../api/constants.dart';
 
 class PostSalesService {
@@ -15,41 +14,28 @@ class PostSalesService {
   static Future<Map<String, dynamic>> createPostSale({
     required Map<String, dynamic> payload,
     required bool isOldClient,
-    List<int>? logoBytes,
+    List<int>? logoBytes,   // ignored on create — backend only accepts JSON here
     String? logoName,
   }) async {
     final token = TokenService.accessToken;
     final uri = Uri.parse("$baseUrl/createpostSales?isOldClient=$isOldClient");
 
-    final request = http.MultipartRequest('POST', uri);
-    request.headers['Authorization'] = "Bearer $token";
-
-    // Add JSON payload as a part named 'postSale' (or whatever the backend expects)
-    // Looking at the updateProject, it uses 'project'. 
-    // Usually for createPostSales it might be 'postSale' or just parameters.
-    // However, if the service previously used jsonEncode(payload), 
-    // we send it as a 'payload' part or similar.
-    request.files.add(http.MultipartFile.fromString(
-      'postSale', // Adjust if backend expects a different part name
-      jsonEncode(payload),
-      contentType: MediaType('application', 'json'),
-    ));
-
-    if (logoBytes != null) {
-      request.files.add(http.MultipartFile.fromBytes(
-        'logo',
-        logoBytes,
-        filename: logoName ?? 'logo.png',
-        contentType: MediaType('image', logoName?.split('.').last ?? 'png'),
-      ));
-    }
-
     try {
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      
+      // The backend endpoint only accepts application/json — NOT multipart.
+      // Logo upload on project creation is handled separately via updateProject.
+      final response = await http.post(
+        uri,
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode(payload),
+      );
+
       print("CREATE POST-SALE STATUS: ${response.statusCode}");
-      print("CREATE POST-SALE BODY: ${response.body}");
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        print("CREATE POST-SALE BODY: ${response.body}");
+      }
 
       final decoded = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -88,6 +74,36 @@ class PostSalesService {
       return decoded['data'] ?? [];
     }
     return [];
+  }
+
+  /// Fetches Post-Sale records for a specific client.
+  static Future<List<dynamic>> getPostSalesByClient(int clientId, {int page = 0, int size = 100}) async {
+    final token = TokenService.accessToken;
+
+    try {
+      final uri = Uri.parse("$baseUrl/client/$clientId?page=$page&size=$size");
+      debugPrint("API REQUEST: GET $uri");
+
+      final response = await http.get(
+        uri,
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      debugPrint("GET CLIENT POST-SALES STATUS: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded['data'] is List) return decoded['data'];
+        if (decoded['data'] is Map && decoded['data']['content'] is List) {
+          return decoded['data']['content'];
+        }
+        return [];
+      }
+      return [];
+    } catch (e) {
+      debugPrint("ERROR FETCHING CLIENT POST-SALES: $e");
+      return [];
+    }
   }
 
   /// Fetches a single Post-Sale record by Project ID (includes client, project, invoices, payments).

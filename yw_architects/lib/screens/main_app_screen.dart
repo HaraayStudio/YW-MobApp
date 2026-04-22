@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../models/app_models.dart';
 import '../widgets/common_widgets.dart';
+import '../utils/responsive.dart';
 
 // Role-specific dashboard sections
 import 'sections/admin_dashboard_section.dart';
@@ -18,6 +19,7 @@ import 'sections/liaison_officer_dashboard_section.dart';
 import 'sections/liaison_assistant_dashboard_section.dart';
 
 import 'sections/dashboard_role_views.dart';
+import 'sections/client_project_overview_section.dart';
 
 // Feature sections
 import 'sections/projects_section.dart';
@@ -50,6 +52,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int? _projectToEdit;
   int? _siteProjectId; // project ID to auto-open in Sites section
+  int? _selectedProjectId; // project ID for client overview
   late AppUser _user;
 
   @override
@@ -66,8 +69,10 @@ class _MainAppScreenState extends State<MainAppScreen> {
         id: _user.id,
         email: _user.info.email,
       );
-      debugPrint("[MainAppScreen] Fetched profile Keys: ${profile?.keys.toList()}");
-      
+      debugPrint(
+        "[MainAppScreen] Fetched profile Keys: ${profile?.keys.toList()}",
+      );
+
       if (profile != null) {
         // If the ID was previously 0 (failed resolution at login), update it now
         if (_user.id == 0 && profile['id'] != null) {
@@ -78,17 +83,29 @@ class _MainAppScreenState extends State<MainAppScreen> {
           });
         }
         final String apiName = ProfileService.extractFullName(profile);
-        final String apiPhone = profile['phone']?.toString() ?? profile['mobile']?.toString() ?? profile['phone_number']?.toString() ?? '';
-        final String apiJoinDate = profile['joinDate']?.toString() ?? profile['join_date']?.toString() ?? '';
-        final String apiEmail = profile['email']?.toString() ?? _user.info.email;
-        
-        // Check if token name is just a role placeholder
-        final bool isRoleInToken = _user.info.firstName.toLowerCase() == _user.role.name.replaceFirst('_', ' ').toLowerCase() ||
-                                  _user.info.firstName.toLowerCase() == _user.role.name.toLowerCase();
+        final String apiPhone =
+            profile['phone']?.toString() ??
+            profile['mobile']?.toString() ??
+            profile['phone_number']?.toString() ??
+            '';
+        final String apiJoinDate =
+            profile['joinDate']?.toString() ??
+            profile['join_date']?.toString() ??
+            '';
+        final String apiEmail =
+            profile['email']?.toString() ?? _user.info.email;
 
-        final finalName = apiName.isNotEmpty 
-            ? apiName 
-            : (isRoleInToken ? _user.info.name : _user.info.name); // Keep token name if it's real
+        // Check if token name is just a role placeholder
+        final bool isRoleInToken =
+            _user.info.firstName.toLowerCase() ==
+                _user.role.name.replaceFirst('_', ' ').toLowerCase() ||
+            _user.info.firstName.toLowerCase() == _user.role.name.toLowerCase();
+
+        final finalName = apiName.isNotEmpty
+            ? apiName
+            : (isRoleInToken
+                  ? _user.info.name
+                  : _user.info.name); // Keep token name if it's real
 
         final parts = finalName.split(' ');
         final fName = parts.isNotEmpty ? parts[0] : '';
@@ -100,13 +117,24 @@ class _MainAppScreenState extends State<MainAppScreen> {
               name: finalName.trim(),
               firstName: fName,
               lastName: lName,
-              initials: (fName.isNotEmpty ? fName[0] : '') + (lName.isNotEmpty ? lName[0] : ''),
+              initials:
+                  (fName.isNotEmpty ? fName[0] : '') +
+                  (lName.isNotEmpty ? lName[0] : ''),
               email: apiEmail,
               phone: apiPhone,
               joinDate: apiJoinDate,
-              profileImage: (profile['profileImage'] ?? profile['profile_image'])?.toString(),
-            ),
-          );
+              profileImage: (profile['profileImage'] ??
+                    profile['profile_image'])
+                ?.toString() !=
+            null
+        ? ((profile['profileImage'] ?? profile['profile_image'])
+                    .toString()
+                    .contains('?')
+                ? '${profile['profileImage'] ?? profile['profile_image']}&v=${DateTime.now().millisecondsSinceEpoch}'
+                : '${profile['profileImage'] ?? profile['profile_image']}?v=${DateTime.now().millisecondsSinceEpoch}')
+        : null,
+          ),
+        );
         });
       }
     } catch (e) {
@@ -119,7 +147,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
     final role = _user.role;
 
     // Management roles (Admin, Co-Founder, HR) get specific bottom nav
-    if (role == UserRole.admin || role == UserRole.coFounder || role == UserRole.hr) {
+    if (role == UserRole.admin ||
+        role == UserRole.coFounder ||
+        role == UserRole.hr) {
       return managementBottomNav;
     }
 
@@ -134,7 +164,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
   // Sidebar items customization
   List<String> get _sidebarNavItems {
     final role = _user.role;
-    if (role == UserRole.admin || role == UserRole.coFounder || role == UserRole.hr) {
+    if (role == UserRole.admin ||
+        role == UserRole.coFounder ||
+        role == UserRole.hr) {
       return managementSidebarNav;
     }
     if (role == UserRole.client) {
@@ -160,7 +192,21 @@ class _MainAppScreenState extends State<MainAppScreen> {
       case UserRole.coFounder:
         return CoFounderDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.client:
-        return ClientDashboardView(user: _user, onNavigate: _navigate);
+        return ClientDashboardView(
+          user: _user,
+          onNavigate: (section) {
+            // Enhanced navigation for project details
+            if (section.startsWith('project_')) {
+              final idStr = section.split('_').last;
+              setState(() {
+                _selectedProjectId = int.tryParse(idStr);
+                _currentSection = 'clientProjectOverview';
+              });
+            } else {
+              _navigate(section);
+            }
+          },
+        );
       case UserRole.hr:
         return HrDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.srArchitect:
@@ -172,58 +218,96 @@ class _MainAppScreenState extends State<MainAppScreen> {
       case UserRole.draftsman:
         return DraftsmanDashboardSection(user: _user, onNavigate: _navigate);
       case UserRole.liaisonManager:
-        return LiaisonManagerDashboardSection(user: _user, onNavigate: _navigate);
+        return LiaisonManagerDashboardSection(
+          user: _user,
+          onNavigate: _navigate,
+        );
       case UserRole.liaisonOfficer:
-        return LiaisonOfficerDashboardSection(user: _user, onNavigate: _navigate);
+        return LiaisonOfficerDashboardSection(
+          user: _user,
+          onNavigate: _navigate,
+        );
       case UserRole.liaisonAssistant:
-        return LiaisonAssistantDashboardSection(user: _user, onNavigate: _navigate);
-      default:
-        return AdminDashboardSection(user: _user, onNavigate: _navigate);
+        return LiaisonAssistantDashboardSection(
+          user: _user,
+          onNavigate: _navigate,
+        );
+
     }
   }
 
   // ── Section switcher ────────────────────────────────────────────────────
   Widget _buildSection() {
     switch (_currentSection) {
-      case 'dashboard':     return _buildDashboard();
-      case 'projects':      return ProjectsSection(
-                              user: _user,
-                              onToast: _toast,
-                              editProjectId: _projectToEdit,
-                              onNavigateToSite: (projectId) {
-                                setState(() {
-                                  _siteProjectId = projectId;
-                                  _currentSection = 'site';
-                                });
-                              },
-                            );
-      case 'tasks':         return TasksSection(user: _user, onToast: _toast);
-      case 'attendance':    if ([UserRole.admin, UserRole.hr, UserRole.coFounder].contains(_user.role)) {
-                              return EmployeesSection(onToast: _toast, initialTabIndex: 1);
-                            }
-                            return AttendanceSection(user: _user, onToast: _toast);
-      case 'leaves':        return LeavesSection(user: _user, onToast: _toast);
-      case 'site':          return SitesScreen(
-                              user: _user, 
-                              onToast: _toast,
-                              initialProjectId: _siteProjectId,
-                              onEditProject: (id) {
-                                setState(() {
-                                  _siteProjectId = null; // clear after use
-                                  _projectToEdit = id;
-                                  _currentSection = 'projects';
-                                });
-                              },
-                            );
-      case 'materials':     return MaterialsSection(user: _user, onToast: _toast);
-      case 'renders':       return RendersSection(user: _user, onToast: _toast);
-      case 'employees':     return EmployeesSection(onToast: _toast);
-      case 'clients':       return ClientsSection(onToast: _toast);
-      case 'reports':       return ReportsSection(onToast: _toast);
-      case 'notifications': return NotificationsSection(onToast: _toast);
-      case 'profile':       return ProfileSection(user: _user, onLogout: widget.onLogout, onToast: _toast);
-      case 'enquiry':       return EnquirySection(user: _user, onToast: _toast);
-      default:              return _buildDashboard();
+      case 'dashboard':
+        return _buildDashboard();
+      case 'projects':
+        return ProjectsSection(
+          user: _user,
+          onToast: _toast,
+          editProjectId: _projectToEdit,
+          onNavigateToSite: (projectId) {
+            setState(() {
+              _siteProjectId = projectId;
+              _currentSection = 'site';
+            });
+          },
+        );
+      case 'tasks':
+        return TasksSection(user: _user, onToast: _toast);
+      case 'attendance':
+        if ([
+          UserRole.admin,
+          UserRole.hr,
+          UserRole.coFounder,
+        ].contains(_user.role)) {
+          return EmployeesSection(onToast: _toast, initialTabIndex: 1);
+        }
+        return AttendanceSection(user: _user, onToast: _toast);
+      case 'leaves':
+        return LeavesSection(user: _user, onToast: _toast);
+      case 'site':
+        return SitesScreen(
+          user: _user,
+          onToast: _toast,
+          initialProjectId: _siteProjectId,
+          onEditProject: (id) {
+            setState(() {
+              _siteProjectId = null; // clear after use
+              _projectToEdit = id;
+              _currentSection = 'projects';
+            });
+          },
+        );
+      case 'materials':
+        return MaterialsSection(user: _user, onToast: _toast);
+      case 'renders':
+        return RendersSection(user: _user, onToast: _toast);
+      case 'employees':
+        return EmployeesSection(onToast: _toast);
+      case 'clients':
+        return ClientsSection(onToast: _toast);
+      case 'reports':
+        return ReportsSection(onToast: _toast);
+      case 'notifications':
+        return NotificationsSection(onToast: _toast);
+      case 'profile':
+        return ProfileSection(
+          user: _user,
+          onLogout: widget.onLogout,
+          onToast: _toast,
+          onProfileUpdate: _refreshProfile,
+        );
+      case 'enquiry':
+        return EnquirySection(user: _user, onToast: _toast);
+      case 'clientProjectOverview':
+        return ClientProjectOverviewSection(
+          user: _user,
+          projectId: _selectedProjectId ?? 0,
+          onBack: () => setState(() => _currentSection = 'dashboard'),
+        );
+      default:
+        return _buildDashboard();
     }
   }
 
@@ -233,10 +317,12 @@ class _MainAppScreenState extends State<MainAppScreen> {
   @override
   Widget build(BuildContext context) {
     // Keep status bar icons dark
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
 
     return Scaffold(
       key: _scaffoldKey,
@@ -268,15 +354,15 @@ class _MainAppScreenState extends State<MainAppScreen> {
       // Use SafeArea padding + explicit height so nothing clips on any device
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top,
-        left: 16,
-        right: 16,
+        left: 16.w,
+        right: 16.w,
       ),
-      height: MediaQuery.of(context).padding.top + 56,
+      height: MediaQuery.of(context).padding.top + 56.h,
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.96),
+        color: AppColors.surface.withValues(alpha: 0.96),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -288,12 +374,29 @@ class _MainAppScreenState extends State<MainAppScreen> {
           InkWell(
             onTap: () => _scaffoldKey.currentState?.openDrawer(),
             borderRadius: BorderRadius.circular(999),
-            child: const Padding(
-              padding: EdgeInsets.all(8),
-              child: Icon(Icons.menu_rounded, color: AppColors.primary, size: 24),
+            child: Padding(
+              padding: EdgeInsets.all(8.w),
+              child: Icon(
+                Icons.menu_rounded,
+                color: AppColors.primary,
+                size: 24.w,
+              ),
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10.w),
+          // Logo
+          Container(
+            width: 32.w,
+            height: 32.w,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8.w),
+              image: const DecorationImage(
+                image: AssetImage('assets/icon/yw_logo_final.png'),
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          SizedBox(width: 12.w),
           // Title + subtitle
           Expanded(
             child: Column(
@@ -303,7 +406,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 Text(
                   _topbarTitle,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primary,
                     height: 1.2,
@@ -312,7 +415,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 Text(
                   _user.info.label,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
+                    fontSize: 11.sp,
                     color: AppColors.onSurfaceVariant,
                     height: 1.1,
                   ),
@@ -327,10 +430,13 @@ class _MainAppScreenState extends State<MainAppScreen> {
               InkWell(
                 onTap: () => _navigate('notifications'),
                 borderRadius: BorderRadius.circular(999),
-                child: const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Icon(Icons.notifications_rounded,
-                      color: AppColors.primary, size: 22),
+                child: Padding(
+                  padding: EdgeInsets.all(8.w),
+                  child: Icon(
+                    Icons.notifications_rounded,
+                    color: AppColors.primary,
+                    size: 22.w,
+                  ),
                 ),
               ),
               Positioned(
@@ -354,9 +460,11 @@ class _MainAppScreenState extends State<MainAppScreen> {
             onTap: () => _navigate('profile'),
             child: AvatarWidget(
               initials: _user.info.initials,
-              imageUrl: _user.info.profileImage, // Now uses the new network image capability
-              size: 36,
-              fontSize: 13,
+              imageUrl: _user
+                  .info
+                  .profileImage, // Now uses the new network image capability
+              size: 36.w,
+              fontSize: 13.sp,
             ),
           ),
         ],
@@ -369,10 +477,10 @@ class _MainAppScreenState extends State<MainAppScreen> {
     final items = _bottomNavItems;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.97),
+        color: AppColors.surface.withValues(alpha: 0.97),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, -2),
           ),
@@ -380,8 +488,8 @@ class _MainAppScreenState extends State<MainAppScreen> {
       ),
       // SafeArea bottom padding
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).padding.bottom + 4,
-        top: 4,
+        bottom: MediaQuery.of(context).padding.bottom + 4.h,
+        top: 4.h,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -400,11 +508,13 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     // Active: filled background pill
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 4),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 14.w,
+                        vertical: 4.h,
+                      ),
                       decoration: BoxDecoration(
                         color: active
-                            ? AppColors.primary.withOpacity(0.12)
+                            ? AppColors.primary.withValues(alpha: 0.12)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(999),
                       ),
@@ -413,19 +523,16 @@ class _MainAppScreenState extends State<MainAppScreen> {
                         color: active
                             ? AppColors.primary
                             : AppColors.onSurfaceVariant,
-                        size: 22,
+                        size: 22.w,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2.h),
                     Text(
                       cfg.label,
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 10,
-                        fontWeight:
-                            active ? FontWeight.w700 : FontWeight.w500,
-                        color: active
-                            ? AppColors.primary
-                            : AppColors.outline,
+                        fontSize: 10.sp,
+                        fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                        color: active ? AppColors.primary : AppColors.outline,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -449,10 +556,10 @@ class _MainAppScreenState extends State<MainAppScreen> {
           // Header
           Container(
             padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 16,
-              bottom: 20,
-              left: 20,
-              right: 20,
+              top: MediaQuery.of(context).padding.top + 16.h,
+              bottom: 20.h,
+              left: 20.w,
+              right: 20.w,
             ),
             decoration: BoxDecoration(gradient: goldGradient),
             child: Column(
@@ -461,24 +568,21 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 Row(
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: 44.w,
+                      height: 44.w,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12.w),
                       ),
-                      child: Center(
-                        child: Text(
-                          'YW',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 18,
-                            color: Colors.white,
-                          ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12.w),
+                        child: Image.asset(
+                          'assets/icon/yw_logo_final.png',
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,15 +591,15 @@ class _MainAppScreenState extends State<MainAppScreen> {
                             'YW Architects',
                             style: GoogleFonts.plusJakartaSans(
                               fontWeight: FontWeight.w700,
-                              fontSize: 16,
+                              fontSize: 16.sp,
                               color: Colors.white,
                             ),
                           ),
                           Text(
                             'Management System',
                             style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11,
-                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 11.sp,
+                              color: Colors.white.withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -503,23 +607,25 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16.h),
                 // User chip
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 10.h,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12.w),
                   ),
                   child: Row(
                     children: [
                       AvatarWidget(
                         initials: _user.info.initials,
-                        size: 36,
-                        fontSize: 13,
+                        size: 36.w,
+                        fontSize: 13.sp,
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: 10.w),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,14 +635,14 @@ class _MainAppScreenState extends State<MainAppScreen> {
                               style: GoogleFonts.plusJakartaSans(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
-                                fontSize: 13,
+                                fontSize: 13.sp,
                               ),
                             ),
                             Text(
                               _user.info.label,
                               style: GoogleFonts.plusJakartaSans(
-                                color: Colors.white.withOpacity(0.65),
-                                fontSize: 11,
+                                color: Colors.white.withValues(alpha: 0.65),
+                                fontSize: 11.sp,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -556,14 +662,14 @@ class _MainAppScreenState extends State<MainAppScreen> {
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+                  padding: EdgeInsets.fromLTRB(8.w, 4.h, 8.w, 8.h),
                   child: Text(
                     'MAIN MENU',
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 10,
+                      fontSize: 10.sp,
                       fontWeight: FontWeight.w700,
                       color: AppColors.onSurfaceVariant,
-                      letterSpacing: 1.2,
+                      letterSpacing: 1.2.w,
                     ),
                   ),
                 ),
@@ -573,22 +679,23 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   return ListTile(
                     dense: true,
                     selected: active,
-                    selectedTileColor: AppColors.primary.withOpacity(0.08),
+                    selectedTileColor: AppColors.primary.withValues(alpha: 0.08),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    leading: Icon(cfg.iconData,
-                        size: 20,
-                        color: active
-                            ? AppColors.primary
-                            : AppColors.onSurfaceVariant),
+                      borderRadius: BorderRadius.circular(12.w),
+                    ),
+                    leading: Icon(
+                      cfg.iconData,
+                      size: 20.w,
+                      color: active
+                          ? AppColors.primary
+                          : AppColors.onSurfaceVariant,
+                    ),
                     title: Text(
                       cfg.label,
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                        color: active
-                            ? AppColors.primary
-                            : AppColors.onSurface,
+                        color: active ? AppColors.primary : AppColors.onSurface,
                       ),
                     ),
                     onTap: () {
@@ -613,13 +720,17 @@ class _MainAppScreenState extends State<MainAppScreen> {
             child: ListTile(
               dense: true,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              leading: const Icon(Icons.logout_rounded,
-                  color: AppColors.error, size: 20),
+                borderRadius: BorderRadius.circular(12.w),
+              ),
+              leading: Icon(
+                Icons.logout_rounded,
+                color: AppColors.error,
+                size: 20.w,
+              ),
               title: Text(
                 'Sign Out',
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
                   color: AppColors.error,
                 ),

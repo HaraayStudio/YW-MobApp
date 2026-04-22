@@ -5,11 +5,13 @@ import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'theme/app_theme.dart';
 import 'models/app_models.dart';
-import 'screens/splash_screen.dart';   // ← fixed splash (no white flash)
+import 'screens/splash_screen1.dart'; // ← New construction splash
 import 'screens/auth_screens.dart';
 import 'screens/main_app_screen.dart';
 import 'services/token_service.dart';
 import 'services/auth_service.dart';
+import 'api/constants.dart';
+import 'utils/responsive.dart';
 
 final themeNotifier = ValueNotifier<ThemeMode>(ThemeMode.light);
 Future<void>? _initFuture;
@@ -36,6 +38,9 @@ Future<void> _onBackgroundInit() async {
     
     // Critical: Initialize TokenService (storage)
     await TokenService.init();
+    
+    // Load dynamic API host settings
+    await ApiConstants.loadFromSettings();
     
     // Status bar: transparent + dark icons
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -158,9 +163,7 @@ class _AppRootState extends State<AppRoot> {
     }
   }
 
-  void _checkAutoLogin() {
-    // Moved logic into _initAndCheckAutoLogin for async safety
-  }
+
 
   Future<void> _onSplashComplete() async {
     // Ensure initialization is ABSOLUTELY DONE before leaving splash
@@ -188,9 +191,10 @@ class _AppRootState extends State<AppRoot> {
 
   @override
   Widget build(BuildContext context) {
+    Responsive.init(context);
     switch (_state) {
       case _AppState.splash:
-        return SplashScreen(onComplete: _onSplashComplete);
+        return SplashScreen1(onComplete: _onSplashComplete);
 
       case _AppState.login:
         return LoginScreen(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/site_model.dart';
+import 'package:yw_architects/utils/responsive.dart';
 import 'site_card.dart';
 
 class SiteListSection extends StatelessWidget {
@@ -34,11 +35,11 @@ class SiteListSection extends StatelessWidget {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 32,
-                bottom: 20,
+              padding: EdgeInsets.only(
+                left: 20.w,
+                right: 20.w,
+                top: 32.h,
+                bottom: 20.h,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,16 +47,16 @@ class SiteListSection extends StatelessWidget {
                   Text(
                     "All Sites",
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 22,
+                      fontSize: 22.sp,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF1B232A),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Text(
                     "${sites.length} sites",
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
                       color: AppColors.onSurfaceVariant,
                     ),
@@ -81,7 +82,7 @@ class SiteListSection extends StatelessWidget {
                       Icon(
                         Icons.construction_rounded,
                         size: 64,
-                        color: AppColors.outline.withOpacity(0.3),
+                        color: AppColors.outline.withValues(alpha: 0.3),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -99,7 +100,7 @@ class SiteListSection extends StatelessWidget {
             else
               // Grid View
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     // Decide whether we are displaying 2 columns (phone) or 3+ (tablet/web)
@@ -112,8 +113,8 @@ class SiteListSection extends StatelessWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16.w,
+                        mainAxisSpacing: 16.w,
                         childAspectRatio:
                             0.85, // Adjust this ratio based on card height/width visualization
                       ),
@@ -142,7 +143,7 @@ class SiteListSection extends StatelessWidget {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(

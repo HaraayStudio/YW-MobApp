@@ -15,13 +15,13 @@ class ProfileService {
 
   // ── Auth Headers ────────────────────────────────────────────────────────────
   static Map<String, String> get _authHeaders => {
-        "Authorization": "Bearer ${TokenService.accessToken}",
-      };
+    "Authorization": "Bearer ${TokenService.accessToken}",
+  };
 
   static Map<String, String> get _jsonHeaders => {
-        "Authorization": "Bearer ${TokenService.accessToken}",
-        "Content-Type": "application/json",
-      };
+    "Authorization": "Bearer ${TokenService.accessToken}",
+    "Content-Type": "application/json",
+  };
 
   // ── Resilient HTTP Helpers ───────────────────────────────────────────────────
   // These helpers disable automatic redirect-following to prevent crashes on
@@ -33,10 +33,14 @@ class ProfileService {
       final request = http.Request('GET', url)
         ..headers.addAll(_authHeaders)
         ..followRedirects = false;
-      
+
       // Send and await response within a single timeout context
-      final streamed = await client.send(request).timeout(const Duration(seconds: 15));
-      final response = await http.Response.fromStream(streamed).timeout(const Duration(seconds: 10));
+      final streamed = await client
+          .send(request)
+          .timeout(const Duration(seconds: 15));
+      final response = await http.Response.fromStream(
+        streamed,
+      ).timeout(const Duration(seconds: 10));
       return response;
     } finally {
       client.close();
@@ -52,8 +56,12 @@ class ProfileService {
       if (body != null) {
         request.body = body is String ? body : jsonEncode(body);
       }
-      final streamed = await client.send(request).timeout(const Duration(seconds: 15));
-      final response = await http.Response.fromStream(streamed).timeout(const Duration(seconds: 10));
+      final streamed = await client
+          .send(request)
+          .timeout(const Duration(seconds: 15));
+      final response = await http.Response.fromStream(
+        streamed,
+      ).timeout(const Duration(seconds: 10));
       return response;
     } finally {
       client.close();
@@ -62,7 +70,11 @@ class ProfileService {
 
   // ── API Methods ─────────────────────────────────────────────────────────────
 
-  static Future<Map<String, dynamic>?> getMyProfile({UserRole? role, int? id, String? email}) async {
+  static Future<Map<String, dynamic>?> getMyProfile({
+    UserRole? role,
+    int? id,
+    String? email,
+  }) async {
     try {
       Uri url;
       int? effectiveId = id;
@@ -70,16 +82,20 @@ class ProfileService {
       if (role == UserRole.client) {
         // Robust Fallback: If ID is missing, try resolving by email
         if ((effectiveId == null || effectiveId == 0) && email != null) {
-          debugPrint("PROFILE SERVICE — ID is 0, attempting email resolution for $email...");
+          debugPrint(
+            "PROFILE SERVICE — ID is 0, attempting email resolution for $email...",
+          );
           effectiveId = await ClientService.resolveClientIdByEmail(email);
         }
-        
+
         if (effectiveId == null || effectiveId == 0) {
           debugPrint("PROFILE SERVICE — FAILED to resolve client ID.");
           return null;
         }
-        
-        url = Uri.parse("${ApiConstants.baseUrl}/clients/getclientbyid/$effectiveId");
+
+        url = Uri.parse(
+          "${ApiConstants.baseUrl}/clients/getclientbyid/$effectiveId",
+        );
       } else {
         url = Uri.parse("$_baseUrl/getemployeedata");
       }
@@ -87,9 +103,11 @@ class ProfileService {
       final response = await _resilientGet(url);
       debugPrint("PROFILE SERVICE — GET STATUS: ${response.statusCode}");
 
-      if (response.statusCode == 200 || response.statusCode == 302 || response.statusCode == 201) {
+      if (response.statusCode == 200 ||
+          response.statusCode == 302 ||
+          response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
-        
+
         // Handle instances where data is un-wrapped and prevent List crashes
         dynamic rawData;
         if (decoded is Map<String, dynamic> && decoded.containsKey('data')) {
@@ -97,10 +115,10 @@ class ProfileService {
         } else {
           rawData = decoded;
         }
-        
+
         // Use the resilient extractor to flatten the structure
         final data = extractUserData(rawData);
-        
+
         debugPrint("PROFILE SERVICE — KEYS RECEIVED: ${data?.keys.toList()}");
         return data;
       }
@@ -113,14 +131,19 @@ class ProfileService {
   /// GET /api/employees/getmyprojects
   /// Returns the list of projects assigned to the current employee.
   /// Used to calculate the real-time project count shown on the profile.
-  static Future<List<dynamic>> getMyProjects({int page = 0, int size = 100}) async {
+  static Future<List<dynamic>> getMyProjects({
+    int page = 0,
+    int size = 100,
+  }) async {
     try {
       final response = await _resilientGet(
         Uri.parse("$_baseUrl/getmyprojects?page=$page&size=$size"),
       );
       debugPrint("PROFILE SERVICE — PROJECTS STATUS: ${response.statusCode}");
 
-      if (response.statusCode == 200 || response.statusCode == 302 || response.statusCode == 201) {
+      if (response.statusCode == 200 ||
+          response.statusCode == 302 ||
+          response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
         return decoded['data'] ?? [];
       }
@@ -152,10 +175,15 @@ class ProfileService {
 
   /// PUT /api/employees/updatemypassword
   /// Changes the password of the currently authenticated user.
-  static Future<bool> updateMyPassword(String oldPassword, String newPassword) async {
+  static Future<bool> updateMyPassword(
+    String oldPassword,
+    String newPassword,
+  ) async {
     try {
       final response = await _resilientPut(
-        Uri.parse("$_baseUrl/updatemypassword?oldPassword=$oldPassword&newPassword=$newPassword"),
+        Uri.parse(
+          "$_baseUrl/updatemypassword?oldPassword=$oldPassword&newPassword=$newPassword",
+        ),
         null,
       );
       debugPrint("PROFILE SERVICE — PASSWORD STATUS: ${response.statusCode}");
@@ -175,7 +203,7 @@ class ProfileService {
         Uri.parse("$_baseUrl/updatemyprofileimage"),
       );
       request.headers['Authorization'] = "Bearer ${TokenService.accessToken}";
-      
+
       // Determine content type to prevent backend IllegalArgumentException rejections
       final ext = filePath.split('.').last.toLowerCase();
       MediaType mediaType = MediaType('image', 'jpeg'); // default fallback
@@ -185,13 +213,17 @@ class ProfileService {
         mediaType = MediaType('image', 'webp');
       }
 
-      request.files.add(await http.MultipartFile.fromPath(
-        'profileimage', 
-        filePath,
-        contentType: mediaType,
-      ));
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'profileimage',
+          filePath,
+          contentType: mediaType,
+        ),
+      );
 
-      final streamed = await request.send().timeout(const Duration(seconds: 30));
+      final streamed = await request.send().timeout(
+        const Duration(seconds: 30),
+      );
       final response = await http.Response.fromStream(streamed);
       debugPrint("PROFILE SERVICE — IMAGE STATUS: ${response.statusCode}");
       if (response.statusCode != 200 && response.statusCode != 201) {
@@ -266,12 +298,18 @@ class ProfileService {
 
     // Fallback specific fields
     if (!combined.containsKey('name') || combined['name'] == '') {
-       final first = combined['firstName']?.toString() ?? combined['first_name']?.toString() ?? '';
-       final last = combined['lastName']?.toString() ?? combined['last_name']?.toString() ?? '';
-       final full = '$first $last'.trim();
-       if (full.isNotEmpty) {
-         combined['name'] = full;
-       }
+      final first =
+          combined['firstName']?.toString() ??
+          combined['first_name']?.toString() ??
+          '';
+      final last =
+          combined['lastName']?.toString() ??
+          combined['last_name']?.toString() ??
+          '';
+      final full = '$first $last'.trim();
+      if (full.isNotEmpty) {
+        combined['name'] = full;
+      }
     }
 
     return combined;
@@ -280,14 +318,16 @@ class ProfileService {
   /// Returns the full name by checking both snake_case and camelCase keys.
   static String extractFullName(Map<String, dynamic>? data) {
     if (data == null) return '';
-    
+
     // Check if there is already a flattened or explicitly provided full 'name'
     if (data['name'] != null && data['name'].toString().trim().isNotEmpty) {
       return data['name'].toString().trim();
     }
-    
-    final first = data['firstName']?.toString() ?? data['first_name']?.toString() ?? '';
-    final last = data['lastName']?.toString() ?? data['last_name']?.toString() ?? '';
+
+    final first =
+        data['firstName']?.toString() ?? data['first_name']?.toString() ?? '';
+    final last =
+        data['lastName']?.toString() ?? data['last_name']?.toString() ?? '';
     return '$first $last'.trim();
   }
 
@@ -302,8 +342,20 @@ class ProfileService {
     if (rawDate == null || rawDate.isEmpty) return '—';
     try {
       final dt = DateTime.parse(rawDate);
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
       return "${dt.day} ${months[dt.month - 1]} ${dt.year}";
     } catch (_) {
       return rawDate;
