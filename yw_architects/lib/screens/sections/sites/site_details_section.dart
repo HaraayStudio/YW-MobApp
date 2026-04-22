@@ -1285,6 +1285,48 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
     }
   }
 
+  void _viewVisitPhoto(SiteVisitPhoto photo) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(10),
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            InteractiveViewer(
+              child: Image.network(
+                photo.imageUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (c, e, s) => const Center(
+                  child: Icon(Icons.broken_image, size: 64, color: Colors.white),
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.close_rounded, color: Colors.white, size: 30),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _viewVisitDocument(SiteVisitDocument doc) async {
+    if (doc.documentUrl.isEmpty) return;
+    final url = Uri.parse(doc.documentUrl);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Could not open document")),
+        );
+      }
+    }
+  }
+
   Widget _buildDocumentTableHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
@@ -1903,49 +1945,59 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   color: AppColors.onSurface,
                 ),
               ),
-              Row(
-                children: [
-                  Text(
-                    DateFormat('d MMM yyyy, h:mm a').format(visit.visitDate),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      color: AppColors.outline,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (_isManager)
-                    GestureDetector(
-                      onTap: () => _showEditSiteVisitDialog(visit),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        DateFormat('d MMM yyyy, h:mm a').format(visit.visitDate),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          color: AppColors.outline,
+                          fontWeight: FontWeight.w500,
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.edit_rounded,
-                              size: 12,
-                              color: AppColors.primary,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "Edit",
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
-                ],
+                    if (_isManager) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => _showEditSiteVisitDialog(visit),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.edit_rounded,
+                                size: 12,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "Edit",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -1970,21 +2022,27 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                 scrollDirection: Axis.horizontal,
                 itemCount: visit.photos.length,
                 separatorBuilder: (c, i) => const SizedBox(width: 8),
-                itemBuilder: (c, i) => ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    visit.photos[i].imageUrl,
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                    errorBuilder: (c, e, s) => Container(
-                      color: Colors.grey.shade200,
-                      width: 60,
-                      height: 60,
-                      child: const Icon(Icons.broken_image, size: 20),
+                itemBuilder: (c, i) {
+                  final photo = visit.photos[i];
+                  return GestureDetector(
+                    onTap: () => _viewVisitPhoto(photo),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        photo.imageUrl,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) => Container(
+                          color: Colors.grey.shade200,
+                          width: 60,
+                          height: 60,
+                          child: const Icon(Icons.broken_image, size: 20),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           ],
@@ -1995,34 +2053,37 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
               runSpacing: 8,
               children: visit.documents
                   .map(
-                    (doc) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3E5F5),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFE1BEE7)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.description,
-                            size: 14,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            doc.documentName,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                    (doc) => GestureDetector(
+                      onTap: () => _viewVisitDocument(doc),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3E5F5),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFE1BEE7)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.description,
+                              size: 14,
                               color: AppColors.primary,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            Text(
+                              doc.documentName,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   )
@@ -3506,48 +3567,39 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           if (_detailedSite.meetings.isEmpty)
             _buildEmptyMeetingsState()
           else
-            ..._detailedSite.meetings
-                .where((m) {
-                  final statusMatch =
-                      _selectedStatusFilter == 'All' ||
-                      m.status.toUpperCase() ==
-                          _selectedStatusFilter.toUpperCase();
-                  final typeMatch =
-                      _selectedTypeFilter == 'All' ||
-                      m.type.toUpperCase() == _selectedTypeFilter.toUpperCase();
-                  return statusMatch && typeMatch;
-                })
-                .map((m) => _buildMeetingCard(m))
-                .toList(),
+            ..._detailedSite.meetings.where((m) {
+              // Normalize strings for robust matching (handle underscores/spaces and casing)
+              final mStatus = m.status.toUpperCase().replaceAll('_', ' ');
+              final sFilter = _selectedStatusFilter.toUpperCase().replaceAll('_', ' ');
+              
+              final statusMatch = sFilter == 'ALL' || mStatus == sFilter;
+              
+              final mType = m.type.toUpperCase().replaceAll('_', ' ');
+              final tFilter = _selectedTypeFilter.toUpperCase().replaceAll('_', ' ');
+              
+              final typeMatch = tFilter == 'ALL' || mType == tFilter;
+              
+              return statusMatch && typeMatch;
+            }).map((m) => _buildMeetingCard(m)).toList(),
         ],
       ),
     );
   }
 
   Widget _buildMeetingSummaryCards() {
-    final scheduled = _detailedSite.meetings
-        .where((m) => m.status == "SCHEDULED")
-        .length;
-    final ongoing = _detailedSite.meetings
-        .where((m) => m.status == "ONGOING")
-        .length;
-    final completed = _detailedSite.meetings
-        .where((m) => m.status == "COMPLETED")
-        .length;
-    final cancelled = _detailedSite.meetings
-        .where((m) => m.status == "CANCELLED")
-        .length;
+    final meetings = _detailedSite.meetings;
+    final scheduled = meetings.where((m) => m.status.toUpperCase() == 'SCHEDULED').length;
+    final ongoing = meetings.where((m) => m.status.toUpperCase() == 'ONGOING').length;
+    final completed = meetings.where((m) => m.status.toUpperCase() == 'COMPLETED').length;
+    final cancelled = meetings.where((m) => m.status.toUpperCase() == 'CANCELLED').length;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Row(
         children: [
-          _buildSummaryCard(
-            "Total",
-            _detailedSite.meetings.length,
-            Colors.blue,
-          ),
-          _buildSummaryCard("Scheduled", scheduled, Colors.indigo),
+          _buildSummaryCard("All", meetings.length, Colors.grey),
+          _buildSummaryCard("Scheduled", scheduled, Colors.blue),
           _buildSummaryCard("Ongoing", ongoing, Colors.orange),
           _buildSummaryCard("Completed", completed, Colors.green),
           _buildSummaryCard("Cancelled", cancelled, Colors.red),
@@ -3557,36 +3609,46 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
   }
 
   Widget _buildSummaryCard(String label, int count, Color color) {
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            "$count",
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: color.withValues(alpha: 0.8),
-            ),
+    final isSelected = _selectedStatusFilter.toUpperCase() == label.toUpperCase();
+    
+    return GestureDetector(
+      onTap: () => setState(() => _selectedStatusFilter = label),
+      child: Container(
+        width: 140,
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.1) : color.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? color : color.withValues(alpha: 0.2),
+            width: isSelected ? 2 : 1,
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: AppColors.outline,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label.toUpperCase(),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: isSelected ? color : color.withValues(alpha: 0.7),
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              "$count",
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -3762,14 +3824,16 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Expanded(
                             child: Text(
                               meeting.title,
                               style: GoogleFonts.plusJakartaSans(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.onSurface,
+                                letterSpacing: -0.2,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -3779,98 +3843,69 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                           _buildStatusChip(meeting.status),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         meeting.agenda,
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          color: AppColors.outline,
+                          fontSize: 13,
+                          color: AppColors.onSurface.withValues(alpha: 0.7),
                           fontWeight: FontWeight.w500,
+                          height: 1.4,
                         ),
-                        maxLines: 2,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 12),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildMeetingTime(
-                              Icons.schedule_rounded,
-                              meeting.scheduledAt,
-                            ),
-                            if (meeting.startedAt != null) ...[
-                              const SizedBox(width: 8),
-                              _buildMeetingTime(
-                                Icons.play_circle_outline_rounded,
-                                meeting.startedAt!,
-                              ),
-                            ],
-                            const SizedBox(width: 8),
-                            _buildTypeChip(meeting.type),
-                            if (meeting.mom != null &&
-                                meeting.mom!.isNotEmpty) ...[
-                              const SizedBox(width: 8),
-                              _buildMomBadge(),
-                            ],
-                          ],
-                        ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildMeetingTime(
+                            Icons.calendar_today_rounded,
+                            meeting.scheduledAt,
+                          ),
+                          _buildTypeChip(meeting.type),
+                          if (meeting.mom != null && meeting.mom!.isNotEmpty)
+                            _buildMomBadge(),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Column(
-                  children: [
-                    TextButton(
-                      onPressed: () => _showMeetingDetailDialog(meeting),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: const BorderSide(
-                            color: AppColors.outlineVariant,
-                          ),
-                        ),
-                      ),
-                      child: Text(
-                        "View",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.outlineVariant),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: () => _showMeetingDetailDialog(meeting),
+                    icon: const Icon(Icons.visibility_outlined, size: 16),
+                    label: const Text("View Details"),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    if (!_isClient) ...[
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () =>
-                            _handleDeleteMeeting(meeting.id, meeting.title),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          backgroundColor: Colors.red.withValues(alpha: 0.05),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          "Delete",
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
+                if (!_isClient) ...[
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => _handleDeleteMeeting(meeting.id, meeting.title),
+                    icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                    color: Colors.red.shade400,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.red.withValues(alpha: 0.05),
+                      padding: const EdgeInsets.all(10),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -4080,7 +4115,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
             child: Text(
               value,
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: isLink ? Colors.blue : AppColors.onSurface,
               ),
@@ -4153,19 +4188,27 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
   }
 
   Widget _buildMeetingTime(IconData icon, DateTime time) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: AppColors.outline),
-        const SizedBox(width: 4),
-        Text(
-          DateFormat('d MMM yyyy, h:mm a').format(time),
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 11,
-            color: AppColors.outline,
-            fontWeight: FontWeight.w600,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.outlineVariant.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppColors.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Text(
+            DateFormat('dd MMM, hh:mm a').format(time),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 11,
+              color: AppColors.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -4713,7 +4756,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                                   FittedBox(
                                     fit: BoxFit.scaleDown,
                                     child: Text(
-                                      "Save Meeting",
+                                      "Save ",
                                       style: GoogleFonts.plusJakartaSans(
                                         fontWeight: FontWeight.w800,
                                         color: Colors.white,
@@ -5389,42 +5432,26 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          rera.reraNumber,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.onSurface,
+                        Expanded(
+                          child: Text(
+                            rera.reraNumber,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.onSurface,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildReraSmallInfo(
-                                Icons.assignment_outlined,
-                                "Reg: ${DateFormat('d MMM yyyy').format(rera.registrationDate)}",
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildReraSmallInfo(
-                                Icons.hourglass_bottom_rounded,
-                                "End: ${DateFormat('d MMM yyyy').format(rera.expectedCompletionDate)}",
-                              ),
-                            ),
-                          ],
-                        ),
+                        const SizedBox(width: 8),
+                        _buildCompactReraStatus(rera.status),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  _buildCompactReraStatus(rera.status),
-                  const SizedBox(width: 8),
-                  if (!_isClient)
+                  if (!_isClient) ...[
+                    const SizedBox(width: 12),
                     InkWell(
                       onTap: () => _handleDeleteRera(rera.id, rera.reraNumber),
                       child: Container(
@@ -5443,6 +5470,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                         ),
                       ),
                     ),
+                  ],
                 ],
               ),
               children: [
@@ -5461,7 +5489,7 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisCount: 2,
-                        childAspectRatio: 4,
+                        childAspectRatio: 3.2,
                         mainAxisSpacing: 20,
                         children: [
                           _buildReraDetailItem("RERA NUMBER", rera.reraNumber),
@@ -5542,9 +5570,9 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
           child: Text(
             text,
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 10,
+              fontSize: 11,
               color: AppColors.outline,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -6170,6 +6198,25 @@ Date        : ${DateFormat('dd MMM yyyy').format(DateTime.now())}''';
   Widget _buildCompactReraStatus(String status) {
     final bool isActive = status.toUpperCase() == 'ACTIVE';
     final Color color = isActive ? Colors.green : Colors.red;
+
+    if (isActive) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.4),
+              blurRadius: 4,
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -7342,12 +7389,7 @@ void _showAddDocumentDialog(
                               color: Colors.white,
                             ),
                           )
-                        : Text(
-                            "Upload Document",
-                            style: GoogleFonts.plusJakartaSans(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                        : const Icon(Icons.upload_rounded, size: 20),
                   ),
                 ],
               ),

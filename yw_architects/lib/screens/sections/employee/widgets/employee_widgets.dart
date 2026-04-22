@@ -6,6 +6,7 @@ import 'package:yw_architects/utils/responsive.dart';
 import 'package:yw_architects/models/app_models.dart';
 import 'package:yw_architects/services/employee_service.dart';
 import 'package:yw_architects/screens/sections/employee/models/employee_models.dart';
+import 'package:intl/intl.dart';
 
 class EmployeeCard extends StatelessWidget {
   final EmployeeModel employee;
@@ -192,18 +193,43 @@ class _EditEmployeeModalState extends State<EditEmployeeModal> {
   late TextEditingController _lNameCtrl;
   late TextEditingController _emailCtrl;
   late TextEditingController _phoneCtrl;
-  
+  late TextEditingController _adharCtrl;
+  late TextEditingController _panCtrl;
+  late TextEditingController _birthDateCtrl;
+  late TextEditingController _joinDateCtrl;
+  late TextEditingController _leaveDateCtrl;
+
   late UserRole _selectedRole;
+  late String _selectedGender;
+  late String _selectedBloodGroup;
+  late String _selectedStatus;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _fNameCtrl = TextEditingController(text: widget.employee.firstName);
-    _lNameCtrl = TextEditingController(text: widget.employee.lastName);
-    _emailCtrl = TextEditingController(text: widget.employee.email);
-    _phoneCtrl = TextEditingController(text: widget.employee.phone);
-    _selectedRole = widget.employee.role;
+    final e = widget.employee;
+    _fNameCtrl = TextEditingController(text: e.firstName);
+    _lNameCtrl = TextEditingController(text: e.lastName);
+    _emailCtrl = TextEditingController(text: e.email);
+    _phoneCtrl = TextEditingController(text: e.phone);
+    _adharCtrl = TextEditingController(text: e.adharNumber);
+    _panCtrl = TextEditingController(text: e.panNumber);
+    _birthDateCtrl = TextEditingController(text: e.birthDate);
+    _joinDateCtrl = TextEditingController(text: e.joinDate);
+    _leaveDateCtrl = TextEditingController(text: e.leaveDate);
+
+    _selectedRole = e.role;
+    
+    // Safety check for Gender
+    const genderOptions = ['Male', 'Female', 'Other'];
+    _selectedGender = genderOptions.contains(e.gender) ? e.gender : 'Male';
+    
+    // Safety check for Blood Group
+    const bloodOptions = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+    _selectedBloodGroup = bloodOptions.contains(e.bloodGroup) ? e.bloodGroup : 'A+';
+    
+    _selectedStatus = e.status.toUpperCase();
   }
 
   @override
@@ -212,6 +238,11 @@ class _EditEmployeeModalState extends State<EditEmployeeModal> {
     _lNameCtrl.dispose();
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
+    _adharCtrl.dispose();
+    _panCtrl.dispose();
+    _birthDateCtrl.dispose();
+    _joinDateCtrl.dispose();
+    _leaveDateCtrl.dispose();
     super.dispose();
   }
 
@@ -225,8 +256,15 @@ class _EditEmployeeModalState extends State<EditEmployeeModal> {
         'lastName': _lNameCtrl.text.trim(),
         'email': _emailCtrl.text.trim(),
         'phone': _phoneCtrl.text.trim(),
+        'adharNumber': _adharCtrl.text.trim(),
+        'panNumber': _panCtrl.text.trim(),
+        'birthDate': _birthDateCtrl.text.trim(),
+        'joinDate': _joinDateCtrl.text.trim(),
+        'leaveDate': _leaveDateCtrl.text.trim(),
+        'gender': _selectedGender,
+        'bloodGroup': _selectedBloodGroup,
         'role': roleToBackend(_selectedRole),
-        'status': widget.employee.status, // Keep status same during profile edit
+        'status': _selectedStatus,
       };
 
       final success = await EmployeeService.updateEmployee(widget.employee.id, payload);
@@ -248,10 +286,10 @@ class _EditEmployeeModalState extends State<EditEmployeeModal> {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        left: 24, 
-        right: 24, 
-        top: 12, 
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24
+        left: 24,
+        right: 24,
+        top: 12,
+        bottom: 24
       ),
       decoration: const BoxDecoration(
         color: AppColors.surface, 
@@ -279,7 +317,7 @@ class _EditEmployeeModalState extends State<EditEmployeeModal> {
               Row(
                 children: [
                   Expanded(child: _EmpFormField(label: 'FIRST NAME', controller: _fNameCtrl)),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(child: _EmpFormField(label: 'LAST NAME', controller: _lNameCtrl)),
                 ],
               ),
@@ -288,16 +326,88 @@ class _EditEmployeeModalState extends State<EditEmployeeModal> {
               const SizedBox(height: 16),
               _EmpFormField(label: 'PHONE NUMBER', controller: _phoneCtrl, keyboardType: TextInputType.phone, maxLength: 10, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
               const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _EmpFormField(
+                      label: 'AADHAAR NUMBER',
+                      controller: _adharCtrl,
+                      keyboardType: TextInputType.number,
+                      maxLength: 12,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _EmpFormField(
+                      label: 'PAN NUMBER',
+                      controller: _panCtrl,
+                      maxLength: 10,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _EmpDropdown<String>(
+                      label: 'GENDER',
+                      value: _selectedGender,
+                      items: ['Male', 'Female', 'Other']
+                          .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _selectedGender = v!),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _EmpDropdown<String>(
+                      label: 'BLOOD GROUP',
+                      value: _selectedBloodGroup,
+                      items: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-']
+                          .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _selectedBloodGroup = v!),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _EmpDateField(
+                      label: 'BIRTH DATE',
+                      controller: _birthDateCtrl,
+                      context: context,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _EmpDateField(
+                      label: 'JOIN DATE',
+                      controller: _joinDateCtrl,
+                      context: context,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               _EmpDropdown<UserRole>(
                 label: 'OFFICIAL ROLE',
                 value: _selectedRole,
-                items: roleMap.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value.name))).toList(),
+                items: roleMap.entries
+                    .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value.name)))
+                    .toList(),
                 onChanged: (v) => setState(() => _selectedRole = v!),
               ),
               const SizedBox(height: 32),
-              _isLoading 
-                ? const Center(child: CircularProgressIndicator()) 
-                : GoldGradientButton(text: 'Save Changes', onTap: _submit),
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : GoldGradientButton(text: 'Save Changes', onTap: _submit),
+              // Add space for keyboard
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 20),
             ],
           ),
         ),
@@ -327,13 +437,29 @@ class _EmpFormField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant, letterSpacing: 0.5)),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          label,
+          style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurfaceVariant,
+              letterSpacing: 0.5),
+        ),
+      ),
       const SizedBox(height: 4),
       TextFormField(
-        controller: controller, keyboardType: keyboardType,
+        controller: controller,
+        keyboardType: keyboardType,
         maxLength: maxLength,
         inputFormatters: inputFormatters,
-        decoration: AppTheme.inputDecoration('Enter $label').copyWith(counterText: ''),
+        style: const TextStyle(fontSize: 13),
+        decoration: AppTheme.inputDecoration('Enter $label').copyWith(
+          counterText: '',
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        ),
         validator: (v) => v == null || v.isEmpty ? 'Required' : null,
       ),
     ]);
@@ -348,32 +474,129 @@ class _PasswordInputField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('PASSWORD', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant)),
+      const Text('PASSWORD',
+          style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurfaceVariant)),
       const SizedBox(height: 4),
       TextFormField(
-        controller: controller, obscureText: !visible,
-        decoration: AppTheme.inputDecoration('Enter password', suffixIcon: IconButton(onPressed: onToggle, icon: Icon(visible ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 18))),
+        controller: controller,
+        obscureText: !visible,
+        style: const TextStyle(fontSize: 13),
+        decoration: AppTheme.inputDecoration('Enter password').copyWith(
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          suffixIcon: IconButton(
+            onPressed: onToggle,
+            icon: Icon(
+                visible ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                size: 18),
+          ),
+        ),
         validator: (v) => v == null || v.length < 4 ? 'Min 4 chars' : null,
       ),
     ]);
   }
 }
-
 class _EmpDropdown<T> extends StatelessWidget {
   final String label;
   final T value;
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?> onChanged;
   const _EmpDropdown({required this.label, required this.value, required this.items, required this.onChanged});
+
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant)),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          label,
+          style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurfaceVariant),
+        ),
+      ),
       const SizedBox(height: 4),
       DropdownButtonFormField<T>(
-        initialValue: value, items: items, onChanged: onChanged,
-        decoration: AppTheme.inputDecoration('Select $label'),
+        value: value,
+        items: items,
+        onChanged: onChanged,
+        isExpanded: true,
+        style: const TextStyle(fontSize: 13, color: AppColors.onSurface),
+        decoration: AppTheme.inputDecoration('Select $label').copyWith(
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        ),
       ),
     ]);
+  }
+}
+
+class _EmpDateField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final BuildContext context;
+
+  const _EmpDateField({
+    required this.label,
+    required this.controller,
+    required this.context,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurfaceVariant),
+          ),
+        ),
+        const SizedBox(height: 4),
+        TextFormField(
+          controller: controller,
+          readOnly: true,
+          style: const TextStyle(fontSize: 13),
+          onTap: () async {
+            final date = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(1900),
+              lastDate: DateTime(2100),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.light(
+                      primary: AppColors.primary,
+                      onPrimary: Colors.white,
+                      onSurface: AppColors.onSurface,
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
+            );
+            if (date != null) {
+              controller.text = DateFormat('yyyy-MM-dd').format(date);
+            }
+          },
+          decoration: AppTheme.inputDecoration('Select $label').copyWith(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            suffixIcon: const Icon(Icons.calendar_today_rounded, size: 16),
+          ),
+          validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+        ),
+      ],
+    );
   }
 }

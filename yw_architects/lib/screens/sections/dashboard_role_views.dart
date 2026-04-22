@@ -123,7 +123,7 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
       color: AppColors.primary,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -132,9 +132,7 @@ class _ManagementDashboardViewState extends State<ManagementDashboardView> {
                   'Good ${AppTheme.getGreeting()}, ${widget.user.info.firstName} 👋',
               subtitle: DateFormat('EEEE, d MMM yyyy').format(DateTime.now()),
             ),
-            const SizedBox(height: 24),
-
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
 
             // Stats Grid
             GridView.count(
@@ -464,7 +462,7 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
       color: AppColors.primary,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -473,7 +471,7 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
                   'Good ${AppTheme.getGreeting()}, ${widget.user.info.firstName} 👋',
               subtitle: widget.user.info.label.replaceAll('_', ' '),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
 
             // Attendance Card
             DashboardAttendanceCard(
@@ -689,7 +687,7 @@ class _ClientDashboardViewState extends State<ClientDashboardView> {
       color: AppColors.primary,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -697,7 +695,7 @@ class _ClientDashboardViewState extends State<ClientDashboardView> {
               title: 'Welcome back,\n${widget.user.info.firstName} 👋',
               subtitle: 'Track your project status & inquiries',
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
 
             // Top Stats
             Row(

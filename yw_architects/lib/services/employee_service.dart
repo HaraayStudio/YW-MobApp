@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'token_service.dart';
+import 'api_helper.dart';
 import '../api/constants.dart';
 
 
@@ -37,14 +38,8 @@ class EmployeeService {
   // Spring: @PostMapping("/createemployee") @RequestBody User user
   // Pass _buildPayload() directly from the Add Employee modal
   static Future<bool> createEmployee(Map<String, dynamic> payload) async {
-    final token = TokenService.accessToken;
-
-    final response = await http.post(
+    final response = await ApiHelper.postWithAuth(
       Uri.parse("$baseUrl/createemployee"),
-      headers: {
-        "Authorization": "Bearer $token",
-        "Content-Type": "application/json",
-      },
       body: jsonEncode(payload),
     );
 
@@ -58,11 +53,8 @@ class EmployeeService {
   // Spring: @GetMapping("/getallemployees")
   // Returns list from ResponseStructure.data
   static Future<List<dynamic>> getAllEmployees() async {
-    final token = TokenService.accessToken;
-
-    final response = await _resilientGet(
+    final response = await ApiHelper.getWithAuth(
       Uri.parse("$baseUrl/getallemployees"),
-      {"Authorization": "Bearer $token"},
     );
 
     print("GET ALL EMPLOYEES STATUS: ${response.statusCode}");
@@ -80,16 +72,20 @@ class EmployeeService {
     int id,
     Map<String, dynamic> payload,
   ) async {
-    final token = TokenService.accessToken;
-
-    final response = await _resilientPut(
-      Uri.parse("$baseUrl/updateemployee?id=$id"),
-      {
-        "Authorization": "Bearer $token",
-        "Content-Type": "application/json",
-      },
-      payload,
-    );
+    final response = await ApiHelper.requestWithRetry((token) async {
+      final client = http.Client();
+      try {
+        final request = http.Request('PUT', Uri.parse("$baseUrl/updateemployee?id=$id"))
+          ..headers.addAll({
+            "Authorization": "Bearer $token",
+            "Content-Type": "application/json",
+          })
+          ..followRedirects = false;
+        request.body = jsonEncode(payload);
+        final streamedResponse = await client.send(request).timeout(const Duration(seconds: 45));
+        return await http.Response.fromStream(streamedResponse);
+      } finally { client.close(); }
+    });
 
     print("UPDATE EMPLOYEE STATUS: ${response.statusCode}");
     return response.statusCode == 200 || response.statusCode == 201;
@@ -99,12 +95,12 @@ class EmployeeService {
   // Spring: @DeleteMapping("/deleteemployee") @RequestParam Long id
   // Soft delete — marks employee inactive, does not remove from DB
   static Future<bool> deleteEmployee(int id) async {
-    final token = TokenService.accessToken;
-
-    final response = await http.delete(
-      Uri.parse("$baseUrl/deleteemployee?id=$id"),
-      headers: {"Authorization": "Bearer $token"},
-    );
+    final response = await ApiHelper.requestWithRetry((token) async {
+      return await http.delete(
+        Uri.parse("$baseUrl/deleteemployee?id=$id"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+    });
 
     print("DELETE EMPLOYEE STATUS: ${response.statusCode}");
     return response.statusCode == 200 || response.statusCode == 201;

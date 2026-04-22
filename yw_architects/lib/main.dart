@@ -30,6 +30,25 @@ void main() {
   initializationFuture;
 
   runApp(const YWArchitectsApp());
+
+  // Move non-critical native calls to after runApp to speed up first frame
+  _postFrameInit();
+}
+
+void _postFrameInit() {
+  // Status bar: transparent + dark icons
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  ));
+
+  // Lock to portrait
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 }
 
 Future<void> _onBackgroundInit() async {
@@ -42,20 +61,6 @@ Future<void> _onBackgroundInit() async {
     // Load dynamic API host settings
     await ApiConstants.loadFromSettings();
     
-    // Status bar: transparent + dark icons
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ));
-
-    // Lock to portrait
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-
     print("[Main] Initialization complete.");
   } catch (e, stack) {
     print("[Main] ERROR during background startup: $e");
@@ -166,7 +171,7 @@ class _AppRootState extends State<AppRoot> {
 
 
   Future<void> _onSplashComplete() async {
-    // Ensure initialization is ABSOLUTELY DONE before leaving splash
+    // 1. Wait for both the animation AND the background data sync to finish
     await initializationFuture;
 
     if (mounted) {

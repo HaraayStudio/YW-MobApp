@@ -107,7 +107,7 @@ class DashboardSharedLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -116,7 +116,7 @@ class DashboardSharedLayout extends StatelessWidget {
               title: 'Good Morning, $greetingRole 👋',
               subtitle: _todayDate(),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
 
             // ── Stats (horizontal scroll) ────────────────────────────────────
             SizedBox(

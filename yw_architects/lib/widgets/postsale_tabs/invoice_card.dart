@@ -134,27 +134,33 @@ class _InvoiceCardState extends State<InvoiceCard> {
             Container(
               padding: const EdgeInsets.all(20),
               color: const Color(0xFFF8FAFC),
-              child: Row(
-                children: [
-                  Expanded(child: _buildAmountBox('NET AMOUNT', net)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text('+', style: TextStyle(color: Colors.black26, fontSize: 20)),
-                  ),
-                  Expanded(child: _buildAmountBox('CGST', cgst)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text('+', style: TextStyle(color: Colors.black26, fontSize: 20)),
-                  ),
-                  Expanded(child: _buildAmountBox('SGST', sgst)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('=', style: TextStyle(color: Colors.black26, fontSize: 20)),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  children: [
+                    _buildAmountBox('NET AMOUNT', net),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text('+',
+                          style: TextStyle(color: Colors.black26, fontSize: 20)),
+                    ),
+                    _buildAmountBox('CGST', cgst),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text('+',
+                          style: TextStyle(color: Colors.black26, fontSize: 20)),
+                    ),
+                    _buildAmountBox('SGST', sgst),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text('=',
+                          style: TextStyle(color: Colors.black26, fontSize: 20)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(8),
@@ -163,15 +169,19 @@ class _InvoiceCardState extends State<InvoiceCard> {
                       child: Column(
                         children: [
                           const Text('GROSS TOTAL',
-                              style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.bold)),
                           const SizedBox(height: 2),
                           Text('₹${gross.toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w900, fontSize: 18)),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             // Details Grid

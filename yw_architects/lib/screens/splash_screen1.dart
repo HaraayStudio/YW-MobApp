@@ -38,10 +38,7 @@ class _SplashScreen1State extends State<SplashScreen1>
   late final Animation<double> _brandFade;      // 3.6s start
   late final Animation<double> _progressBar;    // Over 3.5s
 
-  Timer? _exitTimer;
-
   static const _totalDuration = Duration(milliseconds: 5000);
-  static const _exitAfter = Duration(milliseconds: 6500);
 
   @override
   void initState() {
@@ -130,17 +127,25 @@ class _SplashScreen1State extends State<SplashScreen1>
       ),
     );
 
-    _ctrl.forward();
+    _ctrl.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        // Wait a small beat at the end state before signaling completion
+        Future.delayed(const Duration(milliseconds: 800), () {
+          if (mounted) widget.onComplete();
+        });
+      }
+    });
 
-    _exitTimer = Timer(_exitAfter, () {
-      if (mounted) widget.onComplete();
+    // Added a small delay before starting to ensure the screen is fully visible
+    // after the native splash screen transition.
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) _ctrl.forward();
     });
   }
 
   @override
   void dispose() {
     _ctrl.dispose();
-    _exitTimer?.cancel();
     super.dispose();
   }
 
@@ -516,7 +521,7 @@ class _BuildingPainter extends CustomPainter {
       canvas.drawRect(doorRect, Paint()..color = const Color(0xFF755B00).withValues(alpha: 0.08 * windows));
       _drawAnimatedPath(canvas, Path()..addRect(doorRect), Paint()..color = const Color(0xFF755B00)..strokeWidth = 1.2..style = PaintingStyle.stroke, windows);
 
-      // Other floors
+      // Floor 2 & 3 (rows of 5)
       final floorsY = [175.0, 137.0];
       final winsX = [85.0, 115.0, 150.0, 185.0, 215.0];
       for (var y in floorsY) {
@@ -525,6 +530,14 @@ class _BuildingPainter extends CustomPainter {
           canvas.drawRect(r, fill);
           _drawAnimatedPath(canvas, Path()..addRect(r), paint, windows);
         }
+      }
+
+      // Floor 4 (top row of 3)
+      final topWinsX = [100.0, 150.0, 200.0];
+      for (var x in topWinsX) {
+        final r = Rect.fromLTWH(x, 97, 20, 22);
+        canvas.drawRect(r, fill);
+        _drawAnimatedPath(canvas, Path()..addRect(r), paint, windows);
       }
     }
 

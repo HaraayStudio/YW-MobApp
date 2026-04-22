@@ -77,6 +77,8 @@ class DashboardStatCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
               color: AppColors.onSurfaceVariant,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -299,8 +301,8 @@ class _DonutPainter extends CustomPainter {
 
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
-        startAngle + 0.05, // Small gap
-        sweepAngle - 0.1,
+        startAngle,
+        sweepAngle,
         false,
         paint,
       );

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common_widgets.dart';
 import '../../services/client_service.dart';
+import '../../utils/contact_helper.dart';
 
 // ══════════════════════════════════════════════════════════════
 //  CLIENTS SECTION
@@ -317,6 +318,30 @@ class _ClientsSectionState extends State<ClientsSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Back button
+            InkWell(
+              onTap: () => setState(() => _selectedClient = null),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.arrow_back_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Back to List',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
             // Hero card
             Container(
               width: double.infinity,
@@ -363,14 +388,16 @@ class _ClientsSectionState extends State<ClientsSection> {
                       _ActionBtn(
                         label: 'Call',
                         icon: Icons.call_rounded,
-                        onTap: () => widget.onToast('Calling ${c.name}...'),
+                        onTap: () => ContactHelper.makeCall(c.phone),
+                        onLongPress: () => ContactHelper.copyToClipboard(c.phone, widget.onToast),
                         gradient: true,
                       ),
                       const SizedBox(width: 10),
                       _ActionBtn(
                         label: 'Email',
                         icon: Icons.mail_rounded,
-                        onTap: () => widget.onToast('Opening email...'),
+                        onTap: () => ContactHelper.sendEmail(c.email),
+                        onLongPress: () => ContactHelper.copyToClipboard(c.email, widget.onToast),
                         gradient: false,
                       ),
                     ],
@@ -384,22 +411,25 @@ class _ClientsSectionState extends State<ClientsSection> {
               child: Column(
                 children:
                     [
-                          _InfoRow(Icons.mail_rounded, 'Email', c.email),
-                          _InfoRow(Icons.phone_rounded, 'Phone', c.phone),
+                          _InfoRow(Icons.mail_rounded, 'Email', c.email, widget.onToast),
+                          _InfoRow(Icons.phone_rounded, 'Phone', c.phone, widget.onToast),
                           _InfoRow(
                             Icons.location_on_rounded,
                             'Address',
                             c.address.isEmpty ? 'N/A' : c.address,
+                            widget.onToast,
                           ),
                           _InfoRow(
                             Icons.receipt_rounded,
                             'PAN',
                             c.pan.isEmpty ? 'N/A' : c.pan,
+                            widget.onToast,
                           ),
                           _InfoRow(
                             Icons.receipt_long_rounded,
                             'GST',
                             c.gst.isEmpty ? 'N/A' : c.gst,
+                            widget.onToast,
                           ),
                         ]
                         .map(
@@ -944,12 +974,14 @@ class _ActionBtn extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final bool gradient;
 
   const _ActionBtn({
     required this.label,
     required this.icon,
     required this.onTap,
+    this.onLongPress,
     required this.gradient,
   });
 
@@ -984,43 +1016,51 @@ class _ActionBtn extends StatelessWidget {
       ),
     );
 
-    return GestureDetector(onTap: onTap, child: child);
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: child,
+    );
   }
 }
 
-Widget _InfoRow(IconData icon, String label, String val) {
-  return Row(
-    children: [
-      Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(8),
+Widget _InfoRow(IconData icon, String label, String val, Function(String) onToast) {
+  return GestureDetector(
+    onLongPress: () => ContactHelper.copyToClipboard(val, onToast),
+    behavior: HitTestBehavior.opaque,
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 16),
         ),
-        child: Icon(icon, color: AppColors.primary, size: 16),
-      ),
-      const SizedBox(width: 12),
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 10,
-              color: AppColors.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppColors.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          Text(
-            val,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.onSurface,
-              fontWeight: FontWeight.w500,
+            Text(
+              val,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
-      ),
-    ],
+          ],
+        ),
+      ],
+    ),
   );
 }

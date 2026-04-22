@@ -11,18 +11,12 @@ import 'token_service.dart';
 /// Backend endpoints use @RequestParam (not JSON body), so
 /// credentials are sent as URL query parameters.
 class AuthService {
-  // ─── Host / Port ──────────────────────────────────────────────────────────
-  static String get _resolvedHost => ApiConstants.host;
-  static int get _port => 8080;
-
   // ─── Build Uri with @RequestParam query params ─────────────────────────────
   static Uri _buildUri(String path, Map<String, String> params) {
-    final isProd = ApiConstants.isProduction;
-    return Uri(
-      scheme: ApiConstants.scheme,
-      host: _resolvedHost,
-      port: isProd ? null : ApiConstants.port,
-      path: path,
+    final baseUri = Uri.parse(ApiConstants.baseUrl);
+    // Combine base path (e.g. /api) with the endpoint path (e.g. /auth/login)
+    return baseUri.replace(
+      path: baseUri.path + path,
       queryParameters: params,
     );
   }
@@ -132,8 +126,9 @@ class AuthService {
             .post(uri)
             .timeout(const Duration(seconds: 60));
       } catch (e) {
+        print(' [AuthService] Connection error: $e');
         if (e is TimeoutException) {
-          throw Exception('Connection timed out. Please check if the server is running or if your IP/Host is correct.');
+          throw Exception('Connection timed out. Please check if the server is running or if your internet is stable.');
         }
         attempts++;
         if (attempts >= 2) rethrow; // Final failure
@@ -146,7 +141,7 @@ class AuthService {
 
   static Future<AppUser> loginEmployee(String email, String password) async {
     try {
-      final uri = _buildUri('/api/auth/login', {
+      final uri = _buildUri('/auth/login', {
         'email': email,
         'password': password,
       });
@@ -201,7 +196,7 @@ class AuthService {
       }
     } on SocketException {
       throw Exception(
-        'Cannot reach the server. Is the backend running on port $_port?',
+        'Cannot reach the server. Please check your internet connection or if the server is offline.',
       );
     } catch (e) {
       if (e is Exception) rethrow;
@@ -216,7 +211,7 @@ class AuthService {
   //   http://localhost:8080/api/auth/clientlogin?email=client%40yw.com&password=client123
   static Future<AppUser> loginClient(String email, String password) async {
     try {
-      final uri = _buildUri('/api/auth/clientlogin', {
+      final uri = _buildUri('/auth/clientlogin', {
         'email': email,
         'password': password,
       });
@@ -318,7 +313,7 @@ class AuthService {
       }
     } on SocketException {
       throw Exception(
-        'Cannot reach the server. Is the backend running on port $_port?',
+        'Cannot reach the server. Please check your internet connection or if the server is offline.',
       );
     } catch (e) {
       if (e is Exception) rethrow;
@@ -386,6 +381,61 @@ class AuthService {
       }
     } catch (_) {
       return null;
+    }
+  }
+
+  // ─── Refresh Token ────────────────────────────────────────────────────────
+  static Completer<bool>? _refreshCompleter;
+
+  /// Calls the backend to get a new Access Token using the saved Refresh Token.
+  /// Uses a synchronization lock to handle multiple concurrent refresh requests.
+  static Future<bool> refreshAccessToken() async {
+    // If a refresh is already in progress, wait for it
+    if (_refreshCompleter != null) {
+      return _refreshCompleter!.future;
+    }
+
+    _refreshCompleter = Completer<bool>();
+
+    try {
+      final refreshToken = TokenService.refreshToken;
+      if (refreshToken == null || refreshToken.isEmpty) {
+        print("[AuthService] No refresh token available.");
+        _refreshCompleter!.complete(false);
+        return false;
+      }
+
+      final uri = _buildUri('/auth/refresh', {});
+      
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'refreshToken': refreshToken}),
+      ).timeout(const Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final newAccessToken = data['accessToken'] as String? ?? '';
+        final newRefreshToken = data['refreshToken'] as String?;
+
+        if (newAccessToken.isNotEmpty) {
+          await TokenService.saveTokens(
+            newAccessToken, 
+            newRefreshToken ?? refreshToken
+          );
+          _refreshCompleter!.complete(true);
+          return true;
+        }
+      }
+      
+      _refreshCompleter!.complete(false);
+      return false;
+    } catch (e) {
+      print("[AuthService] Token refresh error: $e");
+      _refreshCompleter?.complete(false);
+      return false;
+    } finally {
+      _refreshCompleter = null;
     }
   }
 

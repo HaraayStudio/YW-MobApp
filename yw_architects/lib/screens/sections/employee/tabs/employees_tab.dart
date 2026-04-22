@@ -7,6 +7,7 @@ import 'package:yw_architects/services/employee_service.dart';
 import 'package:yw_architects/screens/sections/employee/models/employee_models.dart';
 import 'package:yw_architects/screens/sections/employee/widgets/employee_widgets.dart';
 import 'package:yw_architects/services/attendance_service.dart';
+import 'package:yw_architects/utils/contact_helper.dart';
 
 class EmployeesListTab extends StatefulWidget {
   final Function(String) onToast;
@@ -430,9 +431,9 @@ class _ProfileHeroState extends State<_ProfileHero> {
                 ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           AvatarWidget(initials: widget.e.initials, size: 72, fontSize: 24),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             widget.e.name,
             style: GoogleFonts.plusJakartaSans(
@@ -441,7 +442,7 @@ class _ProfileHeroState extends State<_ProfileHero> {
               color: AppColors.onSurface,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             widget.e.roleLabel,
             style: const TextStyle(
@@ -449,7 +450,7 @@ class _ProfileHeroState extends State<_ProfileHero> {
               color: AppColors.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -466,12 +467,50 @@ class _ProfileHeroState extends State<_ProfileHero> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          GoldGradientButton(
-            text: 'Call',
-            icon: Icons.call_rounded,
-            height: 40,
-            onTap: () => widget.onToast('Calling...'),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: GoldGradientButton(
+                  text: 'Call',
+                  icon: Icons.call_rounded,
+                  height: 40,
+                  onTap: () => ContactHelper.makeCall(widget.e.phone),
+                  onLongPress: () => ContactHelper.copyToClipboard(widget.e.phone, widget.onToast),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: InkWell(
+                    onTap: () => ContactHelper.sendEmail(widget.e.email),
+                    onLongPress: () => ContactHelper.copyToClipboard(widget.e.email, widget.onToast),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.email_rounded, size: 18, color: AppColors.onSurface),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Email',
+                          style: TextStyle(
+                            color: AppColors.onSurface,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -602,30 +641,35 @@ class _DetailsCard extends StatelessWidget {
             icon: Icons.badge_rounded,
             label: 'Employee ID',
             value: e.empId,
+            onToast: (msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg))),
           ),
           const Divider(height: 32),
           _DetailRow(
             icon: Icons.email_rounded,
             label: 'Email Address',
             value: e.email,
+            onToast: (msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg))),
           ),
           const Divider(height: 32),
           _DetailRow(
             icon: Icons.phone_android_rounded,
             label: 'Phone Number',
             value: e.phone,
+            onToast: (msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg))),
           ),
           const Divider(height: 32),
           _DetailRow(
             icon: Icons.apartment_rounded,
             label: 'Department',
             value: e.dept,
+            onToast: (msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg))),
           ),
           const Divider(height: 32),
           _DetailRow(
             icon: Icons.info_outline_rounded,
             label: 'Current Status',
             value: e.status,
+            onToast: (msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg))),
           ),
         ],
       ),
@@ -637,48 +681,55 @@ class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final Function(String) onToast;
+
   const _DetailRow({
     required this.icon,
     required this.label,
     required this.value,
+    required this.onToast,
   });
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(10),
+    return GestureDetector(
+      onLongPress: () => ContactHelper.copyToClipboard(value, onToast),
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.primary),
           ),
-          child: Icon(icon, size: 18, color: AppColors.primary),
-        ),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: AppColors.onSurfaceVariant,
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.onSurface,
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurface,
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

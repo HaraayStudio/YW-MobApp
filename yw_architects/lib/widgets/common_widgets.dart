@@ -9,6 +9,7 @@ import '../utils/responsive.dart';
 class GoldGradientButton extends StatelessWidget {
   final String text;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final IconData? icon;
   final double? width;
   final double? height;
@@ -18,6 +19,7 @@ class GoldGradientButton extends StatelessWidget {
     super.key,
     required this.text,
     this.onTap,
+    this.onLongPress,
     this.icon,
     this.width,
     this.height,
@@ -28,6 +30,7 @@ class GoldGradientButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
         width: width?.w ?? double.infinity,
         height: height?.h,

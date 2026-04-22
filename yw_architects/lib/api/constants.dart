@@ -1,59 +1,41 @@
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiConstants {
-  // SET THIS TO true FOR RELEASE / PRODUCTION APK
+  // SET THIS TO true FOR PRODUCTION
   static bool isProduction = true;
 
-  // YOUR PRODUCTION DOMAIN (e.g., 'api.ywarchitects.com')
-  static const String prodHost = 'api.ywarchitects.com';
+  // Real Live API
+  static const String prodBaseUrl = "https://api.ywarchitects.com/api";
 
-  // LOCAL DEVELOPMENT IP (Only works on your local WiFi)
-  static const String devHost = '192.168.1.5';
-
-  static const int port = 8080;
+  // Local Development API (Change to your PC's IP if needed)
+  static const String devBaseUrl = "http://192.168.1.7:8080/api";
 
   // Runtime override (saved in SharedPreferences)
   static String? hostOverride;
 
-  static String get host {
-    if (kIsWeb) return 'localhost';
-
-    // 1. User specified override (via settings)
+  // This is used everywhere in the app
+  static String get baseUrl {
     if (hostOverride != null && hostOverride!.isNotEmpty) {
       return hostOverride!;
     }
-
-    // 2. Production domain
-    if (isProduction) return prodHost;
-
-    // 3. Local Development
-    return devHost;
+    return isProduction ? prodBaseUrl : devBaseUrl;
   }
 
-  static String get scheme => isProduction ? 'https' : 'http';
+  // Helper for things that need the raw server without /api
+  static String get serverUrl => baseUrl.replaceAll('/api', '');
 
-  static String get baseUrl {
-    if (host.startsWith('http')) return "$host/api";
-    if (isProduction) return "https://$host/api";
-    return "http://$host:$port/api";
-  }
-
-  static String get serverUrl {
-    if (host.startsWith('http')) return host;
-    if (isProduction) return "https://$host";
-    return "http://$host:$port";
-  }
-
-  /// Loads custom host from SharedPreferences
+  /// Loads settings from SharedPreferences
   static Future<void> loadFromSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       hostOverride = prefs.getString('custom_api_host');
+
+      // Load saved mode (defaults to false for local dev now)
       isProduction = prefs.getBool('is_production_mode') ?? true;
+
       print(
-        "[ApiConstants] Loaded host override: $hostOverride (Prod: $isProduction)",
+        "[ApiConstants] Loaded settings: $hostOverride (Prod Mode: $isProduction)",
       );
     } catch (e) {
       print("[ApiConstants] Error loading settings: $e");

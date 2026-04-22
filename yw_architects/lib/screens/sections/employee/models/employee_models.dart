@@ -5,10 +5,19 @@ class EmployeeModel {
   final String name;
   final String firstName;
   final String lastName;
+  final String secondName;
   final String roleLabel;
   final UserRole role;
   final String dept;
   final String status;
+  final String joinDate; // Added for editing
+  final String leaveDate; // Added for editing
+  final String birthDate; // Added for editing
+  final String adharNumber; // Added for editing
+  final String panNumber; // Added for editing
+  final String gender; // Added for editing
+  final String bloodGroup; // Added for editing
+  final String profileImage; // Added for editing
   final String since;
   final String email;
   final String phone;
@@ -23,10 +32,19 @@ class EmployeeModel {
     required this.name,
     required this.firstName,
     required this.lastName,
+    this.secondName = '',
     required this.roleLabel,
     required this.role,
     required this.dept,
     required this.status,
+    required this.joinDate,
+    required this.leaveDate,
+    required this.birthDate,
+    required this.adharNumber,
+    required this.panNumber,
+    required this.gender,
+    required this.bloodGroup,
+    required this.profileImage,
     required this.since,
     required this.email,
     required this.phone,
@@ -41,7 +59,7 @@ class EmployeeModel {
     final fName = json['firstName']?.toString() ?? 'Unknown';
     final lName = json['lastName']?.toString() ?? '';
     final roleStr = json['role']?.toString() ?? '';
-    
+
     UserRole parsedRole = backendToRole(roleStr);
     final basicRoleInfo = roleMap[parsedRole] ?? roleMap[UserRole.admin]!;
 
@@ -50,15 +68,25 @@ class EmployeeModel {
       name: '$fName $lName'.trim(),
       firstName: fName,
       lastName: lName,
-      roleLabel: basicRoleInfo.name, 
+      secondName: json['secondName']?.toString() ?? '',
+      roleLabel: basicRoleInfo.name,
       role: parsedRole,
       dept: roleToDept(parsedRole),
       status: json['status']?.toString() ?? 'Active',
+      joinDate: json['joinDate']?.toString() ?? '',
+      leaveDate: json['leaveDate']?.toString() ?? '',
+      birthDate: json['birthDate']?.toString() ?? '',
+      adharNumber: json['adharNumber']?.toString() ?? json['adhar_number']?.toString() ?? '',
+      panNumber: json['panNumber']?.toString() ?? json['pan_number']?.toString() ?? '',
+      gender: (json['gender']?.toString() ?? '').trim(),
+      bloodGroup: (json['bloodGroup']?.toString() ?? json['blood_group']?.toString() ?? '').trim(),
+      profileImage: json['profileImage']?.toString() ?? json['profile_image']?.toString() ?? '',
       since: json['joinDate']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       phone: json['phone']?.toString() ?? '',
       empId: 'YW-${(json['id'] ?? '0').toString().padLeft(3, '0')}',
-      initials: (fName.isNotEmpty ? fName[0] : '') + (lName.isNotEmpty ? lName[0] : ''),
+      initials: (fName.isNotEmpty ? fName[0] : '') +
+          (lName.isNotEmpty ? lName[0] : ''),
       projects: 0,
       tasksDone: 0,
       attendance: '100%',
