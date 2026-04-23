@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:yw_architects/theme/app_theme.dart';
 import 'package:yw_architects/widgets/common_widgets.dart';
 import 'package:yw_architects/utils/responsive.dart';
@@ -200,6 +201,8 @@ class _EmployeeProfileView extends StatefulWidget {
 class _EmployeeProfileViewState extends State<_EmployeeProfileView> {
   bool _statsLoading = true;
   String _attendanceValueStr = '...';
+  List<dynamic> _presentRecords = []; 
+  DateTime _viewDate = DateTime.now(); // Track the currently viewed month
 
   @override
   void initState() {
@@ -208,14 +211,18 @@ class _EmployeeProfileViewState extends State<_EmployeeProfileView> {
   }
 
   Future<void> _fetchStats() async {
-    setState(() => _statsLoading = true);
+    setState(() {
+      _statsLoading = true;
+      _attendanceValueStr = '...';
+    });
     try {
-      final now = DateTime.now();
+      // Use the currently selected _viewDate instead of current month
+      final month = _viewDate.month;
+      final year = _viewDate.year;
 
-      // 1. Fetch Attendance & Count Days Present this month
       final attData = await AttendanceService.getAllEmployeesMonthlyAttendance(
-        now.month,
-        now.year,
+        month,
+        year,
       );
 
       // Filter for this specific user AND status 'PRESENT'
@@ -239,14 +246,28 @@ class _EmployeeProfileViewState extends State<_EmployeeProfileView> {
 
       if (mounted) {
         setState(() {
+          _presentRecords = userRecords;
           _attendanceValueStr = '${userRecords.length} Days';
           _statsLoading = false;
         });
       }
     } catch (e) {
       debugPrint("Error fetching employee stats: $e");
-      if (mounted) setState(() => _statsLoading = false);
+      if (mounted) {
+        setState(() {
+          _attendanceValueStr = '0 Days';
+          _presentRecords = [];
+          _statsLoading = false;
+        });
+      }
     }
+  }
+
+  void _changeMonth(int delta) {
+    setState(() {
+      _viewDate = DateTime(_viewDate.year, _viewDate.month + delta);
+    });
+    _fetchStats();
   }
 
   @override
@@ -266,6 +287,8 @@ class _EmployeeProfileViewState extends State<_EmployeeProfileView> {
             },
           ),
           const SizedBox(height: 24),
+          _buildMonthSelector(),
+          const SizedBox(height: 16),
           _buildStats(),
           const SizedBox(height: 24),
           _DetailsCard(e: widget.employee),
@@ -299,12 +322,224 @@ class _EmployeeProfileViewState extends State<_EmployeeProfileView> {
     );
   }
 
+  Widget _buildMonthSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            onPressed: () => _changeMonth(-1),
+            icon: const Icon(Icons.chevron_left_rounded, color: AppColors.primary),
+            visualDensity: VisualDensity.compact,
+          ),
+          Text(
+            DateFormat('MMMM yyyy').format(_viewDate),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurface,
+            ),
+          ),
+          IconButton(
+            onPressed: () => _changeMonth(1),
+            icon: const Icon(Icons.chevron_right_rounded, color: AppColors.primary),
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStats() {
     return _StatBox(
       label: 'Monthly Presence',
       value: _statsLoading ? '...' : _attendanceValueStr,
       icon: Icons.fingerprint_rounded,
+      onViewHistory: _presentRecords.isEmpty ? null : _showAttendanceHistory,
     );
+  }
+
+  void _showAttendanceHistory() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _AttendanceHistorySheet(
+        employeeName: widget.employee.name,
+        records: _presentRecords,
+      ),
+    );
+  }
+}
+
+class _AttendanceHistorySheet extends StatelessWidget {
+  final String employeeName;
+  final List<dynamic> records;
+
+  const _AttendanceHistorySheet({
+    required this.employeeName,
+    required this.records,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Sort records by date descending
+    final sortedRecords = List.from(records);
+    sortedRecords.sort((a, b) {
+      final dateA = a['date']?.toString() ?? '';
+      final dateB = b['date']?.toString() ?? '';
+      return dateB.compareTo(dateA);
+    });
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.of(context).padding.bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Attendance History',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    employeeName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close_rounded),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.surfaceContainerHigh,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          if (records.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Text('No present records found for this month.'),
+              ),
+            )
+          else
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: sortedRecords.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final record = sortedRecords[index];
+                  // Check all possible date fields from backend
+                  final dateRaw = record['date'] ?? record['attendanceDate'] ?? record['checkInDate'];
+                  final dateStr = dateRaw?.toString() ?? 'Unknown Date';
+                  
+                  final checkIn = record['checkIn']?.toString() ?? '--:--';
+                  final checkOut = record['checkOut']?.toString() ?? '--:--';
+                  
+                  // Simple formatting if YYYY-MM-DD
+                  String formattedDate = dateStr;
+                  if (dateStr != 'Unknown Date') {
+                    try {
+                      // Handle 'YYYY-MM-DD 10:00:00' format
+                      final cleanDate = dateStr.split(' ')[0]; 
+                      final dt = DateTime.parse(cleanDate);
+                      formattedDate = "${_getDayName(dt.weekday)}, ${dt.day} ${_getMonthName(dt.month)}";
+                    } catch (_) {
+                      // Fallback: Just show the raw string if parsing fails
+                      formattedDate = dateStr;
+                    }
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 20),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                formattedDate,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: AppColors.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Check-in: $checkIn  •  Check-out: $checkOut',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const GoldChip(
+                          text: 'Present',
+                          bg: AppColors.chipDoneBg,
+                          fg: AppColors.chipDoneFg,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _getDayName(int day) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days[day - 1];
+  }
+
+  String _getMonthName(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1];
   }
 }
 
@@ -565,10 +800,13 @@ class _StatBox extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
+  final VoidCallback? onViewHistory;
+
   const _StatBox({
     required this.label,
     required this.value,
     required this.icon,
+    this.onViewHistory,
   });
   @override
   Widget build(BuildContext context) {
@@ -597,13 +835,37 @@ class _StatBox extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            value,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.onSurface,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              if (onViewHistory != null)
+                TextButton(
+                  onPressed: onViewHistory,
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    foregroundColor: AppColors.primary,
+                  ),
+                  child: const Text(
+                    'View History',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),

@@ -418,11 +418,14 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   ),
                 ),
                 child: _detailedSite.logoUrl != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.network(
-                          _detailedSite.logoUrl!,
-                          fit: BoxFit.cover,
+                    ? GestureDetector(
+                        onTap: () => _showImagePreview(context, _detailedSite.logoUrl!, "Project Logo"),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            _detailedSite.logoUrl!,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       )
                     : Center(
@@ -1207,7 +1210,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 8,
+                    fontSize: 9,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primary,
                   ),
@@ -1228,7 +1231,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
                 child: Text(
                   "ACTIVE",
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 8,
+                    fontSize: 9,
                     fontWeight: FontWeight.w700,
                     color: Colors.green,
                   ),
@@ -1273,55 +1276,52 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
 
   Future<void> _viewDocument(StageDocument doc) async {
     if (doc.filePath == null || doc.filePath!.isEmpty) return;
-    final url = Uri.parse(doc.filePath!);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+
+    final path = doc.filePath!.toLowerCase();
+    final type = doc.documentType?.toUpperCase() ?? '';
+    // Ironclad detection: Anything with image extensions OR from your AWS S3 is treated as an image
+    final isImage = path.contains('.png') ||
+        path.contains('.jpg') ||
+        path.contains('.jpeg') ||
+        path.contains('.webp') ||
+        path.contains('.gif') ||
+        path.contains('.bmp') ||
+        path.contains('image') ||
+        path.contains('amazonaws.com') || 
+        type == 'DRAWING' ||
+        type == 'RECEIPT' ||
+        type == 'PHOTO';
+
+    if (isImage) {
+      _showImagePreview(context, doc.filePath!, doc.fileName ?? "Image");
     } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Could not open document")),
-        );
+      final url = Uri.parse(doc.filePath!);
+      try {
+        // Use inAppWebView for forced in-app experience
+        await launchUrl(url, mode: LaunchMode.inAppWebView);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error: $e")),
+          );
+        }
       }
     }
   }
 
   void _viewVisitPhoto(SiteVisitPhoto photo) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(10),
-        child: Stack(
-          alignment: Alignment.topRight,
-          children: [
-            InteractiveViewer(
-              child: Image.network(
-                photo.imageUrl,
-                fit: BoxFit.contain,
-                errorBuilder: (c, e, s) => const Center(
-                  child: Icon(Icons.broken_image, size: 64, color: Colors.white),
-                ),
-              ),
-            ),
-            IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.close_rounded, color: Colors.white, size: 30),
-            ),
-          ],
-        ),
-      ),
-    );
+    _showImagePreview(context, photo.imageUrl, "Visit Photo");
   }
 
   Future<void> _viewVisitDocument(SiteVisitDocument doc) async {
     if (doc.documentUrl.isEmpty) return;
     final url = Uri.parse(doc.documentUrl);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
+    try {
+      await launchUrl(url, mode: LaunchMode.inAppWebView);
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Could not open document")),
+          SnackBar(content: Text("Error: $e")),
         );
       }
     }
@@ -1340,7 +1340,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
           _headerText("DOCUMENT", flex: 3.3, align: TextAlign.left),
           _headerText("STAGE", flex: 2.2, align: TextAlign.center),
           _headerText("TYPE", flex: 1.5, align: TextAlign.center),
-          _headerText("STATUS", flex: 1.8, align: TextAlign.center),
+          _headerText("STATUS", flex: 1.5, align: TextAlign.center),
           _headerText("ACTION", flex: 1.2, align: TextAlign.right),
         ],
       ),
@@ -1363,7 +1363,7 @@ class _SiteDetailsSectionState extends State<SiteDetailsSection>
         style: GoogleFonts.plusJakartaSans(
           fontSize: 9,
           fontWeight: FontWeight.w800,
-          color: AppColors.outline,
+          color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
           letterSpacing: 0.5,
         ),
       ),
@@ -6403,14 +6403,31 @@ class _StatusBadge extends StatelessWidget {
     }
 
     if (onlyDot) {
-      // Force green if documents are present, otherwise use status color
-      final dotColor = hasDocuments ? AppColors.chipDoneFg : fg;
+      // If there are documents, show the count in a badge. Otherwise show status dot.
+      if (hasDocuments) {
+        return Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: fg.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+            border: Border.all(color: fg.withValues(alpha: 0.3)),
+          ),
+          child: Text(
+            status, // Reusing status field to pass the count string for onlyDot mode
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 9,
+              fontWeight: FontWeight.w900,
+              color: fg,
+            ),
+          ),
+        );
+      }
 
       return Container(
         width: 10,
         height: 10,
         margin: const EdgeInsets.symmetric(horizontal: 4),
-        decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+        decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
       );
     }
 
@@ -6543,9 +6560,9 @@ class _StageTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _StatusBadge(
-                status: stage.status,
+                status: stage.totalDocumentCount.toString(),
                 onlyDot: true,
-                hasDocuments: stage.documents.isNotEmpty,
+                hasDocuments: stage.totalDocumentCount > 0,
               ),
               const SizedBox(width: 8),
               // Non-functional icon for parent titles
@@ -6640,9 +6657,9 @@ class _SubStageTile extends StatelessWidget {
                 ),
               ),
               _StatusBadge(
-                status: stage.status,
+                status: stage.totalDocumentCount.toString(),
                 onlyDot: true,
-                hasDocuments: stage.documents.isNotEmpty,
+                hasDocuments: stage.totalDocumentCount > 0,
               ),
               const SizedBox(width: 4),
               if (stage.documents.isNotEmpty) _ViewDocsButton(stage: stage),
@@ -6982,22 +6999,23 @@ void _showDocumentsSheet(BuildContext context, SiteStage stage) {
                         ),
                       ),
                       // Open / Preview button
-                      if (doc.filePath != null && doc.filePath!.isNotEmpty)
-                        IconButton(
+                                         IconButton(
                           onPressed: () async {
                             final path = doc.filePath!.toLowerCase();
                             final type = doc.documentType?.toUpperCase() ?? '';
 
-                            // Detect images via extension OR metadata (DRAWING/RECEIPT/etc are often images)
-                            final isImage =
-                                path.endsWith('.png') ||
-                                path.endsWith('.jpg') ||
-                                path.endsWith('.jpeg') ||
-                                path.endsWith('.webp') ||
-                                path.endsWith('.gif') ||
-                                path.endsWith('.bmp') ||
+                            // Ironclad detection: Anything with image extensions OR from your AWS S3 is treated as an image
+                            final isImage = path.contains('.png') ||
+                                path.contains('.jpg') ||
+                                path.contains('.jpeg') ||
+                                path.contains('.webp') ||
+                                path.contains('.gif') ||
+                                path.contains('.bmp') ||
+                                path.contains('image') ||
+                                path.contains('amazonaws.com') ||
                                 type == 'DRAWING' ||
-                                type == 'RECEIPT';
+                                type == 'RECEIPT' ||
+                                type == 'PHOTO';
 
                             if (isImage) {
                               _showImagePreview(
@@ -7006,33 +7024,18 @@ void _showDocumentsSheet(BuildContext context, SiteStage stage) {
                                 doc.fileName ?? 'Image',
                               );
                             } else {
-                              // Non-image: open externally
+                              // Forced inAppWebView
                               final uri = Uri.tryParse(doc.filePath!);
                               if (uri != null) {
                                 try {
-                                  final launched = await launchUrl(
+                                  await launchUrl(
                                     uri,
-                                    mode: LaunchMode.externalApplication,
+                                    mode: LaunchMode.inAppWebView,
                                   );
-                                  if (!launched) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            "Could not open this file type. Please install a viewer.",
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }
                                 } catch (e) {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text("Error opening file: $e"),
-                                      ),
+                                      SnackBar(content: Text("Error: $e")),
                                     );
                                   }
                                 }
@@ -7040,7 +7043,7 @@ void _showDocumentsSheet(BuildContext context, SiteStage stage) {
                             }
                           },
                           icon: const Icon(
-                            Icons.open_in_new_rounded,
+                            Icons.visibility_rounded,
                             size: 18,
                             color: Colors.blueAccent,
                           ),
@@ -7061,14 +7064,14 @@ void _showDocumentsSheet(BuildContext context, SiteStage stage) {
 void _showImagePreview(BuildContext context, String imageUrl, String title) {
   showDialog(
     context: context,
-    barrierColor: Colors.black87,
+    barrierColor: Colors.black,
     builder: (context) => Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black54,
+        backgroundColor: Colors.black.withValues(alpha: 0.5),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -7080,27 +7083,11 @@ void _showImagePreview(BuildContext context, String imageUrl, String title) {
           ),
           overflow: TextOverflow.ellipsis,
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.open_in_new_rounded,
-              color: Colors.white70,
-              size: 20,
-            ),
-            tooltip: "Open in Browser",
-            onPressed: () {
-              final uri = Uri.tryParse(imageUrl);
-              if (uri != null) {
-                launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
-            },
-          ),
-        ],
       ),
       body: Center(
         child: InteractiveViewer(
           minScale: 0.5,
-          maxScale: 4.0,
+          maxScale: 5.0,
           child: Image.network(
             imageUrl,
             fit: BoxFit.contain,

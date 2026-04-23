@@ -9,7 +9,7 @@ class ApiConstants {
   static const String prodBaseUrl = "https://api.ywarchitects.com/api";
 
   // Local Development API (Change to your PC's IP if needed)
-  static const String devBaseUrl = "http://192.168.1.7:8080/api";
+  static const String devBaseUrl = "http://10.0.2.2:8080/api";
 
   // Runtime override (saved in SharedPreferences)
   static String? hostOverride;

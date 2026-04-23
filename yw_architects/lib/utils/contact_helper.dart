@@ -1,20 +1,27 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ContactHelper {
   /// Opens the phone dialer with the given number
   static Future<void> makeCall(String phone) async {
+    if (phone.isEmpty || phone == 'N/A') return;
     final Uri url = Uri.parse('tel:$phone');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('[ContactHelper] Could not launch dialer: $e');
     }
   }
 
   /// Opens the default email app with the given email
   static Future<void> sendEmail(String email) async {
+    if (email.isEmpty || email == 'N/A') return;
     final Uri url = Uri.parse('mailto:$email');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('[ContactHelper] Could not launch email: $e');
     }
   }
 

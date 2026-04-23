@@ -652,12 +652,12 @@ class StageDocument {
   factory StageDocument.fromJson(Map<String, dynamic> json) {
     return StageDocument(
       id: json['id'] ?? 0,
-      fileName: json['fileName'] ?? json['documentName'],
-      filePath: json['filePath'] ?? json['documentUrl'],
-      documentType: json['documentType'],
-      description: json['description'],
-      uploadedAt: json['uploadedAt'] != null
-          ? DateTime.tryParse(json['uploadedAt'])
+      fileName: json['fileName'] ?? json['documentName'] ?? json['name'] ?? 'Document',
+      filePath: json['filePath'] ?? json['documentUrl'] ?? json['url'] ?? json['path'] ?? '',
+      documentType: json['documentType'] ?? json['type'],
+      description: json['description'] ?? json['desc'],
+      uploadedAt: json['uploadedAt'] != null || json['createdAt'] != null
+          ? DateTime.tryParse((json['uploadedAt'] ?? json['createdAt']).toString())
           : null,
     );
   }
@@ -693,11 +693,13 @@ class SiteStage {
   });
 
   factory SiteStage.fromJson(Map<String, dynamic> json) {
-    var children = json['childStages'] as List?;
-    var docs = json['documents'] as List?;
+    // Flexible mapping for various API naming conventions
+    var children = json['childStages'] ?? json['subStages'] ?? json['children'] as List?;
+    var docs = json['documents'] ?? json['stageDocuments'] ?? json['photos'] as List?;
+    
     return SiteStage(
       id: json['id'] ?? 0,
-      stageName: json['stageName'] ?? '',
+      stageName: json['stageName'] ?? json['name'] ?? '',
       customStageName: json['customStageName'],
       status: json['status'] ?? 'NOT_STARTED',
       progressPercentage: (json['progressPercentage'] ?? 0.0).toDouble(),
@@ -710,11 +712,11 @@ class SiteStage {
       actualCompletionDate: json['actualCompletionDate'] != null
           ? DateTime.tryParse(json['actualCompletionDate'])
           : null,
-      childStages: children != null
-          ? children.map((c) => SiteStage.fromJson(c)).toList()
+      childStages: children != null && children is List
+          ? children.map((c) => SiteStage.fromJson(c is Map<String, dynamic> ? c : {})).toList()
           : [],
-      documents: docs != null
-          ? docs.map((d) => StageDocument.fromJson(d)).toList()
+      documents: docs != null && docs is List
+          ? docs.map((d) => StageDocument.fromJson(d is Map<String, dynamic> ? d : {})).toList()
           : [],
       parentStageId: json['parentStageId'] is int 
           ? json['parentStageId'] 
@@ -754,4 +756,12 @@ class SiteStage {
   // Explicit getters to help Dart Internal lookups avoid "Lookup failed" errors
   int? get getParentStageId => parentStageId;
   int? get getDisplayOrder => displayOrder;
+
+  int get totalDocumentCount {
+    int count = documents.length;
+    for (var child in childStages) {
+      count += child.totalDocumentCount;
+    }
+    return count;
+  }
 }

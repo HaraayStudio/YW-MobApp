@@ -217,4 +217,28 @@ class AttendanceService {
     }
     return [];
   }
+
+  /// GET /attendance/employee/{userId}/history?month=X&year=Y
+  static Future<List<Map<String, dynamic>>> getEmployeeAttendanceHistory(
+    int userId,
+    int month,
+    int year,
+  ) async {
+    try {
+      final response = await _resilientGet(
+        Uri.parse('$baseUrl/attendance/employee/$userId/history').replace(
+          queryParameters: {'month': month.toString(), 'year': year.toString()},
+        ),
+        await _getHeaders(),
+      );
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        final List<dynamic> data = decoded['data'] as List<dynamic>? ?? [];
+        return data.cast<Map<String, dynamic>>();
+      }
+    } catch (e) {
+      debugPrint("Error fetching employee history: $e");
+    }
+    return [];
+  }
 }

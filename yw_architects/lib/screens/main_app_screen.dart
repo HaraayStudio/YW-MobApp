@@ -324,26 +324,34 @@ class _MainAppScreenState extends State<MainAppScreen> {
       ),
     );
 
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: AppColors.surface,
-      drawer: _buildDrawer(),
-      body: Column(
-        children: [
-          _buildTopBar(),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              child: KeyedSubtree(
-                key: ValueKey(_currentSection),
-                child: _buildSection(),
+    return PopScope(
+      canPop: _currentSection == 'dashboard',
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // If not on dashboard, go back to dashboard instead of closing
+        setState(() => _currentSection = 'dashboard');
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: AppColors.surface,
+        drawer: _buildDrawer(),
+        body: Column(
+          children: [
+            _buildTopBar(),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                child: KeyedSubtree(
+                  key: ValueKey(_currentSection),
+                  child: _buildSection(),
+                ),
               ),
             ),
-          ),
-          _buildBottomNav(),
-        ],
+            _buildBottomNav(),
+          ],
+        ),
       ),
     );
   }

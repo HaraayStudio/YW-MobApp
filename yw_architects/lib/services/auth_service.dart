@@ -124,7 +124,7 @@ class AuthService {
       try {
         return await http
             .post(uri)
-            .timeout(const Duration(seconds: 60));
+            .timeout(const Duration(seconds: 20));
       } catch (e) {
         print(' [AuthService] Connection error: $e');
         if (e is TimeoutException) {
